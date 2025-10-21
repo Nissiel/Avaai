@@ -68,6 +68,8 @@ class RealtimeAgent:
         self.conversation = ConversationState()
         self._item_roles: Dict[str, str] = {}
         self._pending_transcripts: Dict[str, str] = {}
+        self._final_item_transcripts: Dict[str, str] = {}
+        self._session_overrides: Dict[str, Any] = {}
 
     @property
     def websocket(self) -> websockets.WebSocketClientProtocol:
@@ -108,20 +110,28 @@ class RealtimeAgent:
         return bool(self._ws and not self._ws.closed)
 
     async def _send_session_update(self) -> None:
+        voice = self._session_overrides.get("voice", self._settings.realtime_voice)
+        instructions = self._session_overrides.get("instructions", self._settings.system_prompt)
+        language = self._session_overrides.get("language")
+
         logger.info("🔧 CONFIGURATION SESSION OPENAI POUR %s", self._call_id)
-        logger.info("🔧 INSTRUCTIONS SYSTÈME: %s", self._settings.system_prompt[:100])
-        logger.info("🔧 VOIX: %s", self._settings.realtime_voice)
-        
+        logger.info("🔧 INSTRUCTIONS SYSTÈME: %s", instructions[:160])
+        logger.info("🔧 VOIX: %s", voice)
+
+        transcription_config = {"model": "whisper-1"}
+        if language:
+            transcription_config["language"] = language
+
         payload = {
             "type": "session.update",
             "session": {
                 "modalities": ["text", "audio"],
-                "voice": self._settings.realtime_voice,
+                "voice": voice,
                 "turn_detection": {"type": "server_vad"},
                 "input_audio_format": "g711_ulaw",
                 "output_audio_format": "g711_ulaw",
-                "input_audio_transcription": {"model": "whisper-1"},
-                "instructions": self._settings.system_prompt,
+                "input_audio_transcription": transcription_config,
+                "instructions": instructions,
             },
         }
         logger.info("🔧 PAYLOAD SESSION UPDATE ENVOYÉ")
@@ -129,22 +139,45 @@ class RealtimeAgent:
 
 
 
-    async def send_greeting(self) -> None:
+    async def send_greeting(self, message: Optional[str] = None) -> None:
         """
-        EXPERT FIX: Dans l'API Realtime, l'assistant ne parle PAS automatiquement.
-        Il faut attendre que l'utilisateur parle en premier, puis AVA répond selon son system prompt.
-        On ne force AUCUN greeting automatique - c'est la bonne pratique OpenAI !
+        Send an optional greeting so the caller hears Ava right after connection.
         """
-        logger.info("🎯 CONFIGURATION TERMINÉE - AVA prête à répondre pour %s", self._call_id)
-        logger.info("🎯 AVA attend que l'utilisateur parle en premier (API Realtime standard)")
-        
-        # PAS de greeting forcé ! L'utilisateur parle en premier, AVA répond naturellement
-        # selon son system prompt configuré dans session.update
-        
-        # La conversation se déroulera automatiquement :
-        # 1. User parle -> server_vad détecte
-        # 2. OpenAI génère une réponse selon le system prompt  
-        # 3. AVA répond naturellement en français comme configuré
+        logger.info("🎯 AVA prête à accueillir l'appelant pour %s", self._call_id)
+        if not message:
+            message = self._session_overrides.get("greeting") or self._settings.greeting_message
+
+        payload: Dict[str, Any] = {
+            "type": "response.create",
+            "response": {
+                "modalities": ["audio", "text"],
+            },
+        }
+        if message:
+            payload["response"]["instructions"] = message
+
+        await self.send(payload)
+
+    def configure_session(
+        self,
+        *,
+        voice: Optional[str] = None,
+        instructions: Optional[str] = None,
+        transcription_language: Optional[str] = None,
+        greeting: Optional[str] = None,
+    ) -> None:
+        """
+        Store overrides applied to the next session.update frame.
+        """
+
+        if voice:
+            self._session_overrides["voice"] = voice
+        if instructions:
+            self._session_overrides["instructions"] = instructions
+        if transcription_language:
+            self._session_overrides["language"] = transcription_language
+        if greeting:
+            self._session_overrides["greeting"] = greeting
 
     async def send(self, payload: Dict[str, Any]) -> None:
         message = json.dumps(payload)
@@ -219,10 +252,14 @@ class RealtimeAgent:
             if transcript and transcript.strip():
                 logger.info("🎤 USER TRANSCRIPT CAPTURED (%s): %s", role, transcript)
                 self.conversation.add_turn(role or "user", transcript)
+                if item_id:
+                    self._final_item_transcripts[item_id] = transcript
             else:
                 logger.warning("❌ EMPTY USER TRANSCRIPT in event: %s", event)
 
             if item_id:
+                if transcript and transcript.strip():
+                    self._final_item_transcripts[item_id] = transcript
                 self._pending_transcripts.pop(item_id, None)
 
         # Support pour les anciens formats de transcription
@@ -310,6 +347,8 @@ class RealtimeAgent:
                 if text_value and text_value.strip():
                     logger.info("✅ CONVERSATION ITEM (%s): %s", role, text_value)
                     self.conversation.add_turn(role, text_value)
+                    if item_id and role == "user":
+                        self._final_item_transcripts[item_id] = text_value
                 else:
                     logger.debug("⚪ Empty content in item: %s", content)
         
@@ -337,6 +376,8 @@ class RealtimeAgent:
                 if text_value and text_value.strip():
                     logger.info("🏁 CONVERSATION COMPLETED (%s): %s", role, text_value)
                     self.conversation.add_turn(role, text_value)
+                    if item_id and role == "user":
+                        self._final_item_transcripts[item_id] = text_value
                     
         # Support des anciens événements pour compatibilité
         elif event_type == "response.completed":
@@ -408,9 +449,18 @@ class RealtimeAgent:
                 role = self._item_roles.get(item_id, "user")
                 logger.debug("🧹 Finalisation transcript (%s): %s", item_id, text)
                 self.conversation.add_turn(role, text)
+                self._final_item_transcripts[item_id] = text
             else:
                 logger.debug("🧹 Finalisation transcript (%s): vide ou blanc", item_id)
             self._pending_transcripts.pop(item_id, None)
+
+    def get_transcript_for_item(self, item_id: str) -> Optional[str]:
+        """Return the captured transcript for a given conversation item, if known."""
+        return self._final_item_transcripts.get(item_id)
+
+    def get_role_for_item(self, item_id: str) -> Optional[str]:
+        """Return the role (user/assistant) associated with a conversation item."""
+        return self._item_roles.get(item_id)
 
 
 async def generate_summary(
@@ -434,10 +484,15 @@ async def generate_summary(
     client = AsyncOpenAI(api_key=settings.openai_api_key)
 
     system_prompt = (
-        "Tu es Ava, une secrétaire IA professionnelle. Tu vas résumer un appel "
-        "téléphonique en français. Produis un résumé concis (3 à 5 phrases) qui "
-        "couvre : le motif de l'appel, les informations clés échangées, les "
-        "actions ou suivis éventuels. Utilise un ton poli et professionnel."
+        "Tu es Ava, la secrétaire IA de Nissiel Thomas. Tu dois produire un compte-rendu très détaillé en français. "
+        "Structure toujours ta réponse en sections numérotées :\n"
+        "1. Résumé exécutif (2-3 phrases synthétiques).\n"
+        "2. Coordonnées collectées (Nom, Téléphone, Email, autres informations importantes).\n"
+        "3. Chronologie de l'appel (liste d'étapes avec heure relative si disponible).\n"
+        "4. Détails sur la demande / contexte.\n"
+        "5. Actions recommandées ou suivis à prévoir.\n"
+        "6. Points d'attention / remarques notables.\n"
+        "Quand une information n'a pas été fournie, écris 'non communiqué'. Utilise un style clair, professionnel, avec des puces lorsqu'il y a plusieurs items."
     )
 
     # Debug critique : vérifions ce qui est dans la conversation
@@ -476,8 +531,8 @@ async def generate_summary(
     response = await client.chat.completions.create(
         model=settings.openai_summary_model,
         messages=messages,
-        temperature=0.3,
-        max_tokens=400,
+        temperature=0.2,
+        max_tokens=800,
     )
 
     summary = response.choices[0].message.content or ""

@@ -53,27 +53,42 @@ class Settings(BaseModel):
     # Voice and persona customisation
     greeting_message: str = Field(
         default=(
-            "Bonjour, vous êtes bien en ligne avec Ava, votre assistante "
-            "personnelle. Je suis ici pour répondre à vos questions ou "
-            "prendre un message. Que puis-je faire pour vous ?"
+            "Bonjour et bienvenue. Je suis Ava, l'assistante personnelle de Nissiel Thomas. "
+            "Comment puis-je vous aider aujourd'hui ?"
         ),
         description="Opening message Ava delivers at the start of the call.",
     )
     system_prompt: str = Field(
         default=(
-            "Tu es Ava, une assistante personnelle virtuelle professionnelle "
-            "et chaleureuse. Tu parles exclusivement français avec un ton poli "
-            "et serviable. Présente-toi systématiquement comme « Ava, votre "
-            "assistante personnelle » au début de chaque appel et rappelle ton "
-            "nom si l'appelant semble l'avoir oublié. Ton objectif est d'aider "
-            "l'appelant, de répondre à ses questions et de prendre un message si "
-            "nécessaire. Sois claire, empathique, concise, et assure-toi que "
-            "l'appelant se sente entendu."
+            "Tu es Ava, assistante personnelle de Nissiel Thomas.\n"
+            "Langues : français, anglais, hébreu.\n"
+            "Ta voix est féminine, douce, claire et posée.\n\n"
+            "Ta mission pendant chaque appel :\n"
+            "1️⃣ Te présenter poliment.\n"
+            "2️⃣ Identifier la langue et t’y adapter.\n"
+            "3️⃣ Comprendre pourquoi la personne appelle.\n"
+            "4️⃣ Poser les bonnes questions pour clarifier la demande.\n"
+            "5️⃣ Demander et confirmer les coordonnées : prénom + nom, numéro de téléphone, adresse email.\n"
+            "6️⃣ Reformuler et confirmer l’objet de l’appel.\n"
+            "7️⃣ Clôturer avec un ton chaleureux et professionnel : « Merci beaucoup, je vais transmettre tout cela à Nissiel Thomas. »\n\n"
+            "Important :\n"
+            "- Sois calme, empathique et efficace.\n"
+            "- Le message d’accueil est diffusé automatiquement : ne le répète pas lorsque l’appelant répond, remercie-le et poursuis.\n"
+            "- Conduis un échange très humain : pose une question à la fois avec douceur, remercie pour chaque réponse et crée un climat chaleureux.\n"
+            "- Présente-toi toujours comme Ava, assistante personnelle de Nissiel Thomas, et ne te présente jamais avec un autre prénom.\n"
+            "- Laisse toujours l’appelant terminer avant de relancer.\n"
+            "- Dès que tu comprends le motif de l'appel, demande poliment son prénom, son nom et son numéro de téléphone, puis reformule ces informations pour les confirmer.\n"
+            "- Si la personne hésite ou semble stressée, rassure-la, reformule, propose des exemples et reste patiente.\n"
+            "- Si la personne ne veut pas donner une information, respecte-le et précise que tu notes l’absence.\n"
+            "- Reformule régulièrement ce que tu as compris, surtout lors de la collecte des coordonnées.\n"
+            "- Après les informations clés, propose un bref résumé oral et confirme que tu vas transmettre à Nissiel Thomas.\n"
+            "- Ne fais jamais de promesse d’action. Tu transmets simplement le message.\n"
+            "- À la fin de chaque appel, ton système enverra un résumé complet à Nissiel."
         ),
         description="System prompt injected into the Realtime session.",
     )
     realtime_voice: str = Field(
-        default="alloy",
+        default="fr-feminine-calm",
         description=(
             "Voice preset for the Realtime API. Must support French speech."
         ),
@@ -81,6 +96,18 @@ class Settings(BaseModel):
     realtime_sample_rate_hz: int = Field(
         default=8000,
         description="Audio sample rate negotiated with Twilio.",
+    )
+    default_tenant_id: Optional[str] = Field(
+        default=os.getenv("DEFAULT_TENANT_ID"),
+        description="Tenant identifier used when routing calls.",
+    )
+    ava_profile_api_base: Optional[str] = Field(
+        default=os.getenv("AVA_PROFILE_API_BASE"),
+        description="Base URL for the Ava profile management API.",
+    )
+    ava_profile_service_token: Optional[str] = Field(
+        default=os.getenv("AVA_PROFILE_SERVICE_TOKEN"),
+        description="Service token used when calling the Ava profile API.",
     )
 
     # Email summary configuration
@@ -142,6 +169,9 @@ def _build_settings() -> Settings:
         realtime_sample_rate_hz=int(
             os.getenv("AVA_SAMPLE_RATE_HZ", "8000")
         ),
+        default_tenant_id=os.getenv("DEFAULT_TENANT_ID"),
+        ava_profile_api_base=os.getenv("AVA_PROFILE_API_BASE"),
+        ava_profile_service_token=os.getenv("AVA_PROFILE_SERVICE_TOKEN"),
         summary_email_recipient=os.getenv("SUMMARY_EMAIL"),
         smtp_server=os.getenv("SMTP_SERVER"),
         smtp_port=int(os.getenv("SMTP_PORT", "587")),

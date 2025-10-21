@@ -24,6 +24,7 @@ from fastapi import WebSocket
 from .agent_logic import RealtimeAgent, generate_summary
 from .config import Settings
 from .email_utils import send_summary_via_email
+from .profile_loader import AvaProfileConfig, build_system_prompt, load_profile
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +59,12 @@ class CallSession:
         self._last_voice_timestamp_ms: Optional[int] = None
         self._pending_user_audio_started_ms: Optional[int] = None
         self._speech_vad_threshold = 50  # RMS threshold to classify a frame as speech
+        self._silence_commit_threshold_ms = 2000  # Wait 2s of silence before committing (fallback only)
+        self._max_utterance_ms = 30000  # Force commit after 30s of continuous speech
+        self._min_utterance_ms = 200  # Ignore extremely short noises
+        self._pending_user_items: set[str] = set()
+        self._responded_user_items: set[str] = set()
+        self._profile: Optional[AvaProfileConfig] = None
 
     async def run(self) -> None:
         """
@@ -116,6 +123,23 @@ class CallSession:
         self.stream_sid = message.get("start", {}).get("streamSid")
         logger.info("🚀 DÉMARRAGE APPEL %s (SID: %s)", self.call_id, self.stream_sid)
 
+        self._pending_user_items.clear()
+        self._responded_user_items.clear()
+
+        tenant_id = self.settings.default_tenant_id
+        if tenant_id:
+            self._profile = await load_profile(self.settings, tenant_id)
+            prompt = build_system_prompt(self._profile)
+            self.openai_agent.configure_session(
+                voice=self._profile.voice,
+                instructions=prompt,
+                transcription_language=self._profile.language,
+                greeting=self._profile.greeting,
+            )
+            logger.info("🎭 Profil Ava appliqué pour tenant %s", tenant_id)
+        else:
+            logger.warning("⚠️ Aucun tenant défini, utilisation du profil par défaut.")
+
         logger.info("🔌 CONNEXION À OPENAI...")
         await self.openai_agent.connect()
         logger.info("✅ CONNECTÉ À OPENAI")
@@ -126,7 +150,12 @@ class CallSession:
 
         # Send greeting asynchronously to avoid blocking.
         logger.info("👋 ENVOI SALUTATION AVA...")
-        await self.openai_agent.send_greeting()
+        greeting = (
+            self._profile.greeting
+            if self._profile
+            else self.settings.greeting_message
+        )
+        await self.openai_agent.send_greeting(greeting)
         logger.info("✅ SALUTATION ENVOYÉE")
 
     async def _handle_media(self, message: TwilioMessage) -> None:
@@ -147,25 +176,24 @@ class CallSession:
                     "audio": payload,
                 }
             )
-            # Rely on OpenAI's server-side VAD to decide when an utterance ends.
+            # Rely on OpenAI's server-side VAD to decide when an utterance ends,
+            # but keep a conservative local fallback in case the server event is missing.
 
             if self._is_voice_payload(payload):
                 if not self._pending_user_audio:
                     self._pending_user_audio_started_ms = self._latest_twilio_timestamp_ms
+                    logger.debug("🎙️ Début détection parole locale (ms=%s)", self._pending_user_audio_started_ms)
                 self._pending_user_audio = True
                 self._last_voice_timestamp_ms = self._latest_twilio_timestamp_ms
+            else:
+                self._last_voice_timestamp_ms = self._last_voice_timestamp_ms or self._latest_twilio_timestamp_ms
 
             if (
                 self._pending_user_audio
-                and self._last_voice_timestamp_ms is not None
-                and self._latest_twilio_timestamp_ms - self._last_voice_timestamp_ms >= 600
-            ):
-                await self._commit_user_audio_buffer()
-            elif (
-                self._pending_user_audio
                 and self._pending_user_audio_started_ms is not None
-                and self._latest_twilio_timestamp_ms - self._pending_user_audio_started_ms >= 5000
+                and self._latest_twilio_timestamp_ms - self._pending_user_audio_started_ms >= self._max_utterance_ms
             ):
+                logger.debug("⏱️ Utterance dépasse %sms → commit forcé", self._max_utterance_ms)
                 await self._commit_user_audio_buffer()
 
     async def _drain_openai_events(self) -> None:
@@ -182,9 +210,30 @@ class CallSession:
                         "Réception d'un appel de fonction (%s) non géré.",
                         item.get("name"),
                     )
+            elif event_type == "conversation.item.created":
+                item = event.get("item") or {}
+                if (item.get("role") or "assistant") == "user":
+                    item_id = item.get("id")
+                    if item_id:
+                        self._pending_user_items.add(item_id)
+                        logger.debug("🆕 Item utilisateur créé: %s", item_id)
+            elif event_type == "conversation.item.completed":
+                item = event.get("item") or {}
+                if (item.get("role") or "assistant") == "user":
+                    item_id = item.get("id")
+                    if item_id:
+                        await self._maybe_trigger_response(item_id)
+            elif event_type == "conversation.item.input_audio_transcription.completed":
+                item_id = event.get("item_id")
+                if item_id:
+                    role = self.openai_agent.get_role_for_item(item_id) or "user"
+                    if role == "user":
+                        self._pending_user_items.add(item_id)
+                        await self._maybe_trigger_response(item_id)
+                    else:
+                        logger.debug("ℹ️ Transcription complétée %s ignorée (rôle=%s)", item_id, role)
             elif event_type == "input_audio_buffer.speech_started":
                 self._mark_user_speech_started(event)
-                await self._handle_barge_in()
             elif event_type == "input_audio_buffer.speech_stopped":
                 self._mark_user_speech_stopped(event)
                 await self._commit_user_audio_buffer()
@@ -250,7 +299,6 @@ class CallSession:
         if not self._pending_user_audio:
             return
         await self.openai_agent.send({"type": "input_audio_buffer.commit"})
-        await self.openai_agent.send({"type": "response.create"})
         self._pending_user_audio = False
         self._last_voice_timestamp_ms = None
         self._pending_user_audio_started_ms = None
@@ -259,6 +307,29 @@ class CallSession:
     async def _flush_pending_audio(self) -> None:
         if self._pending_user_audio:
             await self._commit_user_audio_buffer()
+
+    async def _maybe_trigger_response(self, item_id: str) -> None:
+        if item_id in self._responded_user_items:
+            return
+
+        transcript = self.openai_agent.get_transcript_for_item(item_id)
+        if not transcript or not transcript.strip():
+            logger.debug("⏭️ Transcript indisponible pour %s, attente avant réponse.", item_id)
+            return
+
+        role = self.openai_agent.get_role_for_item(item_id) or "user"
+        if role != "user":
+            logger.debug("🚫 Ignoré item %s car rôle=%s", item_id, role)
+            return
+
+        if len(transcript.strip()) < 3:
+            logger.debug("🚫 Transcript trop court pour item %s: '%s'", item_id, transcript)
+            return
+
+        await self.openai_agent.send({"type": "response.create"})
+        self._responded_user_items.add(item_id)
+        self._pending_user_items.discard(item_id)
+        logger.debug("➡️ response.create émis pour item utilisateur %s", item_id)
 
     def _is_voice_payload(self, payload: str) -> bool:
         try:
@@ -272,6 +343,10 @@ class CallSession:
 
     def _mark_user_speech_started(self, event: Dict[str, Any]) -> None:
         self._pending_user_audio = True
+        item_id = event.get("item_id")
+        if item_id:
+            self._pending_user_items.add(item_id)
+            logger.debug("🎙️ Item utilisateur actif: %s", item_id)
         audio_start_ms = event.get("audio_start_ms")
         if isinstance(audio_start_ms, (int, float)):
             ts = int(audio_start_ms)
@@ -282,6 +357,9 @@ class CallSession:
         logger.debug("🎤 Détection début parole (ms=%s)", ts)
 
     def _mark_user_speech_stopped(self, event: Dict[str, Any]) -> None:
+        item_id = event.get("item_id")
+        if item_id:
+            logger.debug("🛑 Fin de parole signalée pour item %s", item_id)
         audio_end_ms = event.get("audio_end_ms")
         if isinstance(audio_end_ms, (int, float)):
             self._last_voice_timestamp_ms = int(audio_end_ms)
@@ -299,6 +377,9 @@ class CallSession:
 
         with contextlib.suppress(Exception):
             await self._flush_pending_audio()
+
+        self._pending_user_items.clear()
+        self._responded_user_items.clear()
 
         if self._openai_task:
             self._openai_task.cancel()
