@@ -1,109 +1,126 @@
-# OpenAI Realtime API with Twilio Quickstart
+## Ava – Assistante vocale IA (Twilio + OpenAI Realtime)
 
-Combine OpenAI's Realtime API and Twilio's phone calling capability to build an AI calling assistant.
+Ava est une secrétaire téléphonique virtuelle francophone bâtie sur Twilio Media Streams et l’API Realtime d’OpenAI. Elle décroche vos appels, engage une conversation fluide en français, tient compte du contexte, puis rédige et envoie automatiquement un résumé professionnel par email une fois l’appel terminé.
 
-<img width="1728" alt="Screenshot 2024-12-18 at 4 59 30 PM" src="https://github.com/user-attachments/assets/d3c8dcce-b339-410c-85ca-864a8e0fc326" />
+### Fonctionnalités principales
+- **Accueil naturel** : message d’ouverture chaleureux dès la prise de ligne.
+- **Conversation temps réel** : transcription Whisper + voix française via le modèle Realtime.
+- **Mémoire contextuelle** : historique complet des échanges pour guider les réponses.
+- **Résumé post-appel** : synthèse professionnelle générée avec GPT et envoyée par email.
+- **Fallback robuste** : journalisation automatique en cas d’échec d’envoi.
 
-## Quick Setup
+---
 
-Open three terminal windows:
+### Prérequis
+- Python 3.11 ou plus.
+- Compte [OpenAI](https://platform.openai.com/) avec accès à l’API Realtime et aux Chat Completions (clé sauvegardée dans `.env`).
+- Compte [Twilio](https://www.twilio.com/) avec un numéro ou la console de test.
+- [ngrok](https://ngrok.com/) (ou équivalent) pour exposer le serveur local à Twilio.
+- Facultatif : le dossier `webapp/` (Next.js) peut servir de tableau de bord si vous souhaitez visualiser les flux, mais Ava fonctionne sans.
 
-| Terminal | Purpose                       | Quick Reference (see below for more) |
-| -------- | ----------------------------- | ------------------------------------ |
-| 1        | To run the `webapp`           | `npm run dev`                        |
-| 2        | To run the `websocket-server` | `npm run dev`                        |
-| 3        | To run `ngrok`                | `ngrok http 8081`                    |
+---
 
-Make sure all vars in `webapp/.env` and `websocket-server/.env` are set correctly. See [full setup](#full-setup) section for more.
+### Installation rapide
+1. **Cloner le dépôt et créer l’environnement**
+   ```bash
+   git clone https://github.com/.../avaai.git
+   cd avaai
+   python -m venv .venv
+   source .venv/bin/activate  # ou .venv\Scripts\activate sous Windows
+   pip install --upgrade pip
+   pip install -r requirements.txt
+   ```
 
-## Overview
+2. **Configurer les variables d’environnement**
+   ```bash
+   cp ava_backend/.env.example ava_backend/.env
+   ```
+   Ouvrez `ava_backend/.env` et complétez au minimum :
+   - `OPENAI_API_KEY` : clé OpenAI
+   - `PUBLIC_BASE_URL` : URL publique (ex. ngrok) pour que Twilio atteigne le serveur
+   - paramètres SMTP si vous souhaitez l’envoi automatique d’emails (`SUMMARY_EMAIL`, `SMTP_SERVER`, etc.)
 
-This repo implements a phone calling assistant with the Realtime API and Twilio, and had two main parts: the `webapp`, and the `websocket-server`.
+3. **Démarrer Ava**
+   ```bash
+   uvicorn main:app --host 0.0.0.0 --port 8081 --reload
+   ```
 
-1. `webapp`: NextJS app to serve as a frontend for call configuration and transcripts
-2. `websocket-server`: Express backend that handles connection from Twilio, connects it to the Realtime API, and forwards messages to the frontend
-<img width="1514" alt="Screenshot 2024-12-20 at 10 32 40 AM" src="https://github.com/user-attachments/assets/61d39b88-4861-4b6f-bfe2-796957ab5476" />
+4. **Exposer l’application à Twilio**
+   ```bash
+   ngrok http 8081
+   ```
+   Notez l’URL publique `https://xxxx.ngrok.io`. Mettez-la dans `PUBLIC_BASE_URL`.
 
-Twilio uses TwiML (a form of XML) to specify how to handle a phone call. When a call comes in we tell Twilio to start a bi-directional stream to our backend, where we forward messages between the call and the Realtime API. (`{{WS_URL}}` is replaced with our websocket endpoint.)
+5. **Configurer le webhook Twilio**
+   - Dans la console Twilio, renseignez pour votre numéro :
+     - **Voice & Fax → A Call Comes In** : `https://xxxx.ngrok.io/twiml`
+   - Twilio initiera alors un Media Stream vers `wss://xxxx.ngrok.io/media-stream`.
 
-```xml
-<!-- TwiML to start a bi-directional stream-->
+6. **Passer un appel**
+   - Dès la prise de ligne, Ava déclenche son accueil en français.
+   - Parlez-lui naturellement : elle écoute, répond et interrompt sa propre réponse si vous reprenez la parole.
+   - À la fin de l’appel, un résumé structuré est généré puis envoyé par email (ou journalisé en fallback).
 
-<?xml version="1.0" encoding="UTF-8"?>
-<Response>
-  <Say>Connected</Say>
-  <Connect>
-    <Stream url="{{WS_URL}}" />
-  </Connect>
-  <Say>Disconnected</Say>
-</Response>
+---
+
+### Architecture
+```
+Ava (FastAPI)  <——>  Twilio Media Streams
+        │                      │
+        └────> OpenAI Realtime ─┘
+
+Modules principaux :
+  - main.py                 : serveur FastAPI (TwiML + WebSocket)
+  - ava_backend/call_session.py  : pont audio Twilio ↔ OpenAI, gestion du flux
+  - ava_backend/agent_logic.py    : session Realtime, suivi conversation, résumé
+  - ava_backend/email_utils.py    : envoi du résumé et fallback en logs
+  - ava_backend/config.py         : chargement des variables d’environnement
 ```
 
-We use `ngrok` to make our server reachable by Twilio.
+Le flux audio Twilio (PCM G.711 mu-law) est transmis en temps réel à OpenAI. Le modèle renvoie des deltas audio qui sont immédiatement réexpédiés à Twilio. Avant chaque prise de parole d’Ava, le modèle reçoit le contexte complet (persona + historique). Lorsque Twilio termine le stream, Ava lance la génération de résumé via l’API Chat Completions (`OPENAI_SUMMARY_MODEL`), puis tente l’envoi SMTP.
 
-### Life of a phone call
+---
 
-Setup
+### Variables d’environnement importantes
+- `OPENAI_API_KEY` : requis.
+- `PUBLIC_BASE_URL` : URL HTTPS accessible par Twilio (souvent l’URL ngrok).
+- `OPENAI_REALTIME_MODEL` : par défaut `gpt-4o-realtime-preview-2024-10-01`.
+- `OPENAI_SUMMARY_MODEL` : modèle pour la synthèse (par ex. `gpt-4.1-mini`).
+- `AVA_GREETING_MESSAGE` / `AVA_SYSTEM_PROMPT` : personnalisation de la voix et de la personnalité.
+- `SUMMARY_EMAIL`, `SMTP_SERVER`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_SENDER` : nécessaires pour l’envoi automatique. Sans ces valeurs, Ava journalise le résumé.
+- `LOG_LEVEL` : ajustez à `DEBUG` pour du diagnostic avancé.
 
-1. We run ngrok to make our server reachable by Twilio
-1. We set the Twilio webhook to our ngrok address
-1. Frontend connects to the backend (`wss://[your_backend]/logs`), ready for a call
+Consultez `ava_backend/.env.example` pour la liste complète.
 
-Call
+---
 
-1. Call is placed to Twilio-managed number
-1. Twilio queries the webhook (`http://[your_backend]/twiml`) for TwiML instructions
-1. Twilio opens a bi-directional stream to the backend (`wss://[your_backend]/call`)
-1. The backend connects to the Realtime API, and starts forwarding messages:
-   - between Twilio and the Realtime API
-   - between the frontend and the Realtime API
+### Endpoints exposés
+- `GET /healthz` : vérifie que l’API répond.
+- `GET /public-url` : renvoie l’URL publique configurée (utile côté frontend).
+- `GET|POST /twiml` : Twilio récupère ici les instructions de streaming.
+- `WS /media-stream` : Twilio Media Streams → pont audio bidirectionnel.
 
-### Function Calling
+---
 
-This demo mocks out function calls so you can provide sample responses. In reality you could handle the function call, execute some code, and then supply the response back to the model.
+### Résumé & email
+1. `ava_backend/call_session.py` maintient l’historique (transcriptions Whisper + réponses d’Ava).
+2. À la fin de l’appel, `generate_summary` (dans `agent_logic.py`) compose un prompt de synthèse et appelle le modèle `OPENAI_SUMMARY_MODEL`.
+3. `send_summary_via_email` envoie le résumé en HTML et texte brut. En cas d’erreur SMTP, le résumé est loggé avec `logger.exception`.
 
-## Full Setup
+---
 
-1. Make sure your [auth & env](#detailed-auth--env) is configured correctly.
+### Aller plus loin
+- Lancer `webapp/` pour un dashboard en Next.js si vous souhaitez afficher flux et transcripts en direct (`npm install && npm run dev` dans `webapp/`).
+- Ajouter des webhooks métier en interceptant les fonctions de `CallSession` (ex. intégration CRM).
+- Adapter la voix (`AVA_REALTIME_VOICE`) ou utiliser une synthèse tierce si besoin.
+- Renforcer la sécurité (authentification, validation Twilio signatures, rotation des clés).
 
-2. Run webapp.
+---
 
-```shell
-cd webapp
-npm install
-npm run dev
-```
+### Dépannage rapide
+- **Pas d’audio côté Twilio** : vérifiez que `PUBLIC_BASE_URL` pointe bien vers l’URL HTTPS d’ngrok et que Twilio est configuré sur `/twiml`.
+- **Pas de voix d’Ava** : observez les logs ; s’assurer que la clé OpenAI est valide et que le modèle choisi supporte l’audio français.
+- **Email non reçu** : activez `LOG_LEVEL=DEBUG` puis vérifiez les logs pour une éventuelle exception SMTP.
+- **Résumé vide** : vérifier que les transcriptions Whisper sont activées et que des échanges ont réellement été reçus.
 
-3. Run websocket server.
-
-```shell
-cd websocket-server
-npm install
-npm run dev
-```
-
-## Detailed Auth & Env
-
-### OpenAI & Twilio
-
-Set your credentials in `webapp/.env` and `websocket-server` - see `webapp/.env.example` and `websocket-server.env.example` for reference.
-
-### Ngrok
-
-Twilio needs to be able to reach your websocket server. If you're running it locally, your ports are inaccessible by default. [ngrok](https://ngrok.com/) can make them temporarily accessible.
-
-We have set the `websocket-server` to run on port `8081` by default, so that is the port we will be forwarding.
-
-```shell
-ngrok http 8081
-```
-
-Make note of the `Forwarding` URL. (e.g. `https://54c5-35-170-32-42.ngrok-free.app`)
-
-### Websocket URL
-
-Your server should now be accessible at the `Forwarding` URL when run, so set the `PUBLIC_URL` in `websocket-server/.env`. See `websocket-server/.env.example` for reference.
-
-# Additional Notes
-
-This repo isn't polished, and the security practices leave some to be desired. Please only use this as reference, and make sure to audit your app with security and engineering before deploying!
+Bon développement avec Ava !
