@@ -19,13 +19,16 @@ trap cleanup SIGINT
 eval "$(/opt/homebrew/bin/brew shellenv)" 2>/dev/null
 
 echo "🔗 Démarrage du serveur websocket (port 8081)..."
-cd websocket-server && npm run dev &
+(cd websocket-server && npm run dev) &
 WEBSOCKET_PID=$!
 
 # Attendre un peu pour que le serveur websocket démarre
 sleep 3
 
 echo "🌐 Démarrage de ngrok (exposition publique)..."
+# Tuer ngrok existant d'abord
+pkill -f "ngrok" 2>/dev/null
+sleep 1
 ngrok http 8081 &
 NGROK_PID=$!
 
@@ -33,7 +36,7 @@ NGROK_PID=$!
 sleep 5
 
 echo "📱 Démarrage de l'application web (port 3000)..."
-cd ../webapp && npm run dev &
+(cd webapp && npm run dev) &
 WEBAPP_PID=$!
 
 echo ""
