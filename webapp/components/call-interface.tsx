@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import TopBar from "@/components/top-bar";
-import ChecklistAndConfig from "@/components/checklist-and-config";
 import SessionConfigurationPanel from "@/components/session-configuration-panel";
 import Transcript from "@/components/transcript";
 import FunctionCallsPanel from "@/components/function-calls-panel";
@@ -44,12 +43,7 @@ const CallInterface = () => {
 
   return (
     <div className="h-screen bg-white flex flex-col">
-      <ChecklistAndConfig
-        ready={allConfigsReady}
-        setReady={setAllConfigsReady}
-        selectedPhoneNumber={selectedPhoneNumber}
-        setSelectedPhoneNumber={setSelectedPhoneNumber}
-      />
+      {/* ChecklistAndConfig RETIRÉ - il est maintenant uniquement dans l'onglet "Setup & Checks" */}
       <TopBar />
       <div className="flex-grow p-4 h-full overflow-hidden flex flex-col">
         <div className="grid grid-cols-12 gap-4 h-full">

@@ -51,7 +51,8 @@ export const ToolConfigurationDialog: React.FC<
     source: "local",
   }));
 
-  const backendTemplateOptions = backendTools.map((t: any) => ({
+  // Ensure backendTools is an array before mapping
+  const backendTemplateOptions = (Array.isArray(backendTools) ? backendTools : []).map((t: any) => ({
     ...t,
     source: "backend",
   }));
