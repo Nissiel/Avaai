@@ -11,6 +11,12 @@ import { translate } from "@/lib/translation";
 export function MarketingShell({ children }: { children: React.ReactNode }) {
   const localeHook = useLocale();
   const locale: Locale = isLocale(localeHook) ? localeHook : fallbackLocale;
+  const docsHref = `/${locale}/docs` as const;
+  const privacyHref = `/${locale}/privacy` as const;
+  const termsHref = `/${locale}/terms` as const;
+  const securityHref = `/${locale}/security` as const;
+  const authHref = `/${locale}/auth` as const;
+  const onboardingHref = `/${locale}/onboarding` as const;
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -23,15 +29,15 @@ export function MarketingShell({ children }: { children: React.ReactNode }) {
             <Link href={`/${locale}#features`}>{translate(locale, "marketing.features", "Features")}</Link>
             <Link href={`/${locale}#pricing`}>{translate(locale, "marketing.pricing", "Pricing")}</Link>
             <Link href={`/${locale}#faq`}>{translate(locale, "marketing.faq", "FAQ")}</Link>
-            <Link href={`/${locale}/docs`}>{translate(locale, "marketing.docs", "Docs")}</Link>
+            <Link href={docsHref as any}>{translate(locale, "marketing.docs", "Docs")}</Link>
           </nav>
           <div className="flex items-center gap-3">
             <ThemeToggle />
             <Button asChild variant="ghost" size="sm">
-              <Link href={`/${locale}/auth`}>{translate(locale, "marketing.signIn", "Sign in")}</Link>
+              <Link href={authHref as any}>{translate(locale, "marketing.signIn", "Sign in")}</Link>
             </Button>
             <Button asChild size="sm">
-              <Link href={`/${locale}/onboarding`}>{translate(locale, "common.cta.primary", "Create my Ava")}</Link>
+              <Link href={onboardingHref as any}>{translate(locale, "common.cta.primary", "Create my Ava")}</Link>
             </Button>
           </div>
         </div>
@@ -41,9 +47,9 @@ export function MarketingShell({ children }: { children: React.ReactNode }) {
         <div className="mx-auto flex w-full max-w-screen-xl flex-col gap-4 px-4 py-6 text-sm text-muted-foreground md:flex-row md:items-center md:justify-between">
           <span>© {new Date().getFullYear()} Ava.ai</span>
           <div className="flex gap-4">
-            <Link href={`/${locale}/privacy`}>{translate(locale, "marketing.privacy", "Privacy")}</Link>
-            <Link href={`/${locale}/terms`}>{translate(locale, "marketing.terms", "Terms")}</Link>
-            <Link href={`/${locale}/security`}>{translate(locale, "marketing.security", "Security")}</Link>
+            <Link href={privacyHref as any}>{translate(locale, "marketing.privacy", "Privacy")}</Link>
+            <Link href={termsHref as any}>{translate(locale, "marketing.terms", "Terms")}</Link>
+            <Link href={securityHref as any}>{translate(locale, "marketing.security", "Security")}</Link>
           </div>
         </div>
       </footer>

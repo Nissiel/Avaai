@@ -9,10 +9,12 @@
 'use client';
 
 import * as React from 'react';
-import { motion } from 'framer-motion';
+import { motion, type HTMLMotionProps } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
-export interface GlassCardProps extends React.HTMLAttributes<HTMLDivElement> {
+type MotionDivBase = Omit<HTMLMotionProps<'div'>, 'children'>;
+
+export interface GlassCardProps extends MotionDivBase {
   /** Enable hover effects */
   hoverable?: boolean;
   /** Enable glow effect */
@@ -23,6 +25,7 @@ export interface GlassCardProps extends React.HTMLAttributes<HTMLDivElement> {
   variant?: 'fade' | 'slide-up' | 'scale' | 'none';
   /** Custom delay for animation */
   delay?: number;
+  children?: React.ReactNode;
 }
 
 const GlassCard = React.forwardRef<HTMLDivElement, GlassCardProps>(
@@ -62,10 +65,8 @@ const GlassCard = React.forwardRef<HTMLDivElement, GlassCardProps>(
       },
     };
 
-    const MotionDiv = variant !== 'none' ? motion.div : 'div';
-
     return (
-      <MotionDiv
+      <motion.div
         ref={ref}
         className={cn(
           'glass rounded-xl p-6',
@@ -87,8 +88,8 @@ const GlassCard = React.forwardRef<HTMLDivElement, GlassCardProps>(
         {...props}
       >
         {children}
-      </MotionDiv>
-    );
+      </motion.div>
+    ) as React.ReactElement;
   }
 );
 

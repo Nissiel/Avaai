@@ -191,7 +191,8 @@ export function useVapi(options: UseVapiOptions): UseVapiReturn {
 
     try {
       const clampedVolume = Math.max(0, Math.min(1, newVolume));
-      vapiRef.current.setVolume(clampedVolume);
+      const anyClient = vapiRef.current as unknown as { setVolume?: (volume: number) => void };
+      anyClient.setVolume?.(clampedVolume);
       setVolumeState(clampedVolume);
     } catch (err: any) {
       console.error('❌ Failed to set volume:', err);

@@ -3,11 +3,14 @@ import uuid
 import pytest
 from fastapi import FastAPI, status
 from fastapi.testclient import TestClient
-from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from app_api.src.models.tenant import Base, Tenant  # type: ignore[import]
-from app_api.src.models.ava_profile import AvaProfile, AvaProfileIn
-from app_api.src.routes.tenant_profile import router, build_system_prompt
+from app_api.src.infrastructure.persistence.models.tenant import Base, Tenant  # type: ignore[import]
+from app_api.src.infrastructure.persistence.models.ava_profile import AvaProfile
+from app_api.src.presentation.schemas.ava_profile import AvaProfileIn
+from app_api.src.presentation.api.v1.routes import tenant_profile
+from app_api.src.application.services.realtime_session import build_system_prompt
+from app_api.src.infrastructure.database.session import get_session
 
 
 @pytest.fixture(scope="module")
@@ -55,15 +58,22 @@ def test_build_system_prompt_injects_all_fields():
     assert "can_summarize_live=False" in prompt
 
 
-def create_test_app() -> FastAPI:
+def create_test_app(session_override: AsyncSession | None = None) -> FastAPI:
     app = FastAPI()
-    app.include_router(router)
+    app.include_router(tenant_profile.router)
+
+    if session_override is not None:
+        async def override_get_session():
+            yield session_override
+
+        app.dependency_overrides[get_session] = override_get_session
+
     return app
 
 
 @pytest.mark.asyncio
 async def test_get_default_profile_returns_defaults(session):
-    app = create_test_app()
+    app = create_test_app(session)
     client = TestClient(app)
 
     response = client.get("/tenant/ava-profile", headers={"Authorization": "Bearer test"})
@@ -99,8 +109,9 @@ async def test_update_profile_persists_and_roundtrips(session):
     assert "planning" in result.allowed_topics
 
 
-def test_forbidden_access_for_viewer_role():
-    app = create_test_app()
+@pytest.mark.asyncio
+async def test_forbidden_access_for_viewer_role(session):
+    app = create_test_app(session)
     client = TestClient(app)
     response = client.put("/tenant/ava-profile", json={})
     assert response.status_code in (

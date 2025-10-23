@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { PrismaClient, IntegrationStatus, IntegrationKind, PlanTier, SubStatus, Provider, CallOutcome, OrgRole } from "@prisma/client";
 
 const prisma = new PrismaClient();

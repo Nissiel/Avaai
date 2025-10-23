@@ -1,6 +1,7 @@
 import "./globals.css";
 
 import type { Metadata, Viewport } from "next";
+import { AppProviders } from "@/providers/app-providers";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://app.ava.ai"),
@@ -70,7 +71,9 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: React.PropsWithChildren) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <AppProviders>{children}</AppProviders>
+      </body>
     </html>
   );
 }

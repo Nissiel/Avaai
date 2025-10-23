@@ -52,10 +52,12 @@ const securityHeaders = [
 
 const nextConfig = {
   reactStrictMode: true,
+  swcMinify: true,
   experimental: {
     typedRoutes: true,
     instrumentationHook: true,
     serverComponentsExternalPackages: ["@react-email/components"],
+    optimizePackageImports: ["lucide-react", "recharts", "framer-motion", "@dnd-kit/core", "@dnd-kit/sortable"],
   },
   eslint: {
     dirs: ["app", "components", "lib", "hooks", "providers", "features"],
@@ -67,6 +69,14 @@ const nextConfig = {
       { protocol: "https", hostname: "avatars.githubusercontent.com" },
       { protocol: "https", hostname: "i.pravatar.cc" },
     ],
+  },
+  compiler: {
+    removeConsole:
+      process.env.NODE_ENV === "production"
+        ? {
+            exclude: ["error", "warn"],
+          }
+        : false,
   },
   // headers: async () => [
   //   {

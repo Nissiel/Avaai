@@ -1,355 +1,195 @@
-# 🚀 AVA - Assistant Vocal Intelligent
+# 🌟 AVA Platform – Voice AI Assistant Suite
 
-> **Solution Divine** : Vapi.ai + Design Futuriste + Personnalisation Maximum
-
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.5-blue.svg)](https://www.typescriptlang.org/)
-[![Next.js](https://img.shields.io/badge/Next.js-14.2-black.svg)](https://nextjs.org/)
-[![Vapi.ai](https://img.shields.io/badge/Vapi.ai-Integrated-green.svg)](https://vapi.ai/)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+> Futuristic voice experiences powered by **Next.js 14**, **FastAPI**, and the **Vapi.ai** realtime stack. Build, monitor, and refine AI assistants with live analytics, realtime call control, and a pro-grade prompt studio.
 
 ---
 
-## ✨ Caractéristiques Divines
+## ✨ Highlights
 
-### 🎯 **Onboarding Ultra-Simple**
-- ✅ **3 clics** : Connexion → Configuration → Activation
-- ✅ **0 friction** : Interface intuitive avec wizard guidé
-- ✅ **État persisté** : Sauvegarde automatique dans localStorage
-
-### 🎨 **Design Futuriste**
-- ✅ **Glassmorphism** : Effets de verre avec backdrop-filter
-- ✅ **Animations 60fps** : Framer Motion pour des transitions fluides
-- ✅ **Gradients animés** : Dégradés dynamiques avec glow effects
-- ✅ **Responsive** : Mobile-first, parfait sur tous les écrans
-
-### 🔧 **Personnalisation Maximum**
-- ✅ **Voix premium** : ElevenLabs, PlayHT, Azure, Deepgram
-- ✅ **Personnalités** : Secrétaire, Commercial, Support, Custom
-- ✅ **Instructions** : Prompts personnalisables par utilisateur
-- ✅ **Fonctions** : Ajoutez vos propres outils et API
-
-### 🏗️ **Architecture Divine**
-- ✅ **Single source env vars** : \`.env\` unique pour toute la config
-- ✅ **One-line setup** : \`npm run setup\` et c'est parti
-- ✅ **TypeScript strict** : Type safety partout
-- ✅ **Clean code** : Structure claire, zero dette technique
+- 🎙️ **Realtime Call Console** – Monitor calls as they happen with streaming transcripts, status badges, and recording playback.
+- 📊 **Analytics HQ** – KPI cards, heatmaps, anomalies, and word clouds powered by the FastAPI analytics service.
+- 🧪 **Prompt Designer** – Monaco-based editor with personality templates, variable helpers, and instant save to Vapi assistants.
+- 🎛️ **Function Builder** – Drag-and-drop toolkit to compose function-calling workflows without touching JSON.
+- 🔄 **Websocket Layer** – Resilient client with auto-reconnect, transcript streaming, and store-driven updates.
+- ⚙️ **Clean Architecture** – Hexagonal backend + feature-first frontend modules, React Query + Zustand for data orchestration.
+- 🛡️ **Observability** – Sentry-ready setup, PostHog analytics, and structured API errors across services.
 
 ---
 
-## 🚀 Quick Start (Divine Setup)
+## 🚀 Quick Start (Dev Environment)
 
-### Prérequis
-\`\`\`bash
-Node.js >= 18.0.0
-npm ou pnpm
-Compte Vapi.ai (gratuit pour commencer)
-\`\`\`
+### 1. Clone & Install
+```bash
+git clone https://github.com/Nissiel/Avaai.git
+cd Avaai
 
-### Installation (1 ligne 🎯)
-\`\`\`bash
-git clone <repo> && cd Avaai && npm run setup
-\`\`\`
+# Frontend
+cd webapp
+pnpm install
 
-Le script \`setup\` vous guide pour :
-1. Créer votre compte Vapi.ai
-2. Configurer vos clés API
-3. Installer toutes les dépendances
-4. Lancer le serveur de dev
+# Backend
+cd ../app-api
+python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+```
 
-### Configuration Manuelle (si besoin)
+### 2. Configure Environment Variables
 
-1. **Copiez \`.env.example\` → \`.env\`**
-\`\`\`bash
+#### Frontend (`webapp/.env`)
+```bash
 cp .env.example .env
-\`\`\`
+```
+| Variable | Description |
+| --- | --- |
+| `NEXT_PUBLIC_API_URL` | FastAPI base URL (default `http://localhost:8000`) |
+| `NEXT_PUBLIC_REALTIME_URL` | WebSocket endpoint for realtime events |
+| `VAPI_PUBLIC_KEY` | Public key from Vapi dashboard |
+| `POSTHOG_KEY` *(optional)* | PostHog project key for analytics |
 
-2. **Ajoutez vos clés Vapi.ai** (obtenez-les sur [vapi.ai](https://vapi.ai))
-\`\`\`env
-VAPI_API_KEY=your-vapi-api-key-here
-VAPI_PUBLIC_KEY=your-vapi-public-key-here
-\`\`\`
+#### Backend (`app-api/.env`)
+```bash
+cp .env.example .env
+```
+| Variable | Description |
+| --- | --- |
+| `AVA_API_VAPI_API_KEY` | Vapi private API key |
+| `AVA_API_DATABASE_URL` | Database DSN (e.g. `sqlite+aiosqlite:///./ava.db`) |
+| `AVA_API_ALLOWED_ORIGINS` | Comma-separated allowed origins (e.g. `http://localhost:3000`) |
 
-3. **Installez et lancez**
-\`\`\`bash
-npm install
-npm run dev
-\`\`\`
+### 3. Database Migration
+```bash
+cd webapp
+pnpm db:migrate   # runs alembic upgrade via package script
+```
 
-4. **Ouvrez [http://localhost:3000/onboarding](http://localhost:3000/onboarding)** 🎉
+### 4. Run the Stack
+```bash
+# Frontend
+cd webapp
+pnpm dev
+
+# Backend
+cd ../app-api
+uvicorn app_api.main:app --reload
+```
+
+Visit **http://localhost:3000** and sign in to the dashboard.
 
 ---
 
-## 📁 Structure du Projet
+## 🗂️ Architecture Overview
 
-\`\`\`
+```
 Avaai/
-├── webapp/                      # 🎨 Frontend Next.js
+├── webapp/                     # Next.js 14 App Router
 │   ├── app/
-│   │   ├── onboarding/         # ✨ Wizard de configuration
-│   │   ├── dashboard/          # 📊 Dashboard analytics
-│   │   └── api/vapi/           # 🔌 API routes Vapi
+│   │   ├── (public)/           # Marketing & auth routes
+│   │   ├── (app)/              # Authenticated shell (dashboard, calls, analytics, settings)
+│   │   └── api/                # Next API routes (backend proxies, Vapi bridge)
 │   ├── components/
-│   │   ├── ava/                # 🤖 Composants AVA
-│   │   └── ui/                 # 🎨 Design system futuriste
-│   └── lib/
-│       └── vapi/               # 📚 Client Vapi + Hooks React
-├── .env.example                # 🔑 Template configuration
-├── README.md                   # 📖 Documentation divine
-└── package.json                # 📦 Dépendances
-\`\`\`
+│   │   ├── features/           # Feature modules (analytics, assistant, calls, onboarding…)
+│   │   ├── layouts/            # Sidebar, TopBar, nav primitives
+│   │   └── ui/                 # Design system (glassmorphism, futuristic buttons, skeletons)
+│   ├── lib/
+│   │   ├── api/                # Typed API clients (React Query friendly)
+│   │   ├── dto/                # Shared DTOs (calls, analytics, assistants)
+│   │   ├── realtime/           # WebSocket client + event typing + hook
+│   │   └── stores/             # Zustand stores (session, calls, assistants, transcripts)
+│   ├── providers/              # App providers (RealtimeProvider, QueryClient, Theme)
+│   └── services/               # External service facades (backend control, analytics)
+│
+├── app-api/                    # FastAPI backend (hexagonal architecture)
+│   ├── src/application/        # CQRS services & orchestration (analytics, realtime session)
+│   ├── src/domain/             # Entities and domain logic
+│   ├── src/infrastructure/     # Persistence, external clients (Vapi), messaging
+│   └── src/presentation/       # REST routers (analytics, calls, assistants, voices…)
+│
+├── websocket-server/           # Node websocket bridge (Twilio/OpenAI realtime)
+└── docs/                       # Additional guides, security notes, setup scripts
+```
 
 ---
 
-## 🎯 Utilisation
+## 🧠 Core Experiences
 
-### 1️⃣ Onboarding (3 étapes)
+### Realtime Call Console
+- `/app/calls` – React Query + Zustand list synced with websocket events (`CALL_STARTED`, `CALL_UPDATED`, `CALL_ENDED`).
+- `/app/calls/[id]` – Streamed transcript chunks rendered with speaker badges, live status updates, and audio recording playback.
+- Transcript cache handled via `useCallTranscriptsStore` with automatic cleanup on unmount.
 
-\`\`\`typescript
-// 1. Connectez votre numéro Twilio
-phoneNumber: "+33 1 23 45 67 89"
+### Prompt & Personality Studio
+- Monaco editor with variable helpers and AI suggestions.
+- Personality templates toggle metadata (`metadata.personality`) persisted through FastAPI ↔️ Vapi.
+- Function Builder drag & drop integrated with assistant update flow – definitions stored as proper JSON schema objects.
 
-// 2. Configurez AVA
-name: "AVA Réception"
-voice: "Jennifer (PlayHT)" // Voix douce et professionnelle
-personality: "Secrétaire"   // Ou Sales, Support, Custom
-instructions: "Tu es l'assistante de réception..."
-
-// 3. Activez !
-// ✅ AVA créée et prête à répondre aux appels
-\`\`\`
-
-### 2️⃣ Gestion depuis le Dashboard
-
-\`\`\`typescript
-// Consultez les stats en temps réel
-- Appels totaux : 142
-- Appels actifs : 3
-- Durée moyenne : 4:32
-- Satisfaction : 98%
-
-// Gérez vos assistantes
-- Créez plusieurs AVA pour différents usages
-- Personnalisez chaque AVA indépendamment
-- Activez/désactivez selon vos besoins
-\`\`\`
-
-### 3️⃣ Intégration avec useVapi Hook
-
-\`\`\`typescript
-import { useVapi } from '@/lib/vapi/hooks';
-
-function MyComponent() {
-  const { startCall, endCall, callStatus, messages } = useVapi();
-
-  // Démarrer un appel
-  const handleCall = () => {
-    startCall('assistant-id-here');
-  };
-
-  // Fin d'appel
-  const handleHangup = () => {
-    endCall();
-  };
-
-  return (
-    <div>
-      {callStatus === 'active' ? (
-        <button onClick={handleHangup}>Raccrocher</button>
-      ) : (
-        <button onClick={handleCall}>Appeler</button>
-      )}
-    </div>
-  );
-}
-\`\`\`
+### Analytics Dashboard
+- KPI grid, timeseries, heatmap, anomalies, and topics from `/api/v1/analytics/*`.
+- Dashboard data hydrates the calls store to keep realtime pages in sync.
+- Uses Recharts, animated gradients, and glass panels for the futuristic look.
 
 ---
 
-## 🛠️ Scripts Disponibles
+## 🔌 API & Data Flow
 
-\`\`\`bash
-# Développement
-npm run dev              # Lance le serveur de dev (localhost:3000)
-npm run setup            # Setup guidé (première installation)
+### Frontend → Backend (Next.js API routes)
+- `/api/calls` → `app-api` `/api/v1/calls`
+- `/api/analytics/*` → `app-api` analytics routers
+- `/api/vapi/assistants` → Vapi SDK wrapper (create/update/delete)
 
-# Production
-npm run build            # Build optimisé pour production
-npm start                # Lance le serveur production
-
-# Qualité code
-npm run lint             # ESLint
-npm run type-check       # TypeScript compilation check
-npm run format           # Prettier formatting
-
-# Base de données (si Prisma activé)
-npm run db:push          # Push schema vers DB
-npm run db:studio        # Interface visuelle Prisma Studio
-
-# Tests
-npm test                 # Tests unitaires
-npm run test:e2e         # Tests end-to-end
-
-# Maintenance
-npm run clean            # Supprime build artifacts
-npm run install:clean    # Réinstalle tout proprement
-\`\`\`
+### Backend Responsibilities
+- **Analytics**: Aggregates call metrics, sentiment, anomalies, exposure through typed DTOs.
+- **Calls**: Persists Vapi call snapshots in SQLAlchemy, exposes query endpoints, streams transcripts.
+- **External Clients**: `VapiClient` (async httpx wrapper), Text-to-speech helpers, Twilio number management.
 
 ---
 
-## 🎨 Design System
+## 🛡️ Monitoring & Observability
 
-### Composants UI Disponibles
-
-\`\`\`typescript
-// 🪟 GlassCard - Carte glassmorphism
-<GlassCard hoverable glow gradientBorder variant="slide-up">
-  Contenu
-</GlassCard>
-
-// 🔘 FuturisticButton - Bouton avec effets
-<FuturisticButton 
-  variant="primary"  // primary, secondary, ghost, danger, success
-  size="lg"          // sm, md, lg, xl
-  glow               // Effet de brillance
-  loading={isLoading}
-  icon={<Icon />}
->
-  Cliquez-moi
-</FuturisticButton>
-
-// 📝 Input, Textarea, Select
-<Input className="glass" placeholder="Votre texte..." />
-<Textarea className="glass" />
-<Select>...</Select>
-\`\`\`
-
-### Classes CSS Utilitaires
-
-\`\`\`css
-/* Glassmorphism */
-.glass              /* Effet verre de base */
-.glass-hover        /* Hover avec translation */
-
-/* Gradients */
-.gradient-primary   /* Gradient bleu électrique → violet */
-.gradient-accent    /* Gradient cyan → bleu */
-.gradient-text      /* Texte avec gradient */
-.gradient-border    /* Bordure gradient */
-.gradient-animated  /* Background animé 15s loop */
-
-/* Glow Effects */
-.glow              /* Brillance statique */
-.glow-hover        /* Brillance au hover */
-
-/* Animations */
-@keyframes fade-in        /* Opacité 0 → 1 */
-@keyframes slide-up       /* Slide depuis le bas */
-@keyframes scale-in       /* Scale 0.95 → 1 */
-@keyframes pulse-ring     /* Pulse 2s infinite */
-\`\`\`
+- **Sentry**: `@sentry/nextjs` wired; set `SENTRY_DSN` to enable error collection.
+- **PostHog**: Frontend instrumentation via `posthog-js` (toggle with `POSTHOG_KEY`).
+- **Structured Logging**: FastAPI uses standard logging; adapt `app-api/src/core/logging.py` to forward to your sink.
+- **Health Checks**: Backend `GET /healthz` + runtime controller via `/api/backend` route in Next.js.
 
 ---
 
-## 🔌 API Routes
+## 🧰 Useful Scripts
 
-### Assistants
+### Frontend (`webapp`)
+| Command | Description |
+| --- | --- |
+| `pnpm dev` | Start Next.js dev server |
+| `pnpm build` | Production build |
+| `pnpm lint` | ESLint with zero warnings tolerated |
+| `pnpm typecheck` | TypeScript `--noEmit` |
+| `pnpm test` | Vitest unit tests |
+| `pnpm storybook` | Storybook (design system playground) |
+| `pnpm db:migrate` | Apply Alembic migrations from the frontend workspace |
 
-\`\`\`typescript
-// POST /api/vapi/assistants - Créer un assistant
-{
-  "name": "AVA Réception",
-  "voice": "jennifer-playht",
-  "personality": "secretary",
-  "instructions": "Tu es l'assistante...",
-  "phoneNumber": "+33 1 23 45 67 89"
-}
-
-// GET /api/vapi/assistants - Lister tous les assistants
-// GET /api/vapi/assistants?id=xxx - Récupérer un assistant
-// PATCH /api/vapi/assistants - Mettre à jour un assistant
-// DELETE /api/vapi/assistants?id=xxx - Supprimer un assistant
-\`\`\`
-
----
-
-## 🚀 Déploiement
-
-### Vercel (Recommandé)
-
-\`\`\`bash
-# 1. Connectez votre repo GitHub à Vercel
-# 2. Ajoutez vos variables d'environnement dans Vercel Dashboard
-# 3. Deploy automatique à chaque push !
-
-# Variables à configurer sur Vercel :
-VAPI_API_KEY=xxx
-VAPI_PUBLIC_KEY=xxx
-VAPI_WEBHOOK_SECRET=xxx
-\`\`\`
-
-### Docker (Alternative)
-
-\`\`\`dockerfile
-# Coming soon - Dockerfile optimisé pour production
-\`\`\`
+### Backend (`app-api`)
+| Command | Description |
+| --- | --- |
+| `uvicorn app_api.main:app --reload` | Development server |
+| `alembic upgrade head` | Run latest migrations |
+| `pytest` | Backend tests (when added) |
 
 ---
 
-## 📊 Performance
+## 🔒 Production Notes
 
-- ⚡ **Lighthouse Score** : 100/100 (Performance, Accessibility, Best Practices, SEO)
-- ⚡ **First Contentful Paint** : < 1s
-- ⚡ **Time to Interactive** : < 2s
-- ⚡ **Bundle Size** : Optimisé avec tree-shaking et code splitting
-
----
-
-## 🤝 Support & Contribution
-
-### Obtenir de l'aide
-- 📖 [Documentation Vapi.ai](https://docs.vapi.ai/)
-- 💬 Discord : *Coming soon*
-- 📧 Email : support@ava-ai.com
-
-### Contribuer
-1. Fork le projet
-2. Créez une branche (\`git checkout -b feature/amazing-feature\`)
-3. Commit (\`git commit -m 'Add amazing feature'\`)
-4. Push (\`git push origin feature/amazing-feature\`)
-5. Ouvrez une Pull Request
+- Configure `NEXT_PUBLIC_REALTIME_URL` to point to the websocket bridge deployed alongside Twilio/OpenAI realtime services.
+- Harden CSP headers in `webapp/next.config.mjs` as needed (template included).
+- For Vercel + Railway deployment, replicate env vars across platforms and enable HTTPS for the FastAPI origin.
+- Enable Sentry/PostHog via environment flags before deploying.
 
 ---
 
-## 📝 License
+## 🤝 Contributing
 
-MIT License - Voir [LICENSE](LICENSE) pour plus de détails.
-
----
-
-## 🌟 Roadmap
-
-### v2.1 (En cours)
-- ✅ Intégration Vapi.ai complète
-- ✅ Onboarding wizard 3 étapes
-- ✅ Design system futuriste
-- 🔄 Dashboard analytics temps réel
-- 🔄 Gestion multi-AVA
-
-### v2.2 (Prochain)
-- ⏳ Tests end-to-end avec Playwright
-- ⏳ Documentation API complète
-- ⏳ Mode dark/light switch
-- ⏳ Export analytics (CSV, PDF)
-
-### v3.0 (Futur)
-- 🔮 AI-powered analytics
-- 🔮 Multi-langue (EN, ES, DE, IT)
-- 🔮 Marketplace de voix
-- 🔮 Intégrations natives (Slack, Teams, etc.)
+1. Fork & branch (`git checkout -b feat/your-feature`)
+2. Run lint + typecheck (`pnpm lint && pnpm typecheck`)
+3. Write/update tests where appropriate
+4. Open a PR describing changes & screenshots (especially for UI work)
 
 ---
 
-<div align="center">
-  <p>Fait avec ❤️ et ✨ magie divine</p>
-  <p><strong>AVA</strong> - L'assistant vocal qui change tout</p>
-</div>
+Built with ❤️ to deliver a **divine**, performant, and maintainable voice assistant platform. Enjoy shipping! 🚀

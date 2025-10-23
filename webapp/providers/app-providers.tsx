@@ -3,6 +3,7 @@
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { PostHogProvider } from "@/providers/posthog-provider";
 import { ReactQueryProvider } from "@/providers/react-query-provider";
+import { RealtimeProvider } from "@/providers/realtime-provider";
 import { SessionProvider } from "@/providers/session-provider";
 import { ThemeProvider } from "@/providers/theme-provider";
 import { ToastProvider } from "@/providers/toast-provider";
@@ -19,8 +20,10 @@ export function AppProviders({ children, session }: AppProvidersProps) {
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <TooltipProvider delayDuration={120}>
             <ReactQueryProvider>
-              {children}
-              <ToastProvider />
+              <RealtimeProvider>
+                {children}
+                <ToastProvider />
+              </RealtimeProvider>
             </ReactQueryProvider>
           </TooltipProvider>
         </ThemeProvider>

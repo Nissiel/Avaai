@@ -11,6 +11,8 @@ interface HeroProps {
 
 export function Hero({ locale: localeParam }: HeroProps) {
   const locale: Locale = isLocale(localeParam) ? localeParam : fallbackLocale;
+  const onboardingHref = `/${locale}/onboarding` as const;
+  const demoHref = `/${locale}/demo` as const;
   return (
     <section className="relative overflow-hidden border-b border-border/50 bg-gradient-to-b from-background to-background/40">
       <div className="mx-auto flex w-full max-w-screen-xl flex-col gap-12 px-4 py-20 lg:flex-row lg:items-center">
@@ -50,12 +52,12 @@ export function Hero({ locale: localeParam }: HeroProps) {
             className="flex flex-wrap items-center gap-4"
           >
             <Button asChild size="lg" className="gap-2">
-              <Link href={`/${locale}/onboarding`}>
+              <Link href={onboardingHref as any}>
                 {translate(locale, "common.cta.primary", "Create my Ava")}
               </Link>
             </Button>
             <Button asChild variant="ghost" size="lg">
-              <Link href={`/${locale}/demo`}>{translate(locale, "common.cta.secondary", "See demo")}</Link>
+              <Link href={demoHref as any}>{translate(locale, "common.cta.secondary", "See demo")}</Link>
             </Button>
           </motion.div>
           <motion.div

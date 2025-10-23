@@ -23,7 +23,8 @@
       "@/hooks/*": ["hooks/*"],
       "@/providers/*": ["providers/*"],
       "@/features/*": ["features/*"],
-      "@/stores/*": ["stores/*"]
+      "@/stores/*": ["lib/stores/*"],
+      "@/services/*": ["services/*"]
     },
     "plugins": [
       {

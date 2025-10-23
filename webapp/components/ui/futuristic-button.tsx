@@ -9,12 +9,13 @@
 'use client';
 
 import * as React from 'react';
-import { motion } from 'framer-motion';
+import { motion, type HTMLMotionProps } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export interface FuturisticButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+type MotionButtonBase = Omit<HTMLMotionProps<'button'>, 'children'>;
+
+export interface FuturisticButtonProps extends MotionButtonBase {
   /** Visual variant */
   variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'success';
   /** Size variant */
@@ -27,6 +28,7 @@ export interface FuturisticButtonProps
   glow?: boolean;
   /** Full width */
   fullWidth?: boolean;
+  children?: React.ReactNode;
 }
 
 const FuturisticButton = React.forwardRef<
@@ -96,7 +98,7 @@ const FuturisticButton = React.forwardRef<
         ) : null}
         {children}
       </motion.button>
-    );
+    ) as React.ReactElement;
   }
 );
 

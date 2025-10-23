@@ -1,4 +1,4 @@
-import { Item } from "@/components/types";
+import { Item } from "@/components/features/studio/types";
 
 export default function handleRealtimeEvent(
   ev: any,

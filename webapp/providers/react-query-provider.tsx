@@ -29,7 +29,7 @@ export function ReactQueryProvider({ children, enableDevtools = process.env.NODE
   return (
     <QueryClientProvider client={queryClient}>
       {children}
-      {enableDevtools ? <ReactQueryDevtools position="bottom-right" buttonPosition="bottom-left" /> : null}
+      {enableDevtools ? <ReactQueryDevtools initialIsOpen={false} /> : null}
     </QueryClientProvider>
   );
 }

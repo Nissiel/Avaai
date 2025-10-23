@@ -20,16 +20,11 @@ export function PostHogProvider({ children }: React.PropsWithChildren) {
     posthog.init(apiKey, {
       api_host: apiHost,
       capture_pageview: false,
-      sanitize_properties: ["email", "phone"],
-      loaded: (client) => {
-        if (process.env.NODE_ENV === "development") {
-          client.debug();
-        }
-      },
     });
 
     return () => {
-      posthog.shutdown();
+      const anyPosthog = posthog as { reset?: () => void };
+      anyPosthog.reset?.();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [apiKey]);

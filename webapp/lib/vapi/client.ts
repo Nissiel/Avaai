@@ -84,7 +84,7 @@ export interface AvaAssistantConfig {
   };
   model: {
     provider: 'openai';
-    model: 'gpt-4' | 'gpt-3.5-turbo';
+    model: 'gpt-4' | 'gpt-3.5-turbo' | 'gpt-4o' | 'gpt-4o-mini';
     temperature?: number;
     maxTokens?: number;
   };
@@ -130,6 +130,17 @@ export interface VapiCall {
  */
 export async function createAvaAssistant(config: AvaAssistantConfig) {
   try {
+    const modelConfig = config.model ?? {
+      provider: "openai" as const,
+      model: "gpt-4o-mini" as const,
+      temperature: 0.7,
+      maxTokens: 500,
+    };
+
+    const systemPrompt =
+      config.systemPrompt ||
+      "Tu es Ava, une assistante vocale polie et efficace. Concentre-toi sur l'aide à l'utilisateur et reste concise.";
+
     const assistant = await vapi.assistants.create({
       name: config.name,
       voice: {
@@ -137,18 +148,19 @@ export async function createAvaAssistant(config: AvaAssistantConfig) {
         voiceId: config.voice.voiceId,
       },
       model: {
-        provider: config.model.provider,
-        model: config.model.model,
-        temperature: config.model.temperature ?? 0.7,
-        maxTokens: config.model.maxTokens ?? 500,
+        provider: modelConfig.provider,
+        model: modelConfig.model,
+        temperature: modelConfig.temperature ?? 0.7,
+        maxTokens: modelConfig.maxTokens ?? 500,
         messages: [
           {
             role: 'system',
-            content: config.systemPrompt,
+            content: systemPrompt,
           },
         ],
       },
-      firstMessage: config.firstMessage,
+      firstMessage:
+        config.firstMessage ?? 'Bonjour, je suis Ava. Comment puis-je vous aider ?',
       ...(config.functions && config.functions.length > 0 && {
         functions: config.functions,
       }),
@@ -175,7 +187,25 @@ export async function updateAvaAssistant(
   config: Partial<AvaAssistantConfig>
 ) {
   try {
-    const assistant = await vapi.assistants.update(assistantId, {
+    const modelPayload =
+      config.model || config.systemPrompt
+        ? {
+            provider: (config.model?.provider ?? 'openai') as 'openai',
+            model: (config.model?.model ?? 'gpt-4o-mini') as 'gpt-4o-mini' | 'gpt-4o' | 'gpt-4' | 'gpt-3.5-turbo',
+            ...(config.model?.temperature !== undefined && { temperature: config.model.temperature }),
+            ...(config.model?.maxTokens !== undefined && { maxTokens: config.model.maxTokens }),
+            ...(config.systemPrompt && {
+              messages: [
+                {
+                  role: 'system' as const,
+                  content: config.systemPrompt,
+                },
+              ],
+            }),
+          }
+        : undefined;
+
+    const updatePayload: any = {
       ...(config.name && { name: config.name }),
       ...(config.voice && {
         voice: {
@@ -183,25 +213,12 @@ export async function updateAvaAssistant(
           voiceId: config.voice.voiceId,
         },
       }),
-      ...(config.model && {
-        model: {
-          provider: config.model.provider,
-          model: config.model.model,
-          temperature: config.model.temperature,
-          maxTokens: config.model.maxTokens,
-          ...(config.systemPrompt && {
-            messages: [
-              {
-                role: 'system',
-                content: config.systemPrompt,
-              },
-            ],
-          }),
-        },
-      }),
+      ...(modelPayload && { model: modelPayload }),
       ...(config.firstMessage && { firstMessage: config.firstMessage }),
-      ...(config.functions && { functions: config.functions }),
-    });
+      ...(config.functions !== undefined && { functions: config.functions }),
+    };
+
+    const assistant = await vapi.assistants.update(assistantId, updatePayload);
 
     return {
       success: true,
