@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Circle, CheckCircle, Loader2 } from "lucide-react";
+import { Circle, CheckCircle, Loader2, RefreshCw, AlertCircle } from "lucide-react";
 import { PhoneNumber } from "@/components/types";
 import {
   Select,
@@ -104,9 +104,14 @@ export default function ChecklistAndConfig({
   }, [currentNumberSid, setSelectedPhoneNumber]);
 
   const updateWebhook = async () => {
-    if (!currentNumberSid || !appendedTwimlUrl) return;
+    if (!currentNumberSid || !appendedTwimlUrl) {
+      console.log("updateWebhook: missing requirements", { currentNumberSid, appendedTwimlUrl });
+      return;
+    }
     try {
       setWebhookLoading(true);
+      console.log("Updating webhook for number:", currentNumberSid, "with URL:", appendedTwimlUrl);
+      
       const res = await fetch("/api/twilio/numbers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -115,36 +120,67 @@ export default function ChecklistAndConfig({
           voiceUrl: appendedTwimlUrl,
         }),
       });
-      if (!res.ok) throw new Error("Failed to update webhook");
+      
+      console.log("Webhook update response status:", res.status);
+      
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error("Webhook update failed:", errorText);
+        throw new Error(`Failed to update webhook: ${res.status} - ${errorText}`);
+      }
+      
+      const updatedNumber = await res.json();
+      console.log("Webhook updated successfully:", updatedNumber);
       setCurrentVoiceUrl(appendedTwimlUrl);
     } catch (err) {
-      console.error(err);
+      console.error("Webhook update error:", err);
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      alert(`Failed to update webhook: ${errorMessage}`);
     } finally {
       setWebhookLoading(false);
     }
   };
 
   const checkNgrok = async () => {
-    if (!localServerUp || !publicUrl) return;
+    if (!localServerUp || !publicUrl) {
+      console.log("checkNgrok: localServerUp:", localServerUp, "publicUrl:", publicUrl);
+      return;
+    }
     setNgrokLoading(true);
     let success = false;
-    for (let i = 0; i < 5; i++) {
+    console.log("Checking ngrok URL:", publicUrl + "/public-url");
+    
+    for (let i = 0; i < 3; i++) {
       try {
-        const resTest = await fetch(publicUrl + "/public-url");
+        const testUrl = publicUrl + "/public-url";
+        console.log(`Attempt ${i + 1}: Testing ${testUrl}`);
+        const resTest = await fetch(testUrl, {
+          method: 'GET',
+          headers: {
+            'ngrok-skip-browser-warning': 'true' // Skip ngrok browser warning
+          }
+        });
+        console.log(`Response status: ${resTest.status}`);
         if (resTest.ok) {
+          const data = await resTest.json();
+          console.log("Response data:", data);
           setPublicUrlAccessible(true);
           success = true;
           break;
         }
-      } catch {
-        // retry
+      } catch (error) {
+        console.error(`Attempt ${i + 1} failed:`, error);
       }
-      if (i < 4) {
-        await new Promise((r) => setTimeout(r, 3000));
+      if (i < 2) {
+        console.log("Waiting 2 seconds before retry...");
+        await new Promise((r) => setTimeout(r, 2000));
       }
     }
     if (!success) {
+      console.log("All ngrok check attempts failed");
       setPublicUrlAccessible(false);
+    } else {
+      console.log("Ngrok check successful!");
     }
     setNgrokLoading(false);
   };
@@ -156,12 +192,19 @@ export default function ChecklistAndConfig({
         done: hasCredentials,
         description: "Then update account details in webapp/.env",
         field: (
-          <Button
-            className="w-full"
-            onClick={() => window.open("https://console.twilio.com/", "_blank")}
+          <button
+            type="button"
+            className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-2xl border border-transparent py-2 font-semibold tracking-[-0.01em] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-500 disabled:pointer-events-none disabled:opacity-60 bg-brand-500 text-white shadow-elevated hover:bg-brand-600 hover:shadow-lg active:scale-[0.995] h-10 px-4 text-sm w-full"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log('🔧 Open Twilio Console clicked!');
+              alert('Twilio Console button clicked!'); // Test visible
+              window.open("https://console.twilio.com/", "_blank");
+            }}
           >
             Open Twilio Console
-          </Button>
+          </button>
         ),
       },
       {
@@ -197,17 +240,22 @@ export default function ChecklistAndConfig({
               </Select>
             )
           ) : (
-            <Button
-              className="w-full"
-              onClick={() =>
+            <button
+              type="button"
+              className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-2xl border border-transparent py-2 font-semibold tracking-[-0.01em] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-500 disabled:pointer-events-none disabled:opacity-60 bg-brand-500 text-white shadow-elevated hover:bg-brand-600 hover:shadow-lg active:scale-[0.995] h-10 px-4 text-sm w-full"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('🔧 Set up Twilio phone number clicked!');
+                alert('Set up Twilio phone number clicked!'); // Test visible
                 window.open(
                   "https://console.twilio.com/us1/develop/phone-numbers/manage/incoming",
                   "_blank"
-                )
-              }
+                );
+              }}
             >
               Set up Twilio phone number
-            </Button>
+            </button>
           ),
       },
       {
@@ -226,18 +274,28 @@ export default function ChecklistAndConfig({
               <Input value={publicUrl} disabled />
             </div>
             <div className="flex-1">
-              <Button
-                variant="outline"
-                onClick={checkNgrok}
+              <button
+                type="button"
+                className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-2xl border border-border py-2 font-semibold tracking-[-0.01em] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-500 disabled:pointer-events-none disabled:opacity-60 bg-background hover:bg-accent/60 hover:text-foreground h-10 px-4 text-sm w-full"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log('🔧 Check ngrok clicked!', { ngrokLoading, localServerUp, publicUrl });
+                  alert('Check ngrok button clicked!');
+                  checkNgrok();
+                }}
                 disabled={ngrokLoading || !localServerUp || !publicUrl}
-                className="w-full"
+                style={{ opacity: (ngrokLoading || !localServerUp || !publicUrl) ? 0.6 : 1 }}
               >
                 {ngrokLoading ? (
-                  <Loader2 className="mr-2 h-4 animate-spin" />
+                  <>
+                    <Loader2 className="mr-2 h-4 animate-spin" />
+                    Checking...
+                  </>
                 ) : (
                   "Check ngrok"
                 )}
-              </Button>
+              </button>
             </div>
           </div>
         ),
@@ -252,17 +310,28 @@ export default function ChecklistAndConfig({
               <Input value={currentVoiceUrl} disabled className="w-full" />
             </div>
             <div className="flex-1">
-              <Button
-                onClick={updateWebhook}
+              <button
+                type="button"
+                className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-2xl border border-transparent py-2 font-semibold tracking-[-0.01em] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-500 disabled:pointer-events-none disabled:opacity-60 bg-brand-500 text-white shadow-elevated hover:bg-brand-600 hover:shadow-lg active:scale-[0.995] h-10 px-4 text-sm w-full"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log('🔧 Update Webhook clicked!', { webhookLoading, currentNumberSid, appendedTwimlUrl });
+                  alert('Update Webhook button clicked!');
+                  updateWebhook();
+                }}
                 disabled={webhookLoading}
-                className="w-full"
+                style={{ opacity: webhookLoading ? 0.6 : 1 }}
               >
                 {webhookLoading ? (
-                  <Loader2 className="mr-2 h-4 animate-spin" />
+                  <>
+                    <Loader2 className="mr-2 h-4 animate-spin" />
+                    Updating...
+                  </>
                 ) : (
                   "Update Webhook"
                 )}
-              </Button>
+              </button>
             </div>
           </div>
         ),
@@ -299,10 +368,37 @@ export default function ChecklistAndConfig({
     }
   }, [allChecksPassed, setReady]);
 
-  const handleDone = () => setReady(true);
+  const handleDone = () => {
+    console.log("Setup completed! All checks passed:", allChecksPassed);
+    setReady(true);
+  };
+
+  const refreshChecks = async () => {
+    console.log("Refreshing all checks...");
+    // Force re-check of all systems
+    if (localServerUp && publicUrl) {
+      await checkNgrok();
+    }
+  };
+
+  // Debug logs
+  console.log('🔧 ChecklistAndConfig render:', { 
+    ready, 
+    allChecksPassed, 
+    localServerUp, 
+    publicUrl, 
+    hasCredentials,
+    phoneNumbers: phoneNumbers.length 
+  });
 
   return (
-    <Dialog open={!ready}>
+    <Dialog open={!ready} onOpenChange={(open) => {
+      console.log('🔧 Dialog onOpenChange:', open);
+      alert('Dialog close attempted!');
+      if (!open) {
+        setReady(true);
+      }
+    }}>
       <DialogContent className="w-full max-w-[800px]">
         <DialogHeader>
           <DialogTitle>Setup Checklist</DialogTitle>
@@ -332,19 +428,50 @@ export default function ChecklistAndConfig({
                   </p>
                 )}
               </div>
-              <div className="flex items-center mt-2 sm:mt-0">{item.field}</div>
+              <div 
+                className="flex items-center mt-2 sm:mt-0" 
+                style={{ position: 'relative', zIndex: 5 }}
+              >
+                {item.field}
+              </div>
             </div>
           ))}
         </div>
 
-        <div className="mt-6 flex flex-col sm:flex-row sm:justify-end">
-          <Button
-            variant="outline"
-            onClick={handleDone}
-            disabled={!allChecksPassed}
+        <div className="mt-6 flex flex-col sm:flex-row gap-3 sm:justify-between" style={{ position: 'relative', zIndex: 10 }}>
+          <button
+            type="button"
+            className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-2xl border border-transparent py-2 font-semibold tracking-[-0.01em] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-500 disabled:pointer-events-none disabled:opacity-60 bg-transparent hover:bg-accent/60 text-foreground h-10 px-4 text-sm flex items-center gap-2"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log('🔧 Refresh Checks clicked!');
+              alert('Refresh button works!');
+              refreshChecks();
+            }}
           >
-            Let's go!
-          </Button>
+            <RefreshCw className="h-4 w-4" />
+            Refresh Checks
+          </button>
+          <button
+            type="button"
+            className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-2xl border border-border py-2 font-semibold tracking-[-0.01em] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-500 disabled:pointer-events-none disabled:opacity-60 bg-background hover:bg-accent/60 hover:text-foreground h-10 px-4 text-sm"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log('🔧 Let\'s go! clicked!', { allChecksPassed });
+              alert('Lets go button works!');
+              if (allChecksPassed) {
+                setReady(true);
+              } else {
+                alert("Please complete all checklist items first");
+              }
+            }}
+            disabled={!allChecksPassed}
+            style={{ opacity: allChecksPassed ? 1 : 0.6 }}
+          >
+            Let's go! {allChecksPassed ? '✅' : '⏳'}
+          </button>
         </div>
       </DialogContent>
     </Dialog>
