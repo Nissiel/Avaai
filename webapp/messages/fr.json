@@ -1,0 +1,140 @@
+{
+  "common": {
+    "appName": "Ava.ai",
+    "tagline": "Votre secrétaire IA, vraiment utile",
+    "cta": {
+      "primary": "Créer mon Ava",
+      "secondary": "Voir la démo",
+      "start": "Commencer"
+    },
+    "nav": {
+      "home": "Accueil",
+      "ava": "Ava Studio",
+      "calls": "Appels",
+      "inbox": "Boîte de réception",
+      "schedules": "Agenda",
+      "integrations": "Intégrations",
+      "phone": "Téléphonie",
+      "billing": "Facturation",
+      "team": "Équipe",
+      "settings": "Paramètres",
+      "logs": "Journal"
+    },
+    "status": {
+      "connected": "Connecté",
+      "disconnected": "Déconnecté",
+      "inProgress": "En cours",
+      "actionRequired": "Action requise"
+    }
+  },
+  "nav": {
+    "menu": "Ouvrir la navigation",
+    "search": "Rechercher",
+    "searchPlaceholder": "Rechercher une action, un contact, un appel...",
+    "command": "Recherchez une action, un contact ou une ressource...",
+    "empty": "Aucun résultat. Essayez un autre mot-clé.",
+    "goTo": "Accéder à",
+    "quickActions": "Actions rapides"
+  },
+  "actions": {
+    "newTestCall": "Lancer un appel test",
+    "newContact": "Créer un contact",
+    "openBilling": "Ouvrir la facturation"
+  },
+  "org": {
+    "switch": "Changer d'organisation",
+    "none": "Sélectionner un workspace",
+    "plan": "Choisir un plan",
+    "search": "Rechercher une organisation",
+    "empty": "Aucune organisation trouvée",
+    "actions": "Actions",
+    "create": "Nouvelle orga"
+  },
+  "auth": {
+    "signOut": "Se déconnecter",
+    "title": "Bienvenue",
+    "subtitle": "Connectez-vous avec un lien magique ou votre fournisseur préféré.",
+    "fields": {
+      "email": "Email professionnel",
+      "remember": "Rester connecté",
+      "remember_hint": "Garde votre session active pendant 30 jours."
+    },
+    "cta": {
+      "magic": "Envoyer le lien magique"
+    },
+    "magic": {
+      "success": "Lien magique envoyé ! Vérifiez votre boîte mail.",
+      "sent": "Un lien sécurisé a été envoyé à {email}."
+    },
+    "totp": {
+      "title": "Vérifier avec le 2FA",
+      "subtitle": "Entrez le code à 6 chiffres de votre application d'authentification.",
+      "token": "Code d'authentification",
+      "verify": "Vérifier le code",
+      "success": "2FA validé. Redirection...",
+      "back": "Utiliser un autre email"
+    },
+    "or": "Ou continuer avec",
+    "oauth": "Continuer avec {provider}",
+    "policy": "En continuant vous acceptez les Conditions et la Politique de confidentialité d'Ava.ai."
+  },
+  "marketing": {
+    "features": "Fonctionnalités",
+    "pricing": "Tarifs",
+    "faq": "FAQ",
+    "docs": "Docs",
+    "signIn": "Se connecter",
+    "privacy": "Confidentialité",
+    "terms": "Conditions",
+    "security": "Sécurité"
+  },
+  "errors": {
+    "404": {
+      "title": "Page introuvable",
+      "description": "La page recherchée a été déplacée ou n'existe plus.",
+      "cta": "Retour à l'accueil"
+    }
+  },
+  "onboarding": {
+    "title": "Configurons votre Ava",
+    "subtitle": "Un onboarding guidé avec sauvegarde automatique. Invitez l'équipe ensuite.",
+    "steps": {
+      "profile": {
+        "title": "Profil",
+        "description": "Infos organisation et préférences légales."
+      },
+      "ava": {
+        "title": "Persona d'Ava",
+        "description": "Ton, langues et garde-fous."
+      },
+      "telephony": {
+        "title": "Téléphonie",
+        "description": "Numéros, routage et sauvegardes."
+      },
+      "integrations": {
+        "title": "Intégrations",
+        "description": "Calendriers, messagerie, CRM et automatisation."
+      },
+      "plan": {
+        "title": "Plan",
+        "description": "Choisissez l'offre et les licences."
+      },
+      "done": {
+        "title": "Lancement",
+        "description": "Relisez le résumé et testez Ava."
+      }
+    },
+    "autosave": "Sauvegarde automatique toutes les 10 secondes. Utilisez ⌘K pour naviguer.",
+    "shortcuts": "Voir les raccourcis",
+    "errors": {
+      "incomplete": "Veuillez remplir les champs requis."
+    },
+    "actions": {
+      "back": "Retour",
+      "launch": "Lancer Ava",
+      "next": "Continuer"
+    },
+    "pageTitle": "Onboarding d'Ava",
+    "pageSubtitle": "Finalisez les étapes pour lancer Ava. Vous pourrez les revoir dans Ava Studio."
+  }
+}

@@ -1,0 +1,169 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum OrgRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum Provider {
+  TWILIO
+  SIP
+}
+
+enum CallOutcome {
+  ANSWERED
+  MISSED
+  VOICEMAIL
+  CALLBACK
+}
+
+enum IntegrationKind {
+  TWILIO
+  GOOGLE_CALENDAR
+  OUTLOOK_CALENDAR
+  GMAIL
+  OUTLOOK_MAIL
+  SLACK
+  NOTION
+  HUBSPOT
+  ZAPIER
+  WEBHOOK
+}
+
+enum IntegrationStatus {
+  CONNECTED
+  ACTION_REQUIRED
+  NOT_CONNECTED
+}
+
+enum PlanTier {
+  FREE
+  PRO
+  BUSINESS
+}
+
+enum SubStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELED
+}
+
+model Org {
+  id        String        @id @default(cuid())
+  name      String
+  slug      String        @unique
+  users     OrgUser[]
+  avas      Ava[]
+  numbers   PhoneNumber[]
+  plans     PlanSubscription[]
+  createdAt DateTime      @default(now())
+}
+
+model OrgUser {
+  id        String   @id @default(cuid())
+  orgId     String
+  userId    String
+  role      OrgRole
+  createdAt DateTime @default(now())
+
+  org Org @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([orgId, userId])
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String?
+  image         String?
+  locale        String   @default("en")
+  twoFAEnabled  Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  orgMemberships OrgUser[]
+}
+
+model Ava {
+  id           String   @id @default(cuid())
+  orgId        String
+  name         String
+  locales      String[]
+  persona      String
+  style        Json
+  voice        String
+  prompts      Json
+  rules        Json
+  integrations Json
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  org Org @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@unique([orgId, name])
+}
+
+model PhoneNumber {
+  id            String   @id @default(cuid())
+  orgId         String
+  provider      Provider
+  e164          String   @unique
+  routing       Json
+  businessHours Json
+  voicemail     Json
+
+  org Org @relation(fields: [orgId], references: [id], onDelete: Cascade)
+}
+
+model Call {
+  id           String      @id @default(cuid())
+  orgId        String
+  avaId        String
+  numberId     String
+  from         String
+  to           String
+  startedAt    DateTime
+  endedAt      DateTime?
+  transcript   Json?
+  summary      String?
+  recordingUrl String?
+  outcome      CallOutcome
+  tags         String[]
+
+  org    Org         @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  ava    Ava         @relation(fields: [avaId], references: [id], onDelete: Cascade)
+  number PhoneNumber @relation(fields: [numberId], references: [id], onDelete: Cascade)
+}
+
+model Integration {
+  id        String             @id @default(cuid())
+  orgId     String
+  kind      IntegrationKind
+  config    Json
+  status    IntegrationStatus
+  createdAt DateTime           @default(now())
+
+  org Org @relation(fields: [orgId], references: [id], onDelete: Cascade)
+}
+
+model PlanSubscription {
+  id               String    @id @default(cuid())
+  orgId            String
+  stripeCustomerId String
+  stripeSubId      String
+  plan             PlanTier
+  status           SubStatus
+  usage            Json
+  renewsAt         DateTime
+
+  org Org @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@unique([orgId])
+}

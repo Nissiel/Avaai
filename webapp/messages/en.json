@@ -1,0 +1,140 @@
+{
+  "common": {
+    "appName": "Ava.ai",
+    "tagline": "Your AI Secretary, truly useful",
+    "cta": {
+      "primary": "Create my Ava",
+      "secondary": "See demo",
+      "start": "Get started"
+    },
+    "nav": {
+      "home": "Home",
+      "ava": "Ava Studio",
+      "calls": "Calls",
+      "inbox": "Inbox",
+      "schedules": "Schedules",
+      "integrations": "Integrations",
+      "phone": "Phone",
+      "billing": "Billing",
+      "team": "Team",
+      "settings": "Settings",
+      "logs": "Logs"
+    },
+    "status": {
+      "connected": "Connected",
+      "disconnected": "Disconnected",
+      "inProgress": "In progress",
+      "actionRequired": "Action required"
+    }
+  },
+  "nav": {
+    "menu": "Open navigation",
+    "search": "Search",
+    "searchPlaceholder": "Search actions, contacts, calls...",
+    "command": "Search actions, contacts, or docs...",
+    "empty": "No results. Try another keyword.",
+    "goTo": "Go to",
+    "quickActions": "Quick actions"
+  },
+  "actions": {
+    "newTestCall": "Launch test call",
+    "newContact": "Create contact",
+    "openBilling": "Open billing"
+  },
+  "org": {
+    "switch": "Switch organization",
+    "none": "Select workspace",
+    "plan": "Choose a plan",
+    "search": "Search organizations",
+    "empty": "No organization found",
+    "actions": "Actions",
+    "create": "New org"
+  },
+  "auth": {
+    "signOut": "Sign out",
+    "title": "Welcome back",
+    "subtitle": "Sign in with a magic link or your favourite identity provider.",
+    "fields": {
+      "email": "Work email",
+      "remember": "Stay signed in",
+      "remember_hint": "Keeps your session active for 30 days."
+    },
+    "cta": {
+      "magic": "Send magic link"
+    },
+    "magic": {
+      "success": "Magic link sent! Check your inbox.",
+      "sent": "We sent a secure link to {email}."
+    },
+    "totp": {
+      "title": "Verify with 2FA",
+      "subtitle": "Enter the 6-digit code from your authenticator app.",
+      "token": "Authenticator code",
+      "verify": "Verify code",
+      "success": "2FA verified. Redirecting...",
+      "back": "Use a different email"
+    },
+    "or": "Or continue with",
+    "oauth": "Continue with {provider}",
+    "policy": "By continuing you agree to the Terms and Privacy of Ava.ai."
+  },
+  "marketing": {
+    "features": "Features",
+    "pricing": "Pricing",
+    "faq": "FAQ",
+    "docs": "Docs",
+    "signIn": "Sign in",
+    "privacy": "Privacy",
+    "terms": "Terms",
+    "security": "Security"
+  },
+  "errors": {
+    "404": {
+      "title": "Page not found",
+      "description": "The page you are looking for has moved or no longer exists.",
+      "cta": "Back to home"
+    }
+  },
+  "onboarding": {
+    "title": "Let's configure your Ava",
+    "subtitle": "Guided onboarding with auto-save. You can invite the team once done.",
+    "steps": {
+      "profile": {
+        "title": "Profile",
+        "description": "Org details and legal preferences."
+      },
+      "ava": {
+        "title": "Ava persona",
+        "description": "Tone, languages, and guardrails."
+      },
+      "telephony": {
+        "title": "Telephony",
+        "description": "Numbers, routing, and safeguards."
+      },
+      "integrations": {
+        "title": "Integrations",
+        "description": "Calendars, inbox, CRM, and automation."
+      },
+      "plan": {
+        "title": "Plan",
+        "description": "Choose billing tier and seats."
+      },
+      "done": {
+        "title": "Launch",
+        "description": "Review summary and test Ava."
+      }
+    },
+    "autosave": "Auto-saving every 10 seconds. Use ⌘K to jump to sections.",
+    "shortcuts": "View shortcuts",
+    "errors": {
+      "incomplete": "Please complete required fields."
+    },
+    "actions": {
+      "back": "Back",
+      "launch": "Launch Ava",
+      "next": "Continue"
+    },
+    "pageTitle": "Ava onboarding",
+    "pageSubtitle": "Complete the steps to launch Ava. You can revisit them anytime from Ava Studio."
+  }
+}
