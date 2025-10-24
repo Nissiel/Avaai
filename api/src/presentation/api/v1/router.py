@@ -9,6 +9,7 @@ from api.src.presentation.api.v1.routes import (
     assistants,
     auth,
     calls,
+    phone_numbers,
     runtime,
     studio_config,
     tenant_profile,
@@ -25,6 +26,7 @@ api_v1_router.include_router(calls.router)
 api_v1_router.include_router(analytics.router)
 api_v1_router.include_router(voices.router)
 api_v1_router.include_router(twilio.router)
+api_v1_router.include_router(phone_numbers.router)
 api_v1_router.include_router(tenant_profile.router)
 
 __all__ = ["api_v1_router"]

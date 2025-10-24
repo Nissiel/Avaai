@@ -1,0 +1,257 @@
+"""Phone numbers API routes for Vapi and Twilio integration."""
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel, Field
+from typing import Optional
+
+from api.src.infrastructure.vapi.client import VapiClient
+from twilio.rest import Client as TwilioClient
+
+router = APIRouter(prefix="/phone-numbers", tags=["phone"])
+
+
+# ==================== DTOs ====================
+
+
+class CreateUSNumberRequest(BaseModel):
+    """Request to create a free US number via Vapi."""
+
+    assistant_id: str = Field(..., description="AVA assistant ID to link")
+    org_id: str = Field(..., description="Organization ID")
+    area_code: Optional[str] = Field(
+        None, description="Optional US area code (e.g., '415')"
+    )
+
+
+class ImportTwilioRequest(BaseModel):
+    """Request to import a Twilio number into Vapi."""
+
+    twilio_account_sid: str = Field(..., description="Twilio Account SID")
+    twilio_auth_token: str = Field(..., description="Twilio Auth Token")
+    phone_number: str = Field(
+        ..., description="E.164 format (+33612345678 or +972501234567)"
+    )
+    assistant_id: str = Field(..., description="AVA assistant ID to link")
+    org_id: str = Field(..., description="Organization ID")
+
+
+class VerifyTwilioRequest(BaseModel):
+    """Request to verify Twilio credentials."""
+
+    account_sid: str = Field(..., description="Twilio Account SID")
+    auth_token: str = Field(..., description="Twilio Auth Token")
+    phone_number: str = Field(..., description="Phone number to verify exists")
+
+
+# ==================== Routes ====================
+
+
+@router.post("/create-us", status_code=status.HTTP_201_CREATED)
+async def create_us_number(request: CreateUSNumberRequest):
+    """
+    Create a free US phone number via Vapi.
+    
+    ⚠️ LIMITATION: Only US numbers, max 10 free per account.
+    
+    Returns:
+        {
+            "success": True,
+            "phone": {
+                "id": "vapi_phone_id",
+                "number": "+1234567890",
+                "provider": "VAPI",
+                "assistantId": "..."
+            }
+        }
+    """
+    try:
+        vapi = VapiClient()
+
+        # Create via Vapi (US only, free, max 10)
+        created = await vapi.create_phone_number(
+            assistant_id=request.assistant_id, area_code=request.area_code
+        )
+
+        # TODO: Save to database
+        # phone = PhoneNumber(
+        #     org_id=request.org_id,
+        #     provider="VAPI",
+        #     e164=created["number"],
+        #     vapi_phone_number_id=created["id"],
+        #     routing={"assistant_id": request.assistant_id}
+        # )
+        # await db.add(phone)
+        # await db.commit()
+
+        return {
+            "success": True,
+            "phone": {
+                "id": created.get("id"),
+                "number": created.get("number"),
+                "provider": "VAPI",
+                "assistantId": created.get("assistantId"),
+            },
+            "message": "Numéro US créé avec succès",
+        }
+
+    except Exception as e:
+        if "limit" in str(e).lower():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Limite de 10 numéros gratuits atteinte. Utilisez l'import Twilio.",
+            )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erreur lors de la création du numéro: {str(e)}",
+        )
+
+
+@router.post("/import-twilio", status_code=status.HTTP_201_CREATED)
+async def import_twilio_number(request: ImportTwilioRequest):
+    """
+    Import an existing Twilio number into Vapi.
+    
+    ✅ SOLUTION pour France, Israël, et tous pays hors US.
+    
+    Workflow:
+    1. Vérifie que le numéro existe dans Twilio
+    2. Appelle Vapi /phone-numbers/import
+    3. Vapi configure automatiquement le webhook Twilio → Vapi
+    4. Sauvegarde dans notre DB
+    
+    Returns:
+        {
+            "success": True,
+            "phone": {...},
+            "message": "Numéro importé avec succès"
+        }
+    """
+    try:
+        # 1. Verify Twilio number exists
+        twilio = TwilioClient(request.twilio_account_sid, request.twilio_auth_token)
+
+        try:
+            numbers = twilio.incoming_phone_numbers.list(
+                phone_number=request.phone_number, limit=1
+            )
+
+            if not numbers:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Numéro {request.phone_number} non trouvé dans votre compte Twilio",
+                )
+        except Exception as e:
+            if "authenticate" in str(e).lower() or "credentials" in str(e).lower():
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Credentials Twilio invalides",
+                )
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Erreur Twilio: {str(e)}",
+            )
+
+        # 2. Import to Vapi
+        vapi = VapiClient()
+
+        imported = await vapi.import_phone_number(
+            twilio_account_sid=request.twilio_account_sid,
+            twilio_auth_token=request.twilio_auth_token,
+            phone_number=request.phone_number,
+            assistant_id=request.assistant_id,
+        )
+
+        # 3. Save to our DB
+        # TODO: Implement database save
+        # phone = PhoneNumber(
+        #     org_id=request.org_id,
+        #     provider="VAPI",  # Managed by Vapi but uses Twilio under the hood
+        #     e164=request.phone_number,
+        #     vapi_phone_number_id=imported["id"],
+        #     twilio_account_sid=request.twilio_account_sid,
+        #     routing={"assistant_id": request.assistant_id}
+        # )
+        # await db.add(phone)
+        # await db.commit()
+
+        return {
+            "success": True,
+            "phone": {
+                "id": imported.get("id"),
+                "number": imported.get("number"),
+                "provider": "VAPI_TWILIO",
+                "assistantId": imported.get("assistantId"),
+            },
+            "message": "Numéro importé avec succès dans Vapi",
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erreur lors de l'import Vapi: {str(e)}",
+        )
+
+
+@router.post("/twilio/verify")
+async def verify_twilio_credentials(request: VerifyTwilioRequest):
+    """
+    Verify Twilio credentials and check if phone number exists.
+    
+    Returns:
+        {
+            "valid": True,
+            "number": "+33612345678",
+            "country": "FR"
+        }
+    """
+    try:
+        client = TwilioClient(request.account_sid, request.auth_token)
+
+        # Test: verify number exists in this account
+        numbers = client.incoming_phone_numbers.list(
+            phone_number=request.phone_number, limit=1
+        )
+
+        if not numbers:
+            return {
+                "valid": False,
+                "error": "Numéro non trouvé dans votre compte Twilio",
+            }
+
+        return {
+            "valid": True,
+            "number": numbers[0].phone_number,
+            "country": numbers[0].iso_country,  # FR, IL, US, etc.
+        }
+
+    except Exception as e:
+        return {"valid": False, "error": str(e)}
+
+
+@router.get("/my-numbers")
+async def get_my_numbers(org_id: str):
+    """
+    Get all phone numbers for an organization.
+    
+    TODO: Implement database query
+    
+    Returns:
+        [
+            {
+                "id": "...",
+                "number": "+33612345678",
+                "provider": "VAPI",
+                "country": "FR"
+            }
+        ]
+    """
+    # TODO: Query from database
+    # phones = await db.query(PhoneNumber).filter(PhoneNumber.org_id == org_id).all()
+
+    return {
+        "success": True,
+        "numbers": [],  # TODO: Return from DB
+        "message": "TODO: Implement database query",
+    }
