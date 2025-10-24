@@ -64,6 +64,8 @@ model Org {
   avas      Ava[]
   numbers   PhoneNumber[]
   plans     PlanSubscription[]
+  calls     Call[]
+  integrations Integration[]
   createdAt DateTime      @default(now())
 }
 
@@ -102,6 +104,7 @@ model Ava {
   prompts      Json
   rules        Json
   integrations Json
+  calls        Call[]
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -118,6 +121,7 @@ model PhoneNumber {
   routing       Json
   businessHours Json
   voicemail     Json
+  calls         Call[]
 
   org Org @relation(fields: [orgId], references: [id], onDelete: Cascade)
 }
