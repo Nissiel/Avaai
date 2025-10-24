@@ -7,6 +7,7 @@ from fastapi import APIRouter
 from api.src.presentation.api.v1.routes import (
     analytics,
     assistants,
+    auth,
     calls,
     runtime,
     studio_config,
@@ -16,6 +17,7 @@ from api.src.presentation.api.v1.routes import (
 )
 
 api_v1_router = APIRouter()
+api_v1_router.include_router(auth.router)
 api_v1_router.include_router(runtime.router)
 api_v1_router.include_router(studio_config.router)
 api_v1_router.include_router(assistants.router)

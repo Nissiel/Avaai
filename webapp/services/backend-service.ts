@@ -4,8 +4,9 @@ import { cache } from "react";
 
 type BackendAction = "start" | "stop" | "restart";
 
-const FALLBACK_BACKEND_URL = "http://localhost:8081";
+const FALLBACK_BACKEND_URL = "http://localhost:8000";
 const BACKEND_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL ??
   process.env.APP_BACKEND_URL ??
   process.env.NEXT_PUBLIC_APP_BACKEND_URL ??
   FALLBACK_BACKEND_URL;

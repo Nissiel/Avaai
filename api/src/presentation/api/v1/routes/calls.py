@@ -80,8 +80,8 @@ async def get_call_detail(
         "duration_seconds": call.duration_seconds,
         "cost": call.cost,
         "transcript": call.transcript,
-        "metadata": call.metadata,
-        "recording_url": call.metadata.get("recordingUrl") if isinstance(call.metadata, dict) else None,
+        "metadata": call.meta,
+        "recording_url": call.meta.get("recordingUrl") if isinstance(call.meta, dict) else None,
     }
 
 
@@ -99,7 +99,7 @@ async def get_call_recording(
     if not call or str(call.tenant_id) != str(current.tenant.id):
         raise HTTPException(status_code=404, detail="Call not found")
 
-    recording_url = call.metadata.get("recordingUrl") if isinstance(call.metadata, dict) else None
+    recording_url = call.meta.get("recordingUrl") if isinstance(call.meta, dict) else None
     if not recording_url:
         raise HTTPException(status_code=404, detail="Recording not available")
 

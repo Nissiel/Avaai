@@ -28,14 +28,14 @@ class CallRecord(Base):
     ended_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     duration_seconds: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     cost: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    metadata: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    meta: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
     transcript: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     def update_from_payload(self, payload: dict[str, object]) -> None:
         """Update the record using a Vapi call payload."""
 
         self.status = str(payload.get("status", self.status))
-        self.metadata = {**(self.metadata or {}), **payload}
+        self.meta = {**(self.meta or {}), **payload}
 
         if "endedAt" in payload and payload["endedAt"]:
             self.ended_at = _parse_datetime(payload["endedAt"]) or self.ended_at

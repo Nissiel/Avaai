@@ -375,12 +375,12 @@ def _collect_satisfaction_scores(calls: Sequence[CallRecord]) -> list[float]:
     scores: list[float] = []
     for call in calls:
         satisfaction = None
-        if isinstance(call.metadata, dict):
-            analytics = call.metadata.get("analytics")
+        if isinstance(call.meta, dict):
+            analytics = call.meta.get("analytics")
             if isinstance(analytics, dict):
                 satisfaction = analytics.get("sentimentScore") or analytics.get("customerSatisfaction")
-        if satisfaction is None and call.metadata.get("sentimentScore") if isinstance(call.metadata, dict) else None:
-            satisfaction = call.metadata["sentimentScore"]
+        if satisfaction is None and call.meta.get("sentimentScore") if isinstance(call.meta, dict) else None:
+            satisfaction = call.meta["sentimentScore"]
         if satisfaction is not None:
             try:
                 scores.append(float(satisfaction))
@@ -398,7 +398,7 @@ def _format_duration(value: float) -> str:
 
 
 def _extract_sentiment(call: CallRecord) -> float | None:
-    metadata = call.metadata or {}
+    metadata = call.meta or {}
     if not isinstance(metadata, dict):
         return None
     analytics = metadata.get("analytics")
@@ -419,7 +419,7 @@ def _extract_sentiment(call: CallRecord) -> float | None:
 
 
 def _extract_topics(call: CallRecord) -> Iterable[str]:
-    metadata = call.metadata or {}
+    metadata = call.meta or {}
     topics: List[str] = []
     if isinstance(metadata, dict):
         for key in ("topics", "tags", "keywords"):

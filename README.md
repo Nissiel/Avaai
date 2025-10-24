@@ -173,11 +173,6 @@ Les contributions sont les bienvenues ! N'hésitez pas à:
 - Proposer une feature
 - Soumettre une pull request
 
----
-
-## 📝 License
-
-Ce projet est sous licence MIT. Voir [LICENSE](LICENSE) pour plus de détails.
 
 ---
 

@@ -20,7 +20,7 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from ...domain.value_objects.ava_profile import (
+from api.src.domain.value_objects.ava_profile import (
     DEFAULT_ALLOWED_TOPICS,
     DEFAULT_FORBIDDEN_TOPICS,
 )

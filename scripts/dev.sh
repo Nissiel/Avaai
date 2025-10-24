@@ -4,6 +4,9 @@ set -e
 echo "🚀 AVA - Démarrage en mode développement"
 echo "========================================"
 
+# Ajouter homebrew au PATH
+export PATH="/opt/homebrew/bin:$PATH"
+
 # Vérifier Node.js
 if ! command -v node &> /dev/null; then
     echo "❌ Node.js non installé. Installation..."

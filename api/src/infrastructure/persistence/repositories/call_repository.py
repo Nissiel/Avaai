@@ -19,7 +19,7 @@ async def upsert_calls(session: AsyncSession, calls: Iterable[CallRecord]) -> No
     for call in calls:
         existing = await session.get(CallRecord, call.id)
         if existing:
-            existing.update_from_payload(call.metadata)
+            existing.update_from_payload(call.meta)
         else:
             session.add(call)
 

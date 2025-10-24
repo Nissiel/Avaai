@@ -54,6 +54,11 @@
     "signOut": "Se déconnecter",
     "title": "Bienvenue",
     "subtitle": "Connectez-vous avec un lien magique ou votre fournisseur préféré.",
+    "login": {
+      "title": "Connexion",
+      "subtitle": "Connectez-vous avec votre email ou numéro de téléphone",
+      "description": "Accédez à votre compte AVA"
+    },
     "fields": {
       "email": "Email professionnel",
       "remember": "Rester connecté",

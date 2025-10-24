@@ -54,6 +54,11 @@
     "signOut": "Sign out",
     "title": "Welcome back",
     "subtitle": "Sign in with a magic link or your favourite identity provider.",
+    "login": {
+      "title": "Sign in",
+      "subtitle": "Sign in with your email or phone number",
+      "description": "Access your AVA account"
+    },
     "fields": {
       "email": "Work email",
       "remember": "Stay signed in",

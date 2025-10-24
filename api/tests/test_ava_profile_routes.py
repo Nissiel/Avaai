@@ -1,4 +1,5 @@
 import asyncio
+import os
 import uuid
 import pytest
 from fastapi import FastAPI, status
@@ -13,6 +14,13 @@ from api.src.application.services.realtime_session import build_system_prompt
 from api.src.infrastructure.database.session import get_session
 
 
+# PostgreSQL test database URL - uses same DB as dev but with test schema isolation
+TEST_DATABASE_URL = os.getenv(
+    "AVA_API_TEST_DATABASE_URL",
+    "postgresql+asyncpg://nissielberrebi@localhost:5432/avaai_test"
+)
+
+
 @pytest.fixture(scope="module")
 def event_loop():
     loop = asyncio.new_event_loop()
@@ -22,16 +30,29 @@ def event_loop():
 
 @pytest.fixture
 async def session():
-    engine = create_async_engine("sqlite+aiosqlite:///:memory:")
+    """
+    PostgreSQL test session with proper cleanup.
+    Uses a separate test database for isolation.
+    """
+    engine = create_async_engine(TEST_DATABASE_URL, echo=False)
+    
+    # Create all tables
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+    
     Session = async_sessionmaker(engine, expire_on_commit=False)
     async with Session() as session:
+        # Create test tenant
         tenant = Tenant(id=uuid.uuid4(), name="Test Tenant")
         session.add(tenant)
         await session.commit()
         await session.refresh(tenant)
         yield session
+    
+    # Cleanup: drop all tables after tests
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+    
     await engine.dispose()
 
 

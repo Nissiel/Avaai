@@ -15,6 +15,7 @@ enum OrgRole {
 
 enum Provider {
   TWILIO
+  VAPI
   SIP
 }
 
@@ -85,10 +86,15 @@ model OrgUser {
 model User {
   id            String   @id @default(cuid())
   email         String   @unique
+  phone         String?  @unique
+  phoneVerified Boolean  @default(false)
+  password      String?
   name          String?
   image         String?
   locale        String   @default("en")
   twoFAEnabled  Boolean  @default(false)
+  onboardingCompleted Boolean @default(false)
+  onboardingStep      Int     @default(0)
   createdAt     DateTime @default(now())
   orgMemberships OrgUser[]
 }
@@ -114,14 +120,18 @@ model Ava {
 }
 
 model PhoneNumber {
-  id            String   @id @default(cuid())
-  orgId         String
-  provider      Provider
-  e164          String   @unique
-  routing       Json
-  businessHours Json
-  voicemail     Json
-  calls         Call[]
+  id                 String   @id @default(cuid())
+  orgId              String
+  provider           Provider
+  e164               String   @unique
+  vapiPhoneNumberId  String?
+  vapiAssistantId    String?
+  twilioAccountSid   String?
+  routing            Json
+  businessHours      Json
+  voicemail          Json
+  calls              Call[]
+  createdAt          DateTime @default(now())
 
   org Org @relation(fields: [orgId], references: [id], onDelete: Cascade)
 }
