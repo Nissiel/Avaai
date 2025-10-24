@@ -88,7 +88,7 @@ export default function WelcomePage() {
         </Button>
         <Button
           size="lg"
-          onClick={() => router.push(`/${locale}/onboarding/phone`)}
+          onClick={() => router.push(`/${locale}/onboarding/industry`)}
           className="gap-2"
         >
           Let's Start

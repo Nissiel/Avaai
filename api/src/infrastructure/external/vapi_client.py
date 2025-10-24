@@ -59,6 +59,56 @@ class VapiClient:
     async def get_assistant(self, assistant_id: str) -> dict:
         return await self._request("GET", f"/assistants/{assistant_id}")
 
+    async def create_assistant(
+        self,
+        *,
+        name: str,
+        voice_provider: str,
+        voice_id: str,
+        first_message: str,
+        model_provider: str = "openai",
+        model: str = "gpt-3.5-turbo",
+        temperature: float = 0.7,
+        max_tokens: int = 250,
+        metadata: dict | None = None,
+    ) -> dict:
+        """
+        Create a new AI assistant in Vapi.
+        
+        Args:
+            name: Assistant name (max 40 chars)
+            voice_provider: Voice provider ("11labs", "azure", "deepgram", etc.)
+            voice_id: Voice ID from provider
+            first_message: Greeting message when call starts
+            model_provider: LLM provider ("openai", "anthropic", etc.)
+            model: Model name (e.g., "gpt-3.5-turbo")
+            temperature: Model creativity (0.0-1.0)
+            max_tokens: Max response length
+            metadata: Optional metadata
+        
+        Returns:
+            Assistant object with 'id' (UUID), 'name', 'voice', 'model', etc.
+        """
+        payload = {
+            "name": name,
+            "voice": {
+                "provider": voice_provider,
+                "voiceId": voice_id,
+            },
+            "model": {
+                "provider": model_provider,
+                "model": model,
+                "temperature": temperature,
+                "maxTokens": max_tokens,
+            },
+            "firstMessage": first_message,
+        }
+        
+        if metadata:
+            payload["metadata"] = metadata
+        
+        return await self._request("POST", "/assistant", json=payload)
+
     async def call_transcript(self, call_id: str) -> dict:
         return await self._request("GET", f"/calls/{call_id}/transcript")
 

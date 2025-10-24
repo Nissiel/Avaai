@@ -11,7 +11,14 @@ interface OnboardingData {
     name: string;
     tone: string;
     greeting: string;
+    // NEW: Rich personalization fields
+    instructions: string;
+    businessContext: string;
+    dos: string;
+    donts: string;
+    exampleConversation: string;
   };
+  assistantId: string | null;  // 🎯 UUID de l'assistant créé
   testCallCompleted: boolean;
 }
 
@@ -21,6 +28,7 @@ interface OnboardingStore {
   updatePhoneSetup: (provider: 'vapi' | 'twilio', phoneNumber?: string) => void;
   updateIndustry: (industry: string) => void;
   updateCustomization: (customization: Partial<OnboardingData['customization']>) => void;
+  setAssistantId: (assistantId: string) => void;  // 🎯 NOUVEAU
   markTestCompleted: () => void;
   setCurrentStep: (step: number) => void;
   reset: () => void;
@@ -36,7 +44,13 @@ const initialData: OnboardingData = {
     name: 'AVA',
     tone: 'warm',
     greeting: 'Hello! How can I help you today?',
+    instructions: '',
+    businessContext: '',
+    dos: '',
+    donts: '',
+    exampleConversation: '',
   },
+  assistantId: null,
   testCallCompleted: false,
 };
 
@@ -65,6 +79,11 @@ export const useOnboarding = create<OnboardingStore>()(
             ...state.data,
             customization: { ...state.data.customization, ...customization },
           },
+        })),
+
+      setAssistantId: (assistantId) =>
+        set((state) => ({
+          data: { ...state.data, assistantId },
         })),
 
       markTestCompleted: () =>

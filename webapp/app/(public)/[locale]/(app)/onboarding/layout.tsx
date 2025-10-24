@@ -5,9 +5,9 @@ import { OnboardingStepper } from '@/components/features/onboarding/stepper';
 
 const ONBOARDING_STEPS = [
   { id: 'welcome', title: 'Welcome', description: 'Get started with AVA' },
-  { id: 'phone', title: 'Phone Setup', description: 'Configure your phone number' },
   { id: 'industry', title: 'Industry', description: 'Select your business type' },
   { id: 'customize', title: 'Customize', description: 'Personalize AVA' },
+  { id: 'phone', title: 'Phone Setup', description: 'Configure your phone number' },
   { id: 'test', title: 'Test Call', description: 'Try your AI receptionist' },
 ];
 

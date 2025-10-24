@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     allowed_origins: str = ""  # Comma-separated string, will be parsed
     database_url: str  # No default - must be set in .env (PostgreSQL required)
     log_level: str = "INFO"
-    vapi_base_url: str = "https://api.vapi.ai/v1"
+    vapi_base_url: str = "https://api.vapi.ai"
     vapi_api_key: str | None = None
     jwt_secret_key: str = "CHANGE_ME_IN_PRODUCTION_USE_ENV_VAR"
 

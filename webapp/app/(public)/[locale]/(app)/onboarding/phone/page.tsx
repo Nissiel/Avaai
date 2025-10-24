@@ -5,13 +5,51 @@ import { useRouter, useParams } from 'next/navigation';
 import { GlassCard } from '@/components/ui/glass-card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Phone, Zap, Settings } from 'lucide-react';
+import { Phone, Zap, Settings, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { createUSNumber } from '@/services/phone-numbers-service';
+import { TwilioSetupDialog } from '@/components/features/onboarding/twilio-setup-dialog';
+import { useOnboarding } from '@/lib/stores/onboarding-store';
 
 export default function PhoneSetupPage() {
   const router = useRouter();
   const params = useParams();
   const locale = params.locale as string;
-  const [selectedOption, setSelectedOption] = useState<'vapi' | 'twilio' | null>(null);
+  const [isCreatingNumber, setIsCreatingNumber] = useState(false);
+  const [showTwilioDialog, setShowTwilioDialog] = useState(false);
+  const { data, updatePhoneSetup } = useOnboarding();
+
+  // TODO: Get real org_id from session/auth
+  const TEMP_ORG_ID = 'temp-org-id';
+  
+  // Get assistant_id from onboarding store (created in customize step)
+  // At this point in the flow (after customize), assistantId ALWAYS exists
+  const assistantId = data.assistantId!;
+
+  const handleCreateUSNumber = async () => {
+    setIsCreatingNumber(true);
+    try {
+      const result = await createUSNumber(assistantId, TEMP_ORG_ID);
+      updatePhoneSetup('vapi', result.phone.number);
+      toast.success('✅ Phone number created!', {
+        description: `Your number: ${result.phone.number}`,
+      });
+      router.push(`/${locale}/onboarding/test`);
+    } catch (error: any) {
+      console.error('Failed to create number:', error);
+      toast.error('❌ Failed to create number', {
+        description: error.message || 'Please try again',
+      });
+    } finally {
+      setIsCreatingNumber(false);
+    }
+  };
+
+  const handleTwilioSuccess = (phoneNumber: string) => {
+    updatePhoneSetup('twilio', phoneNumber);
+    toast.success('✅ Twilio number imported!');
+    router.push(`/${locale}/onboarding/test`);
+  };
 
   return (
     <div className="space-y-8">
@@ -69,14 +107,20 @@ export default function PhoneSetupPage() {
               <Button
                 size="lg"
                 className="w-full"
-                onClick={() => {
-                  // TODO: Call API to create Vapi number
-                  setSelectedOption('vapi');
-                  router.push(`/${locale}/onboarding/industry`);
-                }}
+                onClick={handleCreateUSNumber}
+                disabled={isCreatingNumber}
               >
-                <Phone className="mr-2 h-4 w-4" />
-                Get My US Number
+                {isCreatingNumber ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creating Number...
+                  </>
+                ) : (
+                  <>
+                    <Phone className="mr-2 h-4 w-4" />
+                    Get My US Number
+                  </>
+                )}
               </Button>
             </div>
           </GlassCard>
@@ -116,10 +160,7 @@ export default function PhoneSetupPage() {
                 size="lg"
                 variant="outline"
                 className="w-full"
-                onClick={() => {
-                  // TODO: Open Twilio setup modal
-                  setSelectedOption('twilio');
-                }}
+                onClick={() => setShowTwilioDialog(true)}
               >
                 <Settings className="mr-2 h-4 w-4" />
                 Setup with Twilio
@@ -133,17 +174,26 @@ export default function PhoneSetupPage() {
       <div className="flex justify-between items-center pt-4">
         <Button
           variant="ghost"
-          onClick={() => router.push(`/${locale}/onboarding/welcome`)}
+          onClick={() => router.push(`/${locale}/onboarding/customize`)}
         >
           ← Back
         </Button>
         <Button
           variant="outline"
-          onClick={() => router.push(`/${locale}/onboarding/industry`)}
+          onClick={() => router.push(`/${locale}/onboarding/test`)}
         >
           Skip for now
         </Button>
       </div>
+
+      {/* Twilio Setup Dialog */}
+      <TwilioSetupDialog
+        open={showTwilioDialog}
+        onOpenChange={setShowTwilioDialog}
+        onSuccess={handleTwilioSuccess}
+        assistantId={assistantId}
+        orgId={TEMP_ORG_ID}
+      />
     </div>
   );
 }

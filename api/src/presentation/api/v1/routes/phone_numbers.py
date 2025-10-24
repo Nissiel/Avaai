@@ -31,7 +31,7 @@ class ImportTwilioRequest(BaseModel):
     phone_number: str = Field(
         ..., description="E.164 format (+33612345678 or +972501234567)"
     )
-    assistant_id: str = Field(..., description="AVA assistant ID to link")
+    assistant_id: str = Field(..., description="AVA assistant UUID (REQUIRED)")
     org_id: str = Field(..., description="Organization ID")
 
 
@@ -83,15 +83,24 @@ async def create_us_number(request: CreateUSNumberRequest):
         # await db.add(phone)
         # await db.commit()
 
+        # Vapi may not return 'number' immediately (provisioning takes time)
+        phone_number = created.get("number")
+        message = (
+            f"Numéro US créé: {phone_number}"
+            if phone_number
+            else "Numéro en cours de provisionnement (disponible dans 1-2 min)"
+        )
+
         return {
             "success": True,
             "phone": {
                 "id": created.get("id"),
-                "number": created.get("number"),
+                "number": phone_number,  # May be None initially
                 "provider": "VAPI",
                 "assistantId": created.get("assistantId"),
+                "status": created.get("status"),
             },
-            "message": "Numéro US créé avec succès",
+            "message": message,
         }
 
     except Exception as e:
@@ -220,10 +229,26 @@ async def verify_twilio_credentials(request: VerifyTwilioRequest):
                 "error": "Numéro non trouvé dans votre compte Twilio",
             }
 
+        phone_obj = numbers[0]
+        
+        # Extract country code from E.164 number (e.g., +33 → FR, +972 → IL, +1 → US)
+        country_code = getattr(phone_obj, 'iso_country', None)
+        if not country_code:
+            # Fallback: extract from phone number
+            phone_str = phone_obj.phone_number
+            if phone_str.startswith('+33'):
+                country_code = 'FR'
+            elif phone_str.startswith('+972'):
+                country_code = 'IL'
+            elif phone_str.startswith('+1'):
+                country_code = 'US'
+            else:
+                country_code = 'UNKNOWN'
+
         return {
             "valid": True,
-            "number": numbers[0].phone_number,
-            "country": numbers[0].iso_country,  # FR, IL, US, etc.
+            "number": phone_obj.phone_number,
+            "country": country_code,
         }
 
     except Exception as e:

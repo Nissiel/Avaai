@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { GlassCard } from '@/components/ui/glass-card';
 import { Button } from '@/components/ui/button';
+import { useOnboarding } from '@/lib/stores/onboarding-store';
 import {
   Stethoscope,
   Scissors,
@@ -16,7 +17,7 @@ import {
 
 const INDUSTRIES = [
   {
-    id: 'health',
+    id: 'healthcare',
     label: 'Healthcare',
     description: 'Doctors, dentists, clinics',
     icon: Stethoscope,
@@ -63,11 +64,12 @@ export default function IndustryPage() {
   const router = useRouter();
   const params = useParams();
   const locale = params.locale as string;
-  const [selected, setSelected] = useState<string | null>(null);
+  const { data, updateIndustry } = useOnboarding();
+  const [selected, setSelected] = useState<string | null>(data.industry);
 
   const handleContinue = () => {
     if (selected) {
-      // TODO: Save industry selection
+      updateIndustry(selected);
       router.push(`/${locale}/onboarding/customize`);
     }
   };
@@ -124,7 +126,7 @@ export default function IndustryPage() {
       <div className="flex justify-between items-center pt-4">
         <Button
           variant="ghost"
-          onClick={() => router.push(`/${locale}/onboarding/phone`)}
+          onClick={() => router.push(`/${locale}/onboarding/welcome`)}
         >
           ← Back
         </Button>
