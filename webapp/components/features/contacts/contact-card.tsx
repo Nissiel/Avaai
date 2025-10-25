@@ -58,152 +58,106 @@ export function ContactCard({ contact, dateLocale }: ContactCardProps) {
   const totalDuration = formatDuration(contact.totalDurationSeconds, locale, { includeSeconds: false });
   const averageDuration = formatDuration(contact.averageDurationSeconds, locale, { includeSeconds: false });
 
-  // 🔥 DIVINE UX: Engagement scoring pour hiérarchie visuelle
+  // Professional UX: Engagement scoring subtil
   const isHighEngagement = contact.callCount >= 10;
-  const isVIP = contact.callCount >= 20;
 
   return (
     <GlassCard
       variant="none"
       className={cn(
-        "group relative flex h-full flex-col gap-5 rounded-2xl overflow-hidden",
-        "border-2 transition-all duration-300 ease-out cursor-pointer",
-        "bg-gradient-to-br from-background/90 via-background/70 to-brand-500/10",
-        "hover:scale-[1.02] hover:shadow-xl hover:shadow-brand-500/20",
-        // 🔥 DIVINE: Border cosmique selon VIP status
-        isVIP 
-          ? "border-brand-500/60 shadow-lg shadow-brand-500/30 ring-2 ring-brand-500/20 ring-offset-2 ring-offset-background" 
-          : "border-brand-500/20 hover:border-brand-500/50",
-        "p-5"
+        "group flex h-full flex-col gap-4 rounded-xl border",
+        "bg-background/95 backdrop-blur-sm",
+        "transition-all duration-200 cursor-pointer",
+        "hover:border-foreground/20 hover:shadow-md",
+        isHighEngagement ? "border-foreground/15" : "border-border/60",
+        "p-4"
       )}
     >
-      {/* 🌟 VIP Aura cosmique (Peak-End Rule: mémorisation du "peak") */}
-      {isVIP && (
-        <div className="absolute -top-12 -right-12 w-32 h-32 bg-gradient-to-br from-brand-500/30 to-purple-500/30 rounded-full blur-3xl animate-pulse" />
-      )}
-
-      {/* 🔥 SECTION 1: HEADER - Hero Zone (Fitts's Law: éléments importants = GROS) */}
-      <div className="relative flex items-start gap-4">
-        {/* Avatar PLUS GROS (de 10x10 à 16x16 = +60%) */}
+      {/* SECTION 1: Header - Clean & Professional */}
+      <div className="flex items-start gap-3">
+        {/* Avatar - Simple & Clean */}
         <div className="relative flex-shrink-0">
           <Avatar className={cn(
-            "h-16 w-16 border-2 transition-all duration-300",
-            isVIP 
-              ? "border-brand-500 shadow-lg shadow-brand-500/60 ring-2 ring-brand-400/30" 
-              : "border-brand-500/40 group-hover:border-brand-500/80"
+            "h-12 w-12 border-2 transition-colors duration-200",
+            isHighEngagement 
+              ? "border-foreground/20 bg-foreground/5" 
+              : "border-border/60 bg-muted/30"
           )}>
             <AvatarFallback className={cn(
-              "text-lg font-bold bg-gradient-to-br transition-all duration-300",
-              isVIP 
-                ? "from-brand-500 to-purple-500 text-white" 
-                : "from-brand-500/20 to-brand-400/40 text-brand-600 dark:text-brand-300 group-hover:from-brand-500/30 group-hover:to-brand-400/50"
+              "text-sm font-semibold",
+              isHighEngagement 
+                ? "bg-foreground/10 text-foreground" 
+                : "bg-muted text-muted-foreground"
             )}>
               {getInitials(displayName)}
             </AvatarFallback>
           </Avatar>
           
-          {/* 🟢 Status indicator cosmique (active/inactive) */}
-          <div className={cn(
-            "absolute -bottom-1 -right-1 h-5 w-5 rounded-full border-2 border-background",
-            "transition-all duration-300",
-            isHighEngagement 
-              ? "bg-emerald-500 shadow-lg shadow-emerald-500/60 animate-pulse" 
-              : "bg-muted-foreground/40"
-          )} />
+          {/* Status indicator - Minimal */}
+          {isHighEngagement && (
+            <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-500 border-2 border-background" />
+          )}
         </div>
 
-        {/* 📝 Name + Phone avec hiérarchie DIVINE (Hick's Law: moins = mieux) */}
-        <div className="flex-1 min-w-0 space-y-1.5">
-          <div className="flex items-center gap-2">
-            <h3 className={cn(
-              "text-lg font-bold truncate transition-colors duration-300",
-              "text-foreground group-hover:text-brand-600 dark:group-hover:text-brand-400"
-            )}>
-              {displayName}
-            </h3>
-            {isVIP && (
-              <Badge variant="brand" className="bg-gradient-to-r from-brand-500 to-purple-500 text-white border-0 text-xs font-bold px-2.5 py-0.5 shadow-lg shadow-brand-500/40">
-                ⭐ VIP
-              </Badge>
-            )}
-          </div>
+        {/* Name + Info - Clear Hierarchy */}
+        <div className="flex-1 min-w-0 space-y-1">
+          <h3 className="text-base font-semibold text-foreground truncate">
+            {displayName}
+          </h3>
           
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Phone className="h-3.5 w-3.5 flex-shrink-0" />
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Phone className="h-3 w-3 flex-shrink-0" />
             <span className="truncate">{subtitle}</span>
           </div>
         </div>
 
-        {/* 🔢 Call Count Badge - GRAND et BOLD (Fitts's Law: cible importante) */}
+        {/* Call Count Badge - Professional */}
         <Badge 
           variant={isHighEngagement ? "brand" : "outline"}
           className={cn(
-            "text-lg font-extrabold px-4 py-2 transition-all duration-300 flex-shrink-0",
-            isHighEngagement 
-              ? "bg-gradient-to-br from-brand-500 to-brand-600 text-white shadow-lg shadow-brand-500/40 hover:shadow-xl hover:shadow-brand-500/60" 
-              : "border-2 border-brand-500/40 text-brand-600 dark:text-brand-400 hover:bg-brand-500/10"
+            "text-sm font-semibold px-2.5 py-1",
+            !isHighEngagement && "border-border/60 text-muted-foreground"
           )}
         >
           {contact.callCount}
         </Badge>
       </div>
 
-      {/* 📊 SECTION 2: STATS - Grid 3 colonnes avec ICÔNES colorées (scannabilité++) */}
-      <div className="relative grid grid-cols-3 gap-3">
+      {/* SECTION 2: Stats - Clean Grid */}
+      <div className="grid grid-cols-3 gap-2 pt-2 border-t border-border/40">
         {/* Stat 1: Average Duration */}
-        <div className={cn(
-          "flex flex-col items-center gap-2.5 p-4 rounded-xl",
-          "bg-gradient-to-br from-blue-500/10 via-background/60 to-blue-500/5",
-          "border border-blue-500/20",
-          "transition-all duration-300",
-          "group-hover:border-blue-500/40 group-hover:shadow-md group-hover:shadow-blue-500/20"
-        )}>
-          <Clock className="h-5 w-5 text-blue-500 transition-transform duration-300 group-hover:scale-110" />
-          <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest text-center">
+        <div className="flex flex-col items-center gap-1.5 p-2 rounded-lg bg-muted/30">
+          <Clock className="h-4 w-4 text-muted-foreground" />
+          <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
             {t("averageDuration")}
           </span>
-          <span className="text-base font-bold text-foreground">
-            {averageDuration || t("unknownDuration")}
+          <span className="text-sm font-semibold text-foreground">
+            {averageDuration}
           </span>
         </div>
 
         {/* Stat 2: Total Duration */}
-        <div className={cn(
-          "flex flex-col items-center gap-2.5 p-4 rounded-xl",
-          "bg-gradient-to-br from-purple-500/10 via-background/60 to-purple-500/5",
-          "border border-purple-500/20",
-          "transition-all duration-300",
-          "group-hover:border-purple-500/40 group-hover:shadow-md group-hover:shadow-purple-500/20"
-        )}>
-          <TrendingUp className="h-5 w-5 text-purple-500 transition-transform duration-300 group-hover:scale-110" />
-          <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest text-center">
+        <div className="flex flex-col items-center gap-1.5 p-2 rounded-lg bg-muted/30">
+          <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
             {t("totalDuration")}
           </span>
-          <span className="text-base font-bold text-foreground">
-            {totalDuration || t("unknownDuration")}
+          <span className="text-sm font-semibold text-foreground">
+            {totalDuration}
           </span>
         </div>
 
         {/* Stat 3: Last Contact */}
-        <div className={cn(
-          "flex flex-col items-center gap-2.5 p-4 rounded-xl",
-          "bg-gradient-to-br from-emerald-500/10 via-background/60 to-emerald-500/5",
-          "border border-emerald-500/20",
-          "transition-all duration-300",
-          "group-hover:border-emerald-500/40 group-hover:shadow-md group-hover:shadow-emerald-500/20"
-        )}>
-          <Calendar className="h-5 w-5 text-emerald-500 transition-transform duration-300 group-hover:scale-110" />
-          <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest text-center">
+        <div className="flex flex-col items-center gap-1.5 p-2 rounded-lg bg-muted/30">
+          <Calendar className="h-4 w-4 text-muted-foreground" />
+          <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
             {t("lastContact")}
           </span>
-          <span className="text-sm font-bold text-foreground">
+          <span className="text-xs font-semibold text-foreground">
             {lastContactLabel}
           </span>
         </div>
       </div>
-
-      {/* ✨ DIVINE TOUCH: Hover indicator cosmique au bottom (Peak-End Rule) */}
-      <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-gradient-to-r from-transparent via-brand-500 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
     </GlassCard>
   );
 }

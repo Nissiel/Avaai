@@ -316,64 +316,12 @@ interface MetricChipProps {
 }
 
 function MetricChip({ label, value }: MetricChipProps) {
-  // 🎨 DIVINE: Couleurs dynamiques basées sur le label
-  const colors = React.useMemo(() => {
-    const labelLower = label.toLowerCase();
-    if (labelLower.includes('call') || labelLower.includes('appel')) {
-      return {
-        border: 'border-blue-500/30',
-        bg: 'bg-gradient-to-br from-blue-500/10 via-background/60 to-blue-500/5',
-        icon: 'text-blue-500',
-        hover: 'hover:border-blue-500/50 hover:shadow-md hover:shadow-blue-500/20'
-      };
-    }
-    if (labelLower.includes('total') || labelLower.includes('somme')) {
-      return {
-        border: 'border-purple-500/30',
-        bg: 'bg-gradient-to-br from-purple-500/10 via-background/60 to-purple-500/5',
-        icon: 'text-purple-500',
-        hover: 'hover:border-purple-500/50 hover:shadow-md hover:shadow-purple-500/20'
-      };
-    }
-    if (labelLower.includes('average') || labelLower.includes('moyenne') || labelLower.includes('avg')) {
-      return {
-        border: 'border-emerald-500/30',
-        bg: 'bg-gradient-to-br from-emerald-500/10 via-background/60 to-emerald-500/5',
-        icon: 'text-emerald-500',
-        hover: 'hover:border-emerald-500/50 hover:shadow-md hover:shadow-emerald-500/20'
-      };
-    }
-    if (labelLower.includes('last') || labelLower.includes('dernier') || labelLower.includes('first') || labelLower.includes('premier')) {
-      return {
-        border: 'border-orange-500/30',
-        bg: 'bg-gradient-to-br from-orange-500/10 via-background/60 to-orange-500/5',
-        icon: 'text-orange-500',
-        hover: 'hover:border-orange-500/50 hover:shadow-md hover:shadow-orange-500/20'
-      };
-    }
-    // Default
-    return {
-      border: 'border-brand-500/30',
-      bg: 'bg-gradient-to-br from-brand-500/10 via-background/60 to-brand-500/5',
-      icon: 'text-brand-500',
-      hover: 'hover:border-brand-500/50 hover:shadow-md hover:shadow-brand-500/20'
-    };
-  }, [label]);
-
   return (
-    <div className={cn(
-      "group rounded-2xl border-2 px-5 py-4 text-center shadow-sm transition-all duration-300",
-      colors.border,
-      colors.bg,
-      colors.hover
-    )}>
-      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">
+    <div className="rounded-lg border bg-muted/30 px-4 py-3 text-center">
+      <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground mb-1.5">
         {label}
       </p>
-      <p className={cn(
-        "text-xl font-extrabold transition-transform duration-300 group-hover:scale-105",
-        colors.icon
-      )}>
+      <p className="text-base font-semibold text-foreground">
         {value}
       </p>
     </div>
@@ -439,107 +387,97 @@ function ContactCallTimelineItem({
       : t("unknownAssistant"));
 
   return (
-    <GlassCard className="group relative overflow-hidden rounded-2xl border-2 border-brand-500/20 bg-gradient-to-br from-background/90 via-background/70 to-brand-500/5 p-5 shadow-md transition-all duration-300 hover:border-brand-500/40 hover:shadow-xl hover:shadow-brand-500/20">
-      {/* 🌟 DIVINE: Aura cosmique subtile */}
-      <div className="absolute -top-10 -right-10 w-24 h-24 bg-gradient-to-br from-brand-500/10 to-purple-500/10 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-      
-      <div className="relative space-y-4">
+    <GlassCard className="group rounded-xl border bg-background/95 p-4 shadow-sm transition-all duration-200 hover:border-foreground/15 hover:shadow-md">
+      <div className="space-y-4">
         {/* SECTION 1: Header avec date & badges */}
-        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-          <div className="space-y-2">
+        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+          <div className="space-y-1.5">
             <div className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500/20 to-brand-400/30">
-                <Phone className="h-4 w-4 text-brand-600 dark:text-brand-400" />
-              </div>
-              <div>
-                <p className="text-base font-bold text-foreground">{startedLabel}</p>
-                {relativeLabel ? (
-                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
-                    {relativeLabel}
-                  </p>
-                ) : null}
-              </div>
+              <Phone className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+              <p className="text-sm font-semibold text-foreground">{startedLabel}</p>
             </div>
+            {relativeLabel ? (
+              <p className="text-xs text-muted-foreground flex items-center gap-1 pl-6">
+                <Clock className="h-3 w-3" />
+                {relativeLabel}
+              </p>
+            ) : null}
           </div>
           
-          {/* SECTION 2: Badges avec icônes COLORÉES */}
+          {/* SECTION 2: Badges propres */}
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="outline" className="gap-1.5 border-blue-500/40 bg-blue-500/10 text-blue-600 dark:text-blue-400">
-              <Clock className="h-3.5 w-3.5" />
-              <span className="font-semibold">{durationLabel}</span>
+            <Badge variant="outline" className="gap-1.5">
+              <Clock className="h-3 w-3" />
+              <span className="text-xs">{durationLabel}</span>
             </Badge>
-            <Badge variant="outline" className="gap-1.5 border-purple-500/40 bg-purple-500/10 text-purple-600 dark:text-purple-400">
-              <Phone className="h-3.5 w-3.5" />
-              <span className="font-semibold">{costLabel}</span>
+            <Badge variant="outline" className="gap-1.5">
+              <Phone className="h-3 w-3" />
+              <span className="text-xs">{costLabel}</span>
             </Badge>
-            <Badge variant="outline" className="gap-1.5 border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-              <UserRound className="h-3.5 w-3.5" />
-              <span className="font-semibold truncate max-w-[120px]">{assistantLabel}</span>
+            <Badge variant="outline" className="gap-1.5">
+              <UserRound className="h-3 w-3" />
+              <span className="text-xs truncate max-w-[120px]">{assistantLabel}</span>
             </Badge>
-            <Badge variant="brand" className="font-bold text-xs uppercase tracking-widest shadow-md">
+            <Badge variant="brand" className="text-xs">
               {tStatus(call.status, { defaultMessage: call.status })}
             </Badge>
           </div>
         </div>
 
-        {/* SECTION 3: Transcript Preview avec style amélioré */}
+        {/* SECTION 3: Transcript Preview simple */}
         {call.transcriptPreview ? (
-          <div className="rounded-xl border border-brand-500/20 bg-gradient-to-br from-brand-500/5 to-transparent p-4">
-            <div className="flex items-start gap-2">
-              <MessageSquare className="h-4 w-4 text-brand-500 mt-0.5 flex-shrink-0" />
-              <p className="text-sm text-foreground/80 italic leading-relaxed">
-                &ldquo;{call.transcriptPreview}&rdquo;
-              </p>
-            </div>
+          <div className="rounded-lg border bg-muted/30 p-3">
+            <p className="text-sm text-foreground/90 italic leading-relaxed">
+              &ldquo;{call.transcriptPreview}&rdquo;
+            </p>
           </div>
         ) : null}
 
-        {/* SECTION 4: Actions avec design amélioré */}
-        <div className="flex justify-end gap-2 pt-2 border-t border-border/30">
+        {/* SECTION 4: Actions */}
+        <div className="flex justify-end gap-2 pt-2 border-t">
           <FuturisticButton
             size="sm"
             variant="ghost"
             onClick={() => setOpen((prev) => !prev)}
-            className="gap-2 hover:bg-brand-500/10 hover:text-brand-600 dark:hover:text-brand-400"
+            className="gap-2"
           >
             <MessageSquare className="h-4 w-4" />
-            <span className="font-semibold">{open ? t("hideTranscript") : t("viewTranscript")}</span>
+            <span className="text-xs font-medium">{open ? t("hideTranscript") : t("viewTranscript")}</span>
           </FuturisticButton>
           <FuturisticButton
             size="sm"
             variant="ghost"
             onClick={onDelete}
             disabled={deleting}
-            className="gap-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
+            className="gap-2 text-destructive hover:bg-destructive/10"
           >
             {deleting ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                <span className="font-semibold">{t("deleting")}</span>
+                <span className="text-xs font-medium">{t("deleting")}</span>
               </>
             ) : (
               <>
                 <Trash2 className="h-4 w-4" />
-                <span className="font-semibold">{t("delete")}</span>
+                <span className="text-xs font-medium">{t("delete")}</span>
               </>
             )}
           </FuturisticButton>
         </div>
 
-        {/* SECTION 5: Transcript complet avec style DIVINE */}
+        {/* SECTION 5: Transcript complet */}
         {open ? (
-          <div className="rounded-2xl border-2 border-brand-500/20 bg-gradient-to-br from-background/80 to-brand-500/5 p-5 animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="rounded-lg border bg-muted/20 p-4 animate-in fade-in slide-in-from-top-2 duration-200">
             {callDetailQuery.isLoading ? (
-              <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                <Loader2 className="h-5 w-5 animate-spin text-brand-500" />
-                <span className="font-medium">{t("loadingTranscript")}</span>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>{t("loadingTranscript")}</span>
               </div>
             ) : callDetailQuery.data?.transcript ? (
               <TranscriptContent transcript={callDetailQuery.data.transcript} />
             ) : (
-              <div className="flex flex-col items-center gap-2 py-8">
-                <MessageSquare className="h-8 w-8 text-muted-foreground/50" />
+              <div className="flex flex-col items-center gap-2 py-6">
+                <MessageSquare className="h-6 w-6 text-muted-foreground/50" />
                 <p className="text-sm text-muted-foreground">{t("noTranscript")}</p>
               </div>
             )}
@@ -557,17 +495,12 @@ function TranscriptContent({ transcript }: { transcript: string }) {
     .filter(Boolean);
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {snippets.length > 0 ? (
         snippets.map((line, index) => (
-          <div key={index} className="flex gap-3 group">
-            <div className="flex-shrink-0 mt-1">
-              <div className="h-2 w-2 rounded-full bg-brand-500/60 group-hover:bg-brand-500 transition-colors duration-200" />
-            </div>
-            <p className="text-sm leading-relaxed text-foreground/90 flex-1">
-              &ldquo;<span className="italic">{line}</span>&rdquo;
-            </p>
-          </div>
+          <p key={index} className="text-sm leading-relaxed text-foreground/90">
+            &ldquo;<span className="italic">{line}</span>&rdquo;
+          </p>
         ))
       ) : null}
     </div>

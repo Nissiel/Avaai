@@ -229,21 +229,17 @@ export function StudioSettingsForm({
   }
 
   return (
-    <div className="space-y-6">
-      {/* 🎨 DIVINE HEADER avec gradient */}
-      <GlassCard className="relative overflow-hidden border-2 border-brand-500/30" variant="none">
-        {/* Aura cosmique background */}
-        <div className="absolute -top-20 -right-20 w-48 h-48 bg-gradient-to-br from-brand-500/20 to-purple-500/20 rounded-full blur-3xl" />
-        <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-gradient-to-br from-blue-500/20 to-brand-500/20 rounded-full blur-3xl" />
-        
-        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between p-6">
-          <div className="space-y-2">
+    <div className="space-y-5">
+      {/* Professional Header - Clean & Simple */}
+      <GlassCard className="border" variant="none">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between p-5">
+          <div className="space-y-1">
             <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-purple-500 shadow-lg shadow-brand-500/40">
-                <Sparkles className="h-6 w-6 text-white" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-foreground/5">
+                <Sparkles className="h-5 w-5 text-foreground" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+                <h2 className="text-xl font-semibold text-foreground">
                   {t("title")}
                 </h2>
                 <p className="text-sm text-muted-foreground">{t("description")}</p>
@@ -252,7 +248,7 @@ export function StudioSettingsForm({
           </div>
           <div className="flex gap-2">
             {vapiAssistantId && (
-              <Badge variant="brand" className="flex items-center gap-1.5 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white border-0 shadow-lg shadow-emerald-500/30">
+              <Badge variant="brand" className="flex items-center gap-1.5">
                 <Check className="h-3.5 w-3.5" />
                 Synced
               </Badge>
@@ -273,37 +269,37 @@ export function StudioSettingsForm({
       </GlassCard>
 
       <Form {...form}>
-        <form className="space-y-5" onSubmit={form.handleSubmit((values) => {
+        <form className="space-y-4" onSubmit={form.handleSubmit((values) => {
           console.log("📝 Form Submit Handler Called:", values);
           updateMutation.mutate(values);
         })}>
 
-          <Accordion type="single" collapsible defaultValue="org" className="space-y-5">
+          <Accordion type="single" collapsible defaultValue="org" className="space-y-4">
 
-            {/* 📋 ORGANIZATION SECTION - Design DIVIN */}
+            {/* 📋 ORGANIZATION SECTION - Professional Design */}
             <AccordionItem value="org" className="border-none">
-              <GlassCard className="overflow-hidden border-2 border-blue-500/20 hover:border-blue-500/40 transition-all duration-300" variant="none">
-                <AccordionTrigger className="px-6 py-5 hover:no-underline [&[data-state=open]]:bg-blue-500/5">
-                  <div className="flex items-center gap-4">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg shadow-blue-500/30">
-                      <Sparkles className="h-5 w-5 text-white" />
+              <GlassCard className="border" variant="none">
+                <AccordionTrigger className="px-5 py-4 hover:no-underline [&[data-state=open]]:bg-muted/30">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-foreground/5">
+                      <Sparkles className="h-4 w-4 text-foreground" />
                     </div>
                     <div className="text-left">
-                      <h3 className="text-lg font-bold text-foreground">📋 Organization</h3>
+                      <h3 className="text-base font-semibold text-foreground">Organization</h3>
                       <p className="text-xs text-muted-foreground">Company info & business settings</p>
                     </div>
                   </div>
                 </AccordionTrigger>
-                <AccordionContent className="px-6 pb-6">
-                  <div className="grid gap-5 pt-4 md:grid-cols-2">
+                <AccordionContent className="px-5 pb-5">
+                  <div className="grid gap-4 pt-3 md:grid-cols-2">
                     <FormField
                       control={form.control}
                       name="organizationName"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-sm font-semibold">{t("form.organizationName")}</FormLabel>
+                          <FormLabel className="text-sm font-medium">{t("form.organizationName")}</FormLabel>
                           <FormControl>
-                            <Input {...field} disabled={isDisabled} className="h-11" />
+                            <Input {...field} disabled={isDisabled} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -427,31 +423,31 @@ export function StudioSettingsForm({
               </GlassCard>
             </AccordionItem>
 
-            {/* 🤖 AI PERFORMANCE SECTION - Design DIVIN */}
+            {/* 🤖 AI PERFORMANCE SECTION - Professional */}
             <AccordionItem value="ai" className="border-none">
-              <GlassCard className="overflow-hidden border-2 border-purple-500/20 hover:border-purple-500/40 transition-all duration-300" variant="none">
-                <AccordionTrigger className="px-6 py-5 hover:no-underline [&[data-state=open]]:bg-purple-500/5">
-                  <div className="flex items-center gap-4">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 shadow-lg shadow-purple-500/30">
-                      <Bot className="h-5 w-5 text-white" />
+              <GlassCard className="border" variant="none">
+                <AccordionTrigger className="px-5 py-4 hover:no-underline [&[data-state=open]]:bg-muted/30">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-foreground/5">
+                      <Bot className="h-4 w-4 text-foreground" />
                     </div>
                     <div className="text-left">
-                      <h3 className="text-lg font-bold text-foreground">🤖 AI Performance</h3>
+                      <h3 className="text-base font-semibold text-foreground">AI Performance</h3>
                       <p className="text-xs text-muted-foreground">Model settings & intelligence tuning</p>
                     </div>
                   </div>
                 </AccordionTrigger>
-                <AccordionContent className="px-6 pb-6">
-                  <div className="space-y-6 pt-4">
+                <AccordionContent className="px-5 pb-5">
+                  <div className="space-y-4 pt-3">
                     <FormField
                       control={form.control}
                       name="aiModel"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-sm font-semibold">AI Model</FormLabel>
+                          <FormLabel className="text-sm font-medium">AI Model</FormLabel>
                           <FormControl>
                             <Select value={field.value} onValueChange={field.onChange} disabled={isDisabled}>
-                              <SelectTrigger className="h-11">
+                              <SelectTrigger>
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
@@ -521,22 +517,22 @@ export function StudioSettingsForm({
               </GlassCard>
             </AccordionItem>
 
-            {/* 🎤 VOICE & PERSONALITY SECTION - Design DIVIN */}
+            {/* 🎤 VOICE & PERSONALITY SECTION - Professional */}
             <AccordionItem value="voice" className="border-none">
-              <GlassCard className="overflow-hidden border-2 border-emerald-500/20 hover:border-emerald-500/40 transition-all duration-300" variant="none">
-                <AccordionTrigger className="px-6 py-5 hover:no-underline [&[data-state=open]]:bg-emerald-500/5">
-                  <div className="flex items-center gap-4">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 shadow-lg shadow-emerald-500/30">
-                      <Mic className="h-5 w-5 text-white" />
+              <GlassCard className="border" variant="none">
+                <AccordionTrigger className="px-5 py-4 hover:no-underline [&[data-state=open]]:bg-muted/30">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-foreground/5">
+                      <Mic className="h-4 w-4 text-foreground" />
                     </div>
                     <div className="text-left">
-                      <h3 className="text-lg font-bold text-foreground">🎤 Voice & Personality</h3>
+                      <h3 className="text-base font-semibold text-foreground">Voice & Personality</h3>
                       <p className="text-xs text-muted-foreground">Voice settings & conversation style</p>
                     </div>
                   </div>
                 </AccordionTrigger>
-                <AccordionContent className="px-6 pb-6">
-                  <div className="space-y-6 pt-4">
+                <AccordionContent className="px-5 pb-5">
+                  <div className="space-y-4 pt-3">
                     <div className="grid gap-6 md:grid-cols-2">
                       <FormField
                         control={form.control}
@@ -673,22 +669,22 @@ export function StudioSettingsForm({
               </GlassCard>
             </AccordionItem>
 
-            {/* 💬 CONVERSATION BEHAVIOR SECTION - Design DIVIN */}
+            {/* 💬 CONVERSATION BEHAVIOR SECTION - Professional */}
             <AccordionItem value="conversation" className="border-none">
-              <GlassCard className="overflow-hidden border-2 border-orange-500/20 hover:border-orange-500/40 transition-all duration-300" variant="none">
-                <AccordionTrigger className="px-6 py-5 hover:no-underline [&[data-state=open]]:bg-orange-500/5">
-                  <div className="flex items-center gap-4">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 shadow-lg shadow-orange-500/30">
-                      <MessageSquare className="h-5 w-5 text-white" />
+              <GlassCard className="border" variant="none">
+                <AccordionTrigger className="px-5 py-4 hover:no-underline [&[data-state=open]]:bg-muted/30">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-foreground/5">
+                      <MessageSquare className="h-4 w-4 text-foreground" />
                     </div>
                     <div className="text-left">
-                      <h3 className="text-lg font-bold text-foreground">💬 Conversation Behavior</h3>
+                      <h3 className="text-base font-semibold text-foreground">Conversation Behavior</h3>
                       <p className="text-xs text-muted-foreground">System prompts & auto-collect settings</p>
                     </div>
                   </div>
                 </AccordionTrigger>
-                <AccordionContent className="px-6 pb-6">
-                  <div className="space-y-6 pt-4">
+                <AccordionContent className="px-5 pb-5">
+                  <div className="space-y-4 pt-3">
                     <FormField
                       control={form.control}
                       name="systemPrompt"
@@ -725,20 +721,20 @@ export function StudioSettingsForm({
                       )}
                     />
 
-                    {/* Auto-collect switches avec design amélioré */}
-                    <div className="space-y-4 rounded-xl border-2 border-brand-500/20 bg-gradient-to-br from-brand-500/5 to-transparent p-5">
+                    {/* Auto-collect switches - Professional design */}
+                    <div className="space-y-3 rounded-lg border bg-muted/30 p-4">
                       <div className="flex items-center gap-2">
-                        <Zap className="h-4 w-4 text-brand-500" />
-                        <p className="text-sm font-bold text-foreground">Auto-collect Information</p>
+                        <Zap className="h-4 w-4 text-foreground" />
+                        <p className="text-sm font-semibold text-foreground">Auto-collect Information</p>
                       </div>
-                      <div className="space-y-4">
+                      <div className="space-y-3">
                         <FormField
                           control={form.control}
                           name="askForName"
                           render={({ field }) => (
-                            <FormItem className="flex items-center justify-between space-y-0 rounded-lg bg-background/60 p-3">
+                            <FormItem className="flex items-center justify-between space-y-0 rounded-md bg-background p-3">
                               <div className="space-y-0.5">
-                                <FormLabel className="text-sm font-semibold">Ask for Name</FormLabel>
+                                <FormLabel className="text-sm font-medium">Ask for Name</FormLabel>
                                 <FormDescription className="text-xs">Request caller's name during conversation</FormDescription>
                               </div>
                               <FormControl>
@@ -752,9 +748,9 @@ export function StudioSettingsForm({
                           control={form.control}
                           name="askForEmail"
                           render={({ field }) => (
-                            <FormItem className="flex items-center justify-between space-y-0 rounded-lg bg-background/60 p-3">
+                            <FormItem className="flex items-center justify-between space-y-0 rounded-md bg-background p-3">
                               <div className="space-y-0.5">
-                                <FormLabel className="text-sm font-semibold">Ask for Email</FormLabel>
+                                <FormLabel className="text-sm font-medium">Ask for Email</FormLabel>
                                 <FormDescription className="text-xs">Request caller's email address</FormDescription>
                               </div>
                               <FormControl>
@@ -768,9 +764,9 @@ export function StudioSettingsForm({
                           control={form.control}
                           name="askForPhone"
                           render={({ field }) => (
-                            <FormItem className="flex items-center justify-between space-y-0 rounded-lg bg-background/60 p-3">
+                            <FormItem className="flex items-center justify-between space-y-0 rounded-md bg-background p-3">
                               <div className="space-y-0.5">
-                                <FormLabel className="text-sm font-semibold">Ask for Phone</FormLabel>
+                                <FormLabel className="text-sm font-medium">Ask for Phone</FormLabel>
                                 <FormDescription className="text-xs">Request caller's phone number</FormDescription>
                               </div>
                               <FormControl>
@@ -788,39 +784,35 @@ export function StudioSettingsForm({
 
           </Accordion>
 
-          {/* 🔥 DIVINE SAVE BUTTON */}
-          <GlassCard className="relative overflow-hidden border-2 border-brand-500/30" variant="none">
-            <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-gradient-to-br from-brand-500/20 to-purple-500/20 rounded-full blur-3xl" />
-            <div className="relative flex flex-col gap-3 p-6 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-3">
-                {isDirty && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <div className="h-2 w-2 rounded-full bg-orange-500 animate-pulse" />
-                    <span>Unsaved changes</span>
-                  </div>
-                )}
+          {/* Professional Save Button */}
+          <div className="flex flex-col gap-3 border-t pt-5">
+            {isDirty && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="h-2 w-2 rounded-full bg-orange-500" />
+                <span>You have unsaved changes</span>
               </div>
+            )}
+            <div className="flex justify-end">
               <Button
                 type="submit"
                 size="lg"
                 disabled={updateMutation.isPending}
-                className="relative overflow-hidden bg-gradient-to-r from-brand-500 to-purple-500 hover:from-brand-600 hover:to-purple-600 shadow-lg shadow-brand-500/40 hover:shadow-xl hover:shadow-brand-500/60 transition-all duration-300"
+                className="gap-2"
               >
                 {updateMutation.isPending ? (
                   <>
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    <span className="font-bold">Saving & Syncing...</span>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span className="font-semibold">Saving...</span>
                   </>
                 ) : (
                   <>
-                    <Save className="mr-2 h-5 w-5" />
-                    <Zap className="mr-1 h-4 w-4" />
-                    <span className="font-bold">Save & Sync to Vapi</span>
+                    <Save className="h-4 w-4" />
+                    <span className="font-semibold">Save & Sync to Vapi</span>
                   </>
                 )}
               </Button>
             </div>
-          </GlassCard>
+          </div>
         </form>
       </Form>
     </div>
