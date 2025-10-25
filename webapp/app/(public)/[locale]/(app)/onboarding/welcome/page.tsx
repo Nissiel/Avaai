@@ -10,6 +10,15 @@ export default function WelcomePage() {
   const params = useParams();
   const locale = params.locale as string;
 
+  const handleSkip = () => {
+    // Mark onboarding as completed in localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('onboarding_completed', 'true');
+      console.log('✅ Onboarding skipped - marked as completed');
+    }
+    router.push(`/${locale}/dashboard`);
+  };
+
   const features = [
     {
       icon: Phone,
@@ -82,7 +91,7 @@ export default function WelcomePage() {
       <div className="flex justify-between items-center">
         <Button
           variant="outline"
-          onClick={() => router.push(`/${locale}/dashboard`)}
+          onClick={handleSkip}
         >
           Skip for now
         </Button>

@@ -221,6 +221,7 @@
       "empty": "Aucun appel pour l'instant",
       "unknownNumber": "Numéro inconnu",
       "noTranscript": "Aucun transcript disponible",
+      "viewContact": "Ouvrir la fiche de {name}",
       "view": "Voir",
       "send": "Envoyer le transcript",
       "free": "Gratuit",

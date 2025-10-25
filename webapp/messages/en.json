@@ -223,6 +223,7 @@
       "empty": "No calls yet",
       "unknownNumber": "Unknown number",
       "noTranscript": "No transcript available",
+      "viewContact": "Open contact profile for {name}",
       "view": "View",
       "send": "Email transcript",
       "free": "Free",

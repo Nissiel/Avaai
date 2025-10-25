@@ -22,7 +22,11 @@ export default function TestCallPage() {
   };
 
   const handleComplete = () => {
-    // TODO: Mark onboarding as completed
+    // Mark onboarding as completed in localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('onboarding_completed', 'true');
+      console.log('✅ Onboarding completed - marked as done');
+    }
     router.push(`/${locale}/dashboard`);
   };
 

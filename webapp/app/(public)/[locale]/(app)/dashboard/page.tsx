@@ -17,6 +17,7 @@ import { FuturisticButton } from '@/components/ui/futuristic-button';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { CallTranscriptViewer } from '@/components/app/call-transcript-viewer';
 import { toast } from 'sonner';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 import { getAnalyticsOverview } from '@/lib/api/analytics';
 import { listAssistants, type AssistantsResult } from '@/lib/api/assistants';
@@ -246,8 +247,9 @@ export default function DashboardPage() {
         ) : calls.length === 0 ? (
           <p className="text-muted-foreground">{t('recent.empty')}</p>
         ) : (
-          <div className="space-y-4">
-            {calls.slice(0, 5).map((call: any) => {
+          <ScrollArea className="max-h-[420px] pr-3">
+            <div className="space-y-4">
+              {calls.map((call: any) => {
               const phoneNumber: string = call.customerNumber || '';
               const alias = phoneNumber ? aliases[phoneNumber] : undefined;
               const normalizedPhone = phoneNumber ? humanizeIdentifier(phoneNumber) : '';
@@ -272,18 +274,35 @@ export default function DashboardPage() {
               ]
                 .filter(Boolean)
                 .join(' • ');
+              const contactId =
+                phoneNumber && phoneNumber.trim().length > 0 ? phoneNumber.trim() : 'unknown';
+              const contactHref = {
+                pathname: '/[locale]/app/contacts/[contactId]',
+                params: { locale, contactId },
+              } as const;
 
               return (
-                <div key={call.id} className="flex items-center justify-between p-4 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
-                  <div className="flex-1 space-y-1">
-                    <p className="font-medium">{displayName}</p>
+                <div
+                  key={call.id}
+                  className="flex items-center justify-between gap-4 rounded-2xl border border-border/40 bg-white/5 p-4 transition hover:border-brand-500/30 hover:bg-white/10"
+                >
+                  <Link
+                    href={contactHref}
+                    className="flex flex-1 flex-col gap-1 rounded-xl px-3 py-2 transition hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                    aria-label={t('recent.viewContact', { name: displayName })}
+                  >
+                    <span className="text-base font-semibold leading-tight text-foreground">
+                      {displayName}
+                    </span>
                     {phoneLabel ? (
-                      <p className="text-xs font-mono uppercase tracking-wide text-muted-foreground/70">
+                      <span className="text-xs font-mono uppercase tracking-wide text-muted-foreground/70">
                         {phoneLabel}
-                      </p>
+                      </span>
                     ) : null}
-                    <p className="text-sm text-muted-foreground">{metadata}</p>
-                  </div>
+                    <span className="text-xs text-muted-foreground uppercase tracking-[0.18em]">
+                      {metadata}
+                    </span>
+                  </Link>
                   <div className="flex items-center gap-2">
                     <FuturisticButton
                       size="sm"
@@ -308,7 +327,8 @@ export default function DashboardPage() {
                 </div>
               );
             })}
-          </div>
+            </div>
+          </ScrollArea>
         )}
       </GlassCard>
 
