@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useLocale } from "next-intl";
 import { useQuery } from "@tanstack/react-query";
 import {
   Area,
@@ -35,6 +36,7 @@ import { GlassCard } from "@/components/ui/glass-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { useCallsStore } from "@/stores/calls-store";
+import { formatDuration } from "@/lib/formatters/duration";
 
 const dayLabels = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
 
@@ -49,20 +51,27 @@ function formatDateLabel(value: string) {
 function KpiGrid({
   totalCalls,
   activeNow,
-  avgDuration,
+  avgDurationSeconds,
   satisfaction,
   totalCost,
+  locale,
 }: {
   totalCalls: number;
   activeNow: number;
-  avgDuration: string;
+  avgDurationSeconds: number;
   satisfaction: number;
   totalCost?: number;
+  locale: string;
 }) {
+  const avgDurationLabel =
+    avgDurationSeconds > 0
+      ? formatDuration(avgDurationSeconds, locale, { includeSeconds: false })
+      : "—";
+
   const kpis = [
     { label: "Appels", value: totalCalls, footer: "7 derniers jours" },
     { label: "Actifs", value: activeNow, footer: "en direct" },
-    { label: "Durée moyenne", value: avgDuration, footer: "min par appel" },
+    { label: "Durée moyenne", value: avgDurationLabel, footer: "par appel" },
     { label: "Satisfaction", value: `${Math.round(satisfaction * 100)}%`, footer: "score moyen" },
     { label: "Coûts", value: totalCost ? `${totalCost.toFixed(2)} €` : "—", footer: "période" },
   ];
@@ -248,6 +257,7 @@ function RecentCalls({ calls }: { calls: CallSummary[] }) {
 }
 
 export function AnalyticsDashboard() {
+  const locale = useLocale();
   const [mounted, setMounted] = useState(false);
   const setCalls = useCallsStore((state) => state.setCalls);
 
@@ -317,9 +327,10 @@ export function AnalyticsDashboard() {
         <KpiGrid
           totalCalls={overview.totalCalls}
           activeNow={overview.activeNow}
-          avgDuration={overview.avgDuration}
+          avgDurationSeconds={overview.avgDurationSeconds}
           satisfaction={overview.satisfaction}
           totalCost={overview.totalCost}
+          locale={locale}
         />
       )}
 

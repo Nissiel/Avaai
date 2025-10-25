@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const response = await fetch(`${API_URL}/api/auth/me`, {
+    const response = await fetch(`${API_URL}/api/v1/auth/me`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -56,7 +56,7 @@ export async function PATCH(request: NextRequest) {
 
     const body = await request.json();
 
-    const response = await fetch(`${API_URL}/api/auth/me`, {
+    const response = await fetch(`${API_URL}/api/v1/auth/me`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",

@@ -24,7 +24,7 @@ function getEmptyAnalytics(): DashboardAnalytics {
     overview: {
       totalCalls: 0,
       activeNow: 0,
-      avgDuration: "0s",
+      avgDurationSeconds: 0,
       satisfaction: 0,
       totalCost: 0,
       period: {

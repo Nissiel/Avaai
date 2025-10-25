@@ -158,17 +158,17 @@ export default function ContactDetailPage({ params }: ContactDetailPageProps) {
   if (!isFetching && !contactAggregate) {
     return (
       <section className="space-y-8">
-        <FuturisticButton
+        <Button
           asChild
           variant="ghost"
           size="sm"
-          className="gap-2 px-3 py-1 text-xs font-medium uppercase tracking-[0.18em]"
+          className="gap-2 rounded-full px-3 py-1 text-xs font-medium uppercase tracking-[0.18em]"
         >
           <Link href={`/${locale}/app/contacts`}>
             <ArrowLeft className="h-3.5 w-3.5" />
             {t("back")}
           </Link>
-        </FuturisticButton>
+        </Button>
         <GlassCard className="rounded-3xl border border-border/60 bg-background/80 p-10 text-center">
           <Sparkles className="mx-auto h-10 w-10 text-muted-foreground/60" />
           <p className="mt-4 text-lg font-semibold text-foreground">{t("notFound.title")}</p>
@@ -181,17 +181,17 @@ export default function ContactDetailPage({ params }: ContactDetailPageProps) {
   return (
     <section className="space-y-8">
       <div className="flex items-center gap-3">
-        <FuturisticButton
+        <Button
           asChild
           variant="ghost"
           size="sm"
-          className="gap-2 px-3 py-1 text-xs font-medium uppercase tracking-[0.18em]"
+          className="gap-2 rounded-full px-3 py-1 text-xs font-medium uppercase tracking-[0.18em]"
         >
           <Link href={`/${locale}/app/contacts`}>
             <ArrowLeft className="h-3.5 w-3.5" />
             {t("back")}
           </Link>
-        </FuturisticButton>
+        </Button>
         <Badge variant="brand" className="text-[10px] uppercase tracking-[0.14em]">
           {t("badge")}
         </Badge>
@@ -359,11 +359,15 @@ function ContactCallTimelineItem({
     ? formatDistanceToNow(startedAtDate, { addSuffix: true, locale: dateLocale })
     : null;
 
-  const currencyFormatter = new Intl.NumberFormat(locale, {
-    style: "currency",
-    currency: CURRENCY_BY_LOCALE[locale as SupportedLocale] ?? "USD",
-    maximumFractionDigits: 2,
-  });
+  const currencyFormatter = React.useMemo(
+    () =>
+      new Intl.NumberFormat(locale, {
+        style: "currency",
+        currency: CURRENCY_BY_LOCALE[locale as SupportedLocale] ?? "USD",
+        maximumFractionDigits: 2,
+      }),
+    [locale],
+  );
 
   const durationLabel = call.durationSeconds
     ? formatDuration(call.durationSeconds, locale)
