@@ -23,6 +23,13 @@ import {
 } from "@/components/ui/form";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import {
+  createSessionFromTokenResponse,
+  getBackendBaseUrl,
+  persistSession,
+  type AuthTokenResponse,
+} from "@/lib/auth/session-client";
+import { useSessionStore } from "@/stores/session-store";
 
 // ============================================================================
 // Validation Schema
@@ -91,6 +98,8 @@ export function SignupForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [phoneType, setPhoneType] = useState<"valid" | "invalid" | "empty">("empty");
   const [passwordStrength, setPasswordStrength] = useState({ score: 0, label: "", color: "" });
+  const setSession = useSessionStore((state) => state.setSession);
+  const backendBaseUrl = getBackendBaseUrl();
 
   const form = useForm<SignupValues>({
     resolver: zodResolver(signupSchema),
@@ -124,7 +133,7 @@ export function SignupForm() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("http://localhost:8000/api/v1/auth/signup", {
+      const response = await fetch(`${backendBaseUrl}/api/v1/auth/signup`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -138,15 +147,21 @@ export function SignupForm() {
         }),
       });
 
-      const data = await response.json();
+      const data: AuthTokenResponse & { detail?: string } = await response.json();
 
       if (!response.ok) {
         throw new Error(data.detail || "Erreur lors de l'inscription");
       }
 
       // Store tokens in localStorage
-      localStorage.setItem("access_token", data.access_token);
-      localStorage.setItem("refresh_token", data.refresh_token);
+      if (typeof window !== "undefined") {
+        localStorage.setItem("access_token", data.access_token);
+        localStorage.setItem("refresh_token", data.refresh_token);
+
+        const sessionPayload = createSessionFromTokenResponse(data);
+        setSession(sessionPayload);
+        persistSession(sessionPayload);
+      }
 
       toast.success("Compte créé avec succès !", {
         description: "Bienvenue sur AVA !",

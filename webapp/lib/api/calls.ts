@@ -87,3 +87,30 @@ export async function getCallRecording(callId: string): Promise<{ recordingUrl: 
   const parsed = schema.parse(data);
   return { recordingUrl: parsed.recording_url };
 }
+
+export interface SendTranscriptEmailResponse {
+  status: string;
+  message: string;
+  email_id: string;
+}
+
+/**
+ * Send call transcript via email to the authenticated user
+ * 
+ * @param callId - The ID of the call
+ * @returns Promise resolving to email send result
+ */
+export async function sendCallTranscriptEmail(callId: string): Promise<SendTranscriptEmailResponse> {
+  const res = await fetch(`/api/calls/${callId}/email`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ detail: "Failed to send email" }));
+    throw new Error(error.detail || `Failed to send transcript email`);
+  }
+
+  return res.json();
+}

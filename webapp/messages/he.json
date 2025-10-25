@@ -86,7 +86,32 @@
     "signIn": "התחברות",
     "privacy": "פרטיות",
     "terms": "תנאים",
-    "security": "אבטחה"
+    "security": "אבטחה",
+    "product": "מוצר",
+    "resources": "משאבים",
+    "support": "תמיכה",
+    "taglineFooter": "העוזרת הקולית שלא מפספסת אף הזדמנות, 24/7.",
+    "fallback": {
+      "badge": "Ava Studio",
+      "title": "הקבלה הקולית שתמיד זמינה",
+      "subtitle": "תכננו והשיקו עוזרת טלפונית שמקבלת שיחות, מסננת לידים וקובעת פגישות תוך דקות ספורות.",
+      "primary": "התחילו עכשיו",
+      "secondary": "צפו בהדגמה",
+      "stats": {
+        "calls": {
+          "value": "99.9%",
+          "label": "שיחות נענות"
+        },
+        "csat": {
+          "value": "4.9/5",
+          "label": "ציון שביעות רצון"
+        },
+        "setup": {
+          "value": "3 דק׳",
+          "label": "הגדרה ממוצעת"
+        }
+      }
+    }
   },
   "errors": {
     "404": {
@@ -136,5 +161,186 @@
     },
     "pageTitle": "אונבורדינג אווה",
     "pageSubtitle": "השלימו את השלבים כדי להפעיל את אווה. תמיד אפשר לחזור אליהם מ-Ava Studio."
+  },
+  "sidebarNav": {
+    "dashboard": "לוח מחוונים",
+    "assistants": "עוזרים",
+    "calls": "שיחות",
+    "analytics": "ניתוחים",
+    "settings": "הגדרות"
+  },
+  "sidebarTip": {
+    "title": "🎯 טיפ",
+    "body": "לחצו ‎⌘K כדי לפתוח את חלונית הפקודות ולהתקדם מהר יותר."
+  },
+  "localeSwitcher": {
+    "ariaLabel": "שינוי שפה",
+    "active": "פעיל"
+  },
+  "dashboardPage": {
+    "title": "לוח מחוונים",
+    "subtitle": "ברוך שובך! כך נראית הפעילות של העוזרות של Ava.",
+    "cta": "עוזר חדש",
+    "loading": "טוען את לוח המחוונים...",
+    "error": "שגיאה בטעינת לוח המחוונים",
+    "stats": {
+      "totalCalls": "סה\"כ שיחות",
+      "activeUsers": "משתמשים פעילים",
+      "avgDuration": "משך ממוצע",
+      "successRate": "שיעור הצלחה",
+      "totalCost": "עלות"
+    },
+    "statsHelpers": {
+      "totalCalls": "7 הימים האחרונים",
+      "avgDuration": "דקות לשיחה",
+      "successRate": "שיחות שהסתיימו ללא הסלמה",
+      "totalCost": "תקופת חיוב"
+    },
+    "recent": {
+      "title": "שיחות אחרונות",
+      "loading": "טוען...",
+      "empty": "אין שיחות עדיין",
+      "unknownNumber": "מספר לא מוכר",
+      "noTranscript": "אין תמלול זמין",
+      "view": "צפה",
+      "send": "שלח תמלול במייל",
+      "free": "ללא עלות",
+      "toastSuccess": "התמלול נשלח במייל!",
+      "toastError": "שליחת התמלול נכשלה"
+    }
+  },
+  "assistantsPage": {
+    "title": "עוזרים",
+    "subtitle": "נהלו את דמויות הקול, התאימו אישיות וחברו למספרים.",
+    "cta": "יצירת עוזר",
+    "list": {
+      "title": "העוזרים שלך",
+      "description": "הם יופיעו כאן מיד כשהם מסונכרנים מ-Vapi.",
+      "empty": "התחברו לחשבון Vapi כדי לראות עוזרים קיימים."
+    }
+  },
+  "callsPage": {
+    "title": "שיחות",
+    "subtitle": "{count} שיחות נותחו • שיחות חדשות מוזרמות בזמן אמת",
+    "searchPlaceholder": "חיפוש מהיר (מספר, עוזר, תמלול...)",
+    "statusPlaceholder": "סטטוס",
+    "status": {
+      "any": "כל הסטטוסים",
+      "in-progress": "בתהליך",
+      "ended": "הושלמו",
+      "failed": "נכשלו"
+    },
+    "duration": "{minutes}דק {seconds}שנ'",
+    "unknownNumber": "מספר לא מוכר",
+    "noTranscript": "אין תמלול זמין",
+    "empty": "לא נמצאו שיחות לתצוגה זו."
+  },
+  "settingsPage": {
+    "header": {
+      "title": "הגדרות",
+      "subtitle": "נהלו את הפרטים האישיים וקבעו את הגדרות הסטודיו של Ava."
+    },
+    "tabs": {
+      "profile": "פרופיל",
+      "studio": "הגדרות סטודיו"
+    },
+    "profile": {
+      "title": "פרופיל משתמש",
+      "description": "הפרטים שלכם מוצגים בהתראות ובתקשורת עם לקוחות.",
+      "form": {
+        "name": "שם מלא",
+        "email": "אימייל",
+        "phone": "טלפון (אופציונלי)",
+        "phonePlaceholder": "+972 50 123 4567",
+        "locale": "שפה ברירת מחדל"
+      },
+      "actions": {
+        "reset": "איפוס",
+        "save": "שמירה",
+        "saving": "שומר..."
+      },
+      "messages": {
+        "success": "הפרופיל עודכן בהצלחה",
+        "error": "לא ניתן לעדכן את הפרופיל",
+        "sessionExpired": "תם תוקף ההתחברות. אנא התחברו מחדש."
+      },
+      "errors": {
+        "nameMin": "השם חייב להכיל לפחות 2 תווים",
+        "nameMax": "השם לא יכול לעלות על 100 תווים",
+        "email": "אנא הזינו אימייל תקין",
+        "phone": "הזינו מספר בינלאומי (+972 ...)",
+        "locale": "בחרו שפה"
+      }
+    },
+    "studio": {
+      "title": "הגדרות סטודיו",
+      "description": "הגדירו את זהות הארגון ואת האישיות של Ava.",
+      "refresh": "רענון",
+      "loading": "טוען את הגדרות הסטודיו…",
+      "error": "לא הצלחנו לטעון את ההגדרות. נסו שוב.",
+      "form": {
+        "organizationName": "שם הארגון",
+        "adminEmail": "אימייל מנהל",
+        "timezone": "אזור זמן",
+        "language": "שפה ראשית",
+        "persona": "דמות של Ava",
+        "tone": "טון דיבור",
+        "guidelines": "הנחיות",
+        "phoneNumber": "מספר ראשי",
+        "businessHours": "שעות פעילות",
+        "fallbackEmail": "אימייל גיבוי",
+        "summaryEmail": "אימייל סיכומים",
+        "smtpServer": "שרת SMTP",
+        "smtpPort": "פורט SMTP",
+        "smtpUsername": "שם משתמש SMTP",
+        "smtpPassword": "סיסמת SMTP"
+      },
+      "smtpDescription": "הגדירו את כתובת השולח לדוחות ולהתראות האוטומטיות.",
+      "actions": {
+        "reset": "איפוס",
+        "save": "שמירה",
+        "saving": "שומר..."
+      },
+      "messages": {
+        "success": "ההגדרות נשמרו בהצלחה",
+        "error": "לא ניתן לשמור את ההגדרות"
+      },
+      "errors": {
+        "required": "אנא מלאו את השדה",
+        "email": "הזינו כתובת אימייל תקינה"
+      },
+      "options": {
+        "timezone": {
+          "europe/paris": "אירופה / פריז",
+          "america/new_york": "אמריקה / ניו יורק",
+          "asia/tokyo": "אסיה / טוקיו"
+        },
+        "language": {
+          "fr": "צרפתית",
+          "en": "אנגלית",
+          "es": "ספרדית"
+        },
+        "persona": {
+          "secretary": "עוזרת מנהלים",
+          "concierge": "קונסיירז' פרימיום",
+          "sdr": "פיתוח מכירות",
+          "cs": "שירות לקוחות"
+        },
+        "tone": {
+          "warm": "חמים",
+          "professional": "מקצועי",
+          "energetic": "אנרגטי"
+        }
+      }
+    }
+  },
+  "analyticsPage": {
+    "title": "ניתוחים מפורטים",
+    "subtitle": "עקבו אחרי נפח השיחות, תחושות והנושאים המרכזיים בזמן אמת כדי לייעל את Ava."
+  },
+  "userMenu": {
+    "signedInAs": "מחוברים בשם",
+    "profile": "פרופיל",
+    "studio": "הגדרות סטודיו"
   }
 }

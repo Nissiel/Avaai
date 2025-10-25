@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from api.src.infrastructure.external.vapi_client import VapiApiError, VapiClient
 from api.src.presentation.dependencies.auth import CurrentTenant, get_current_tenant
+from api.src.core.settings import get_settings
 
 router = APIRouter(prefix="/assistants", tags=["Assistants"])
 
@@ -76,6 +77,16 @@ async def create_assistant(
     After onboarding: Should validate tenant ownership
     """
     client = _client()
+    settings = get_settings()
+    
+    # DIVINE: Safe metadata handling - use empty dict if None
+    metadata = request.metadata or {}
+    
+    # TODO: Add function calling for caller info collection
+    # Vapi requires specific format for functions - needs investigation
+    # For now, create assistant without functions to unblock onboarding
+    functions = None  # Disabled temporarily due to Vapi format requirements
+    
     try:
         assistant = await client.create_assistant(
             name=request.name,
@@ -86,9 +97,16 @@ async def create_assistant(
             model=request.model,
             temperature=request.temperature,
             max_tokens=request.max_tokens,
-            metadata=request.metadata,
+            metadata=metadata,  # Use safe metadata
+            functions=functions,  # Disabled temporarily - Vapi format issue
         )
     except VapiApiError as exc:
+        # DIVINE: Log the full error for debugging
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Vapi API error creating assistant: {exc}")
+        logger.error(f"Request payload - name: {request.name}, voice: {request.voice_provider}/{request.voice_id}")
+        
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY, 
             detail=f"Failed to create assistant: {str(exc)}"

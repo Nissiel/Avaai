@@ -7,7 +7,7 @@ All database operations are async and use SQLAlchemy 2.x sessions.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -28,9 +28,9 @@ class UserRepository:
     async def create(
         self,
         email: str,
-        password: str | None = None,
-        phone: str | None = None,
-        name: str | None = None,
+        password: Optional[str] = None,
+        phone: Optional[str] = None,
+        name: Optional[str] = None,
         locale: str = "en",
     ) -> User:
         """

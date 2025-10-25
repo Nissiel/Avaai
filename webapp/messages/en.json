@@ -91,7 +91,32 @@
     "signIn": "Sign in",
     "privacy": "Privacy",
     "terms": "Terms",
-    "security": "Security"
+    "security": "Security",
+    "product": "Product",
+    "resources": "Resources",
+    "support": "Support",
+    "taglineFooter": "The AI receptionist that captures every opportunity 24/7.",
+    "fallback": {
+      "badge": "Ava Studio",
+      "title": "Your AI receptionist is always available",
+      "subtitle": "Design, launch, and operate a human-level voice assistant that greets callers, qualifies leads, and schedules appointments in minutes.",
+      "primary": "Start now",
+      "secondary": "Watch the demo",
+      "stats": {
+        "calls": {
+          "value": "99.9%",
+          "label": "Calls answered"
+        },
+        "csat": {
+          "value": "4.9/5",
+          "label": "Satisfaction score"
+        },
+        "setup": {
+          "value": "3 min",
+          "label": "Average setup"
+        }
+      }
+    }
   },
   "errors": {
     "404": {
@@ -141,5 +166,186 @@
     },
     "pageTitle": "Ava onboarding",
     "pageSubtitle": "Complete the steps to launch Ava. You can revisit them anytime from Ava Studio."
+  },
+  "sidebarNav": {
+    "dashboard": "Dashboard",
+    "assistants": "Assistants",
+    "calls": "Calls",
+    "analytics": "Analytics",
+    "settings": "Settings"
+  },
+  "sidebarTip": {
+    "title": "Pro tip",
+    "body": "Press ⌘K to open the command palette and move faster."
+  },
+  "localeSwitcher": {
+    "ariaLabel": "Change language",
+    "active": "Active"
+  },
+  "dashboardPage": {
+    "title": "Dashboard",
+    "subtitle": "Welcome back! Here's what's happening with your Ava assistants.",
+    "cta": "New assistant",
+    "loading": "Loading dashboard...",
+    "error": "Error loading dashboard",
+    "stats": {
+      "totalCalls": "Total calls",
+      "activeUsers": "Active users",
+      "avgDuration": "Avg duration",
+      "successRate": "Success rate",
+      "totalCost": "Spend"
+    },
+    "statsHelpers": {
+      "totalCalls": "Last 7 days",
+      "avgDuration": "Minutes per call",
+      "successRate": "Completed without escalation",
+      "totalCost": "Current billing period"
+    },
+    "recent": {
+      "title": "Recent calls",
+      "loading": "Loading...",
+      "empty": "No calls yet",
+      "unknownNumber": "Unknown number",
+      "noTranscript": "No transcript available",
+      "view": "View",
+      "send": "Email transcript",
+      "free": "Free",
+      "toastSuccess": "Transcript emailed successfully!",
+      "toastError": "Failed to send transcript"
+    }
+  },
+  "assistantsPage": {
+    "title": "Assistants",
+    "subtitle": "Manage your voice personas, adjust their personality, and connect them to numbers.",
+    "cta": "Create assistant",
+    "list": {
+      "title": "Your assistants",
+      "description": "They will appear here as soon as they sync from Vapi.",
+      "empty": "Connect your Vapi account to display existing assistants."
+    }
+  },
+  "callsPage": {
+    "title": "Calls",
+    "subtitle": "{count} calls analysed • New calls stream in real time",
+    "searchPlaceholder": "Quick search (number, assistant, transcript...)",
+    "statusPlaceholder": "Status",
+    "status": {
+      "any": "All statuses",
+      "in-progress": "In progress",
+      "ended": "Completed",
+      "failed": "Failed"
+    },
+    "duration": "{minutes}m {seconds}s",
+    "unknownNumber": "Unknown number",
+    "noTranscript": "No transcript available",
+    "empty": "No calls match this filter."
+  },
+  "settingsPage": {
+    "header": {
+      "title": "Settings",
+      "subtitle": "Manage your personal details and configure your Ava studio."
+    },
+    "tabs": {
+      "profile": "Profile",
+      "studio": "Studio settings"
+    },
+    "profile": {
+      "title": "User profile",
+      "description": "Your details appear in notifications and customer communications.",
+      "form": {
+        "name": "Full name",
+        "email": "Email",
+        "phone": "Phone (optional)",
+        "phonePlaceholder": "+1 415 555 0100",
+        "locale": "Default language"
+      },
+      "actions": {
+        "reset": "Reset",
+        "save": "Save",
+        "saving": "Saving..."
+      },
+      "messages": {
+        "success": "Profile updated successfully",
+        "error": "Unable to update profile",
+        "sessionExpired": "Session expired. Please sign in again."
+      },
+      "errors": {
+        "nameMin": "Name must contain at least 2 characters",
+        "nameMax": "Name cannot exceed 100 characters",
+        "email": "Please enter a valid email",
+        "phone": "Provide an international number (+1 ...)",
+        "locale": "Please select a language"
+      }
+    },
+    "studio": {
+      "title": "Studio settings",
+      "description": "Define your organisation identity and Ava personality.",
+      "refresh": "Refresh",
+      "loading": "Loading studio configuration…",
+      "error": "We couldn't load the configuration. Please try again.",
+      "form": {
+        "organizationName": "Organization name",
+        "adminEmail": "Admin email",
+        "timezone": "Timezone",
+        "language": "Primary language",
+        "persona": "Ava persona",
+        "tone": "Voice tone",
+        "guidelines": "Instructions & guidelines",
+        "phoneNumber": "Main number",
+        "businessHours": "Business hours",
+        "fallbackEmail": "Fallback email",
+        "summaryEmail": "Summary email",
+        "smtpServer": "SMTP server",
+        "smtpPort": "SMTP port",
+        "smtpUsername": "SMTP username",
+        "smtpPassword": "SMTP password"
+      },
+      "smtpDescription": "Configure the sender for automated reports and notifications.",
+      "actions": {
+        "reset": "Reset",
+        "save": "Save",
+        "saving": "Saving..."
+      },
+      "messages": {
+        "success": "Studio configuration updated successfully",
+        "error": "Unable to save configuration"
+      },
+      "errors": {
+        "required": "Please fill in this field",
+        "email": "Enter a valid email"
+      },
+      "options": {
+        "timezone": {
+          "europe/paris": "Europe / Paris",
+          "america/new_york": "America / New York",
+          "asia/tokyo": "Asia / Tokyo"
+        },
+        "language": {
+          "fr": "French",
+          "en": "English",
+          "es": "Spanish"
+        },
+        "persona": {
+          "secretary": "Executive assistant",
+          "concierge": "Premium concierge",
+          "sdr": "Sales development",
+          "cs": "Customer success"
+        },
+        "tone": {
+          "warm": "Warm",
+          "professional": "Professional",
+          "energetic": "Energetic"
+        }
+      }
+    }
+  },
+  "analyticsPage": {
+    "title": "Detailed analytics",
+    "subtitle": "Track call volume, sentiment, and key topics in real time to optimise Ava."
+  },
+  "userMenu": {
+    "signedInAs": "Signed in as",
+    "profile": "Profile",
+    "studio": "Studio settings"
   }
 }

@@ -8,7 +8,7 @@ from collections import Counter, defaultdict
 from datetime import datetime, timedelta, timezone
 from math import sqrt
 from statistics import mean
-from typing import Any, Dict, Iterable, List, Sequence
+from typing import Any, Dict, Iterable, List, Optional, Sequence
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -76,7 +76,7 @@ def _as_call_record(raw: dict[str, Any], tenant_id) -> CallRecord:
         ended_at=ended_at,
         duration_seconds=_safe_int(raw.get("durationSeconds")),
         cost=_safe_float(raw.get("cost")),
-        metadata=raw,
+        meta=raw,  # Fixed: was 'metadata', should be 'meta'
         transcript=_extract_transcript(raw),
     )
     return record
@@ -96,7 +96,7 @@ def _safe_float(value: Any) -> float | None:
         return None
 
 
-def _extract_transcript(raw: dict[str, Any]) -> str | None:
+def _extract_transcript(raw: dict[str, Any]) -> Optional[str]:
     transcript = raw.get("transcript")
     if isinstance(transcript, str):
         return transcript

@@ -24,7 +24,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ...infrastructure.persistence.models.tenant import Tenant
 from ...infrastructure.database.session import get_session
 
-bearer_scheme = HTTPBearer(auto_error=True)
+# Development mode: Optional auth for local testing
+DEV_MODE = os.getenv("ENVIRONMENT", "development") == "development"
+
+bearer_scheme = HTTPBearer(auto_error=not DEV_MODE)
 
 
 class Role:
@@ -33,7 +36,7 @@ class Role:
     VIEWER = "viewer"
 
 
-@dataclass(slots=True)
+@dataclass
 class CurrentTenant:
     """Represents the authenticated tenant and user roles."""
 
@@ -57,10 +60,21 @@ async def _parse_token(token: str) -> dict:
 
 
 async def get_current_tenant(
-    credentials: Annotated[HTTPAuthorizationCredentials, Security(bearer_scheme)],
-    session: Annotated[AsyncSession, Depends(get_session)],
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Security(bearer_scheme)] = None,
+    session: Annotated[AsyncSession, Depends(get_session)] = None,
 ) -> CurrentTenant:
-    """Resolve the tenant and enforce owner/admin RBAC."""
+    """Resolve the tenant and enforce owner/admin RBAC.
+    
+    In DEV mode, if no credentials provided, uses default tenant for testing.
+    """
+    
+    # DEV MODE: Create/use default tenant if no auth
+    if DEV_MODE and credentials is None:
+        return await _get_dev_tenant(session)
+    
+    # PRODUCTION: Require auth
+    if credentials is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required")
 
     payload = await _parse_token(credentials.credentials)
     tenant_id_raw = payload.get("tenant_id")
@@ -83,3 +97,28 @@ async def get_current_tenant(
     current = CurrentTenant(tenant=tenant, roles=roles, user_id=user_id)
     current.require_roles({Role.OWNER, Role.ADMIN})
     return current
+
+
+async def _get_dev_tenant(session: AsyncSession) -> CurrentTenant:
+    """Get or create default dev tenant for local testing."""
+    from sqlalchemy import select
+    
+    # Try to get first tenant
+    result = await session.execute(select(Tenant).limit(1))
+    tenant = result.scalar_one_or_none()
+    
+    # Create default if none exists
+    if not tenant:
+        tenant = Tenant(
+            id=uuid.UUID("00000000-0000-0000-0000-000000000001"),
+            name="Dev Tenant",
+        )
+        session.add(tenant)
+        await session.commit()
+        await session.refresh(tenant)
+    
+    return CurrentTenant(
+        tenant=tenant,
+        roles={Role.OWNER, Role.ADMIN},
+        user_id=uuid.UUID("00000000-0000-0000-0000-000000000001"),
+    )

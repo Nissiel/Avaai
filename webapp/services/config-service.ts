@@ -3,6 +3,7 @@ import "server-only";
 import { backendConfig } from "@/services/backend-service";
 
 export interface StudioConfig {
+  // Organization
   organizationName: string;
   adminEmail: string;
   timezone: string;
@@ -14,10 +15,32 @@ export interface StudioConfig {
   businessHours: string;
   fallbackEmail: string;
   summaryEmail: string;
+  
+  // SMTP (deprecated but kept for backward compatibility)
   smtpServer: string;
   smtpPort: string;
   smtpUsername: string;
   smtpPassword: string;
+  
+  // AI Performance (NEW)
+  aiModel: string;
+  aiTemperature: number;
+  aiMaxTokens: number;
+  
+  // Voice Settings (NEW)
+  voiceProvider: string;
+  voiceId: string;
+  voiceSpeed: number;
+  
+  // Conversation Behavior (NEW)
+  systemPrompt: string;
+  firstMessage: string;
+  askForName: boolean;
+  askForEmail: boolean;
+  askForPhone: boolean;
+  
+  // Vapi Integration (NEW)
+  vapiAssistantId: string | null;
 }
 
 export type StudioConfigUpdate = Partial<StudioConfig>;

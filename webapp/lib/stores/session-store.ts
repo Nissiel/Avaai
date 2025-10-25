@@ -1,9 +1,10 @@
 import { create } from "zustand";
-import type { Session } from "next-auth";
+
+import type { AvaSession } from "@/lib/auth/session-client";
 
 type SessionState = {
-  session: Session | null;
-  setSession: (session: Session | null) => void;
+  session: AvaSession | null;
+  setSession: (session: AvaSession | null) => void;
 };
 
 export const useSessionStore = create<SessionState>((set) => ({

@@ -5,7 +5,7 @@ Repository functions for persisting and querying call records.
 from __future__ import annotations
 
 from datetime import datetime, timedelta
-from typing import Iterable, Sequence
+from typing import Iterable, Optional, Sequence
 
 from sqlalchemy import Select, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -29,7 +29,7 @@ async def upsert_calls(session: AsyncSession, calls: Iterable[CallRecord]) -> No
 async def get_recent_calls(
     session: AsyncSession,
     *,
-    tenant_id: str | None = None,
+    tenant_id: Optional[str] = None,
     since: datetime | None = None,
     limit: int = 100,
 ) -> Sequence[CallRecord]:

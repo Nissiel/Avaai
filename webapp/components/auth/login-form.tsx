@@ -22,6 +22,13 @@ import {
 } from "@/components/ui/form";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import {
+  createSessionFromTokenResponse,
+  getBackendBaseUrl,
+  persistSession,
+  type AuthTokenResponse,
+} from "@/lib/auth/session-client";
+import { useSessionStore } from "@/stores/session-store";
 
 // ============================================================================
 // Validation Schema
@@ -61,6 +68,8 @@ export function LoginForm() {
   const locale = useLocale(); // Get current locale: "fr", "en", or "he"
   const [isLoading, setIsLoading] = useState(false);
   const [identifierType, setIdentifierType] = useState<"email" | "phone" | "unknown">("unknown");
+  const setSession = useSessionStore((state) => state.setSession);
+  const backendBaseUrl = getBackendBaseUrl();
 
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
@@ -80,7 +89,7 @@ export function LoginForm() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("http://localhost:8000/api/v1/auth/login", {
+      const response = await fetch(`${backendBaseUrl}/api/v1/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -90,7 +99,7 @@ export function LoginForm() {
         }),
       });
 
-      const data = await response.json();
+      const data: AuthTokenResponse & { detail?: string } = await response.json();
 
       if (!response.ok) {
         // Gestion des erreurs backend
@@ -105,6 +114,10 @@ export function LoginForm() {
         if (values.remember) {
           localStorage.setItem("remember_me", "true");
         }
+
+        const sessionPayload = createSessionFromTokenResponse(data);
+        setSession(sessionPayload);
+        persistSession(sessionPayload);
       }
 
       toast.success("Connexion réussie !", {

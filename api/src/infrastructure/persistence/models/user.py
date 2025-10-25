@@ -8,6 +8,7 @@ Stores authentication credentials, profile info, and onboarding state.
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Optional
 from uuid import uuid4
 
 from sqlalchemy import Boolean, DateTime, Integer, String
@@ -37,23 +38,23 @@ class User(Base):
         nullable=False,
         index=True,
     )
-    phone: Mapped[str | None] = mapped_column(
+    phone: Mapped[Optional[str]] = mapped_column(
         String(20),
         unique=True,
         nullable=True,
         index=True,
     )
-    password: Mapped[str | None] = mapped_column(
+    password: Mapped[Optional[str]] = mapped_column(
         String(255),
         nullable=True,  # Nullable for OAuth-only users
     )
 
     # Profile fields
-    name: Mapped[str | None] = mapped_column(
+    name: Mapped[Optional[str]] = mapped_column(
         String(255),
         nullable=True,
     )
-    image: Mapped[str | None] = mapped_column(
+    image: Mapped[Optional[str]] = mapped_column(
         String(512),
         nullable=True,
     )

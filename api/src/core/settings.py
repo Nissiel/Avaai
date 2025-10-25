@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 from functools import lru_cache
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 from pydantic import field_validator
 from pydantic_settings import BaseSettings
@@ -18,8 +18,13 @@ class Settings(BaseSettings):
     database_url: str  # No default - must be set in .env (PostgreSQL required)
     log_level: str = "INFO"
     vapi_base_url: str = "https://api.vapi.ai"
-    vapi_api_key: str | None = None
+    vapi_api_key: Optional[str] = None
     jwt_secret_key: str = "CHANGE_ME_IN_PRODUCTION_USE_ENV_VAR"
+    
+    # Email settings (Resend)
+    resend_api_key: Optional[str] = None
+    resend_domain: str = "avaai.app"
+    app_url: str = "http://localhost:3000"
 
     @field_validator("allowed_origins", mode="after")
     @classmethod

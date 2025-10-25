@@ -43,21 +43,21 @@ class VapiClient:
         return response.text
 
     async def list_assistants(self, *, limit: int = 50) -> Sequence[dict]:
-        data = await self._request("GET", "/assistants", params={"limit": limit})
-        return data.get("items", data)
+        data = await self._request("GET", "/assistant", params={"limit": limit})
+        return data.get("items", data) if isinstance(data, dict) else data
 
-    async def list_calls(self, *, limit: int = 100, status: str | None = None) -> Sequence[dict]:
+    async def list_calls(self, *, limit: int = 100, status: Optional[str] = None) -> Sequence[dict]:
         params: Dict[str, Any] = {"limit": limit}
         if status:
             params["status"] = status
-        data = await self._request("GET", "/calls", params=params)
-        return data.get("items", data)
+        data = await self._request("GET", "/call", params=params)
+        return data if isinstance(data, list) else data.get("items", data)
 
     async def get_call(self, call_id: str) -> dict:
-        return await self._request("GET", f"/calls/{call_id}")
+        return await self._request("GET", f"/call/{call_id}")
 
     async def get_assistant(self, assistant_id: str) -> dict:
-        return await self._request("GET", f"/assistants/{assistant_id}")
+        return await self._request("GET", f"/assistant/{assistant_id}")
 
     async def create_assistant(
         self,
@@ -70,7 +70,10 @@ class VapiClient:
         model: str = "gpt-3.5-turbo",
         temperature: float = 0.7,
         max_tokens: int = 250,
+        voice_speed: float = 1.0,
+        system_prompt: str | None = None,
         metadata: dict | None = None,
+        functions: list[dict] | None = None,
     ) -> dict:
         """
         Create a new AI assistant in Vapi.
@@ -84,33 +87,194 @@ class VapiClient:
             model: Model name (e.g., "gpt-3.5-turbo")
             temperature: Model creativity (0.0-1.0)
             max_tokens: Max response length
+            voice_speed: Voice speed multiplier (0.5-2.0, default 1.0)
+            system_prompt: Custom system instructions for the AI
             metadata: Optional metadata
+            functions: Optional custom functions for function calling
         
         Returns:
             Assistant object with 'id' (UUID), 'name', 'voice', 'model', etc.
         """
+        # Build voice config with speed
+        voice_config: dict = {
+            "provider": voice_provider,
+            "voiceId": voice_id,
+        }
+        
+        # Add speed if supported by provider (11labs, azure, deepgram)
+        if voice_provider in ("11labs", "azure", "deepgram") and voice_speed != 1.0:
+            voice_config["speed"] = voice_speed
+        
+        # Build model config
+        model_config: dict = {
+            "provider": model_provider,
+            "model": model,
+            "temperature": temperature,
+            "maxTokens": max_tokens,
+        }
+        
+        # Add system prompt if provided
+        if system_prompt:
+            model_config["messages"] = [
+                {
+                    "role": "system",
+                    "content": system_prompt
+                }
+            ]
+        
         payload = {
             "name": name,
-            "voice": {
-                "provider": voice_provider,
-                "voiceId": voice_id,
-            },
-            "model": {
-                "provider": model_provider,
-                "model": model,
-                "temperature": temperature,
-                "maxTokens": max_tokens,
-            },
+            "voice": voice_config,
+            "model": model_config,
             "firstMessage": first_message,
         }
         
         if metadata:
             payload["metadata"] = metadata
         
+        if functions:
+            payload["functions"] = functions
+        
         return await self._request("POST", "/assistant", json=payload)
 
+    async def update_assistant(
+        self,
+        assistant_id: str,
+        *,
+        name: str | None = None,
+        voice_provider: str | None = None,
+        voice_id: str | None = None,
+        first_message: str | None = None,
+        model_provider: str | None = None,
+        model: str | None = None,
+        temperature: float | None = None,
+        max_tokens: int | None = None,
+        voice_speed: float | None = None,
+        system_prompt: str | None = None,
+        metadata: dict | None = None,
+        functions: list[dict] | None = None,
+    ) -> dict:
+        """
+        Update an existing AI assistant in Vapi.
+        
+        Only provided fields will be updated. Others remain unchanged.
+        
+        Returns:
+            Updated assistant object
+        """
+        payload: dict = {}
+        
+        if name is not None:
+            payload["name"] = name
+        
+        # Voice config
+        if voice_provider or voice_id or voice_speed:
+            voice_config: dict = {}
+            if voice_provider:
+                voice_config["provider"] = voice_provider
+            if voice_id:
+                voice_config["voiceId"] = voice_id
+            if voice_speed is not None and voice_provider in ("11labs", "azure", "deepgram"):
+                voice_config["speed"] = voice_speed
+            if voice_config:
+                payload["voice"] = voice_config
+        
+        # Model config
+        if model_provider or model or temperature is not None or max_tokens or system_prompt:
+            model_config: dict = {}
+            if model_provider:
+                model_config["provider"] = model_provider
+            if model:
+                model_config["model"] = model
+            if temperature is not None:
+                model_config["temperature"] = temperature
+            if max_tokens:
+                model_config["maxTokens"] = max_tokens
+            if system_prompt:
+                model_config["messages"] = [{"role": "system", "content": system_prompt}]
+            if model_config:
+                payload["model"] = model_config
+        
+        if first_message is not None:
+            payload["firstMessage"] = first_message
+        
+        if metadata is not None:
+            payload["metadata"] = metadata
+        
+        if functions is not None:
+            payload["functions"] = functions
+        
+        return await self._request("PATCH", f"/assistant/{assistant_id}", json=payload)
+    
+    async def get_or_create_assistant(
+        self,
+        assistant_id: str | None,
+        *,
+        name: str,
+        voice_provider: str,
+        voice_id: str,
+        first_message: str,
+        model_provider: str = "openai",
+        model: str = "gpt-3.5-turbo",
+        temperature: float = 0.7,
+        max_tokens: int = 250,
+        voice_speed: float = 1.0,
+        system_prompt: str | None = None,
+        metadata: dict | None = None,
+        functions: list[dict] | None = None,
+    ) -> dict:
+        """
+        DIVINE METHOD: Get or create assistant intelligently.
+        
+        If assistant_id exists and assistant is found: UPDATE it
+        If assistant_id doesn't exist or assistant not found: CREATE new one
+        
+        Returns:
+            Assistant object (created or updated)
+        """
+        # Try to update existing assistant if ID provided
+        if assistant_id:
+            try:
+                existing = await self.get_assistant(assistant_id)
+                if existing:
+                    # Update existing assistant
+                    return await self.update_assistant(
+                        assistant_id,
+                        name=name,
+                        voice_provider=voice_provider,
+                        voice_id=voice_id,
+                        first_message=first_message,
+                        model_provider=model_provider,
+                        model=model,
+                        temperature=temperature,
+                        max_tokens=max_tokens,
+                        voice_speed=voice_speed,
+                        system_prompt=system_prompt,
+                        metadata=metadata,
+                        functions=functions,
+                    )
+            except VapiApiError:
+                # Assistant not found or error - will create new one
+                pass
+        
+        # Create new assistant
+        return await self.create_assistant(
+            name=name,
+            voice_provider=voice_provider,
+            voice_id=voice_id,
+            first_message=first_message,
+            model_provider=model_provider,
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            voice_speed=voice_speed,
+            system_prompt=system_prompt,
+            metadata=metadata,
+            functions=functions,
+        )
+
     async def call_transcript(self, call_id: str) -> dict:
-        return await self._request("GET", f"/calls/{call_id}/transcript")
+        return await self._request("GET", f"/call/{call_id}/transcript")
 
     async def analytics(self, *, period: str = "7d") -> dict:
         return await self._request("GET", "/analytics", params={"period": period})

@@ -15,6 +15,7 @@ from api.src.presentation.api.v1.routes import (
     tenant_profile,
     twilio,
     voices,
+    webhooks,
 )
 
 api_v1_router = APIRouter()
@@ -28,5 +29,6 @@ api_v1_router.include_router(voices.router)
 api_v1_router.include_router(twilio.router)
 api_v1_router.include_router(phone_numbers.router)
 api_v1_router.include_router(tenant_profile.router)
+api_v1_router.include_router(webhooks.router)
 
 __all__ = ["api_v1_router"]

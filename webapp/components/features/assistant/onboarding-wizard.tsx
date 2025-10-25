@@ -437,7 +437,7 @@ export function AvaOnboardingWizard() {
                         ❌ Une erreur est survenue
                       </p>
                       <FuturisticButton
-                        variant="secondary"
+                        variant="primary"
                         onClick={() => setState({ ...state, status: 'idle' })}
                       >
                         Réessayer

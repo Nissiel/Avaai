@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Area,
@@ -248,32 +248,42 @@ function RecentCalls({ calls }: { calls: CallSummary[] }) {
 }
 
 export function AnalyticsDashboard() {
+  const [mounted, setMounted] = useState(false);
   const setCalls = useCallsStore((state) => state.setCalls);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const overviewQuery = useQuery({
     queryKey: ["analytics", "overview"],
     queryFn: getAnalyticsOverview,
     staleTime: 60_000,
+    enabled: mounted,
   });
   const timeseriesQuery = useQuery({
     queryKey: ["analytics", "timeseries"],
     queryFn: getAnalyticsTimeseries,
     staleTime: 60_000,
+    enabled: mounted,
   });
   const topicsQuery = useQuery({
     queryKey: ["analytics", "topics"],
     queryFn: getAnalyticsTopics,
     staleTime: 300_000,
+    enabled: mounted,
   });
   const anomaliesQuery = useQuery({
     queryKey: ["analytics", "anomalies"],
     queryFn: getAnalyticsAnomalies,
     staleTime: 60_000,
+    enabled: mounted,
   });
   const heatmapQuery = useQuery({
     queryKey: ["analytics", "heatmap"],
     queryFn: getAnalyticsHeatmap,
     staleTime: 300_000,
+    enabled: mounted,
   });
 
   useEffect(() => {
@@ -289,11 +299,11 @@ export function AnalyticsDashboard() {
   const heatmap = heatmapQuery.data ?? [];
   const calls = overviewQuery.data?.calls ?? [];
 
-  const loadingOverview = overviewQuery.isLoading;
-  const loadingTimeseries = timeseriesQuery.isLoading;
-  const loadingTopics = topicsQuery.isLoading && !overviewQuery.data?.topics;
-  const loadingAnomalies = anomaliesQuery.isLoading;
-  const loadingHeatmap = heatmapQuery.isLoading;
+  const loadingOverview = !mounted || overviewQuery.isLoading;
+  const loadingTimeseries = !mounted || timeseriesQuery.isLoading;
+  const loadingTopics = !mounted || (topicsQuery.isLoading && !overviewQuery.data?.topics);
+  const loadingAnomalies = !mounted || anomaliesQuery.isLoading;
+  const loadingHeatmap = !mounted || heatmapQuery.isLoading;
 
   return (
     <div className="space-y-8">

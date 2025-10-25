@@ -1,7 +1,9 @@
 "use client";
 
 import * as React from "react";
+import type { Route } from "next";
 import { GaugeCircle, Bot, PhoneCall, LineChart, Settings, type LucideIcon } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
 
 import { NavLink } from "@/components/ui/nav-link";
@@ -14,19 +16,45 @@ export type SidebarNavItem = {
   exact?: boolean;
 };
 
-const NAV_ITEMS: SidebarNavItem[] = [
-  { label: "Dashboard", href: "/dashboard", icon: GaugeCircle, exact: true },
-  { label: "Assistants", href: "/assistants", icon: Bot },
-  { label: "Appels", href: "/calls", icon: PhoneCall },
-  { label: "Analytics", href: "/analytics", icon: LineChart },
-  { label: "Paramètres", href: "/settings", icon: Settings },
+type SidebarNavDefinition = {
+  labelKey: string;
+  path: string;
+  icon: LucideIcon;
+  exact?: boolean;
+};
+
+const NAV_DEFINITIONS: SidebarNavDefinition[] = [
+  { labelKey: "dashboard", path: "dashboard", icon: GaugeCircle, exact: true },
+  { labelKey: "assistants", path: "app/assistants", icon: Bot },
+  { labelKey: "calls", path: "app/calls", icon: PhoneCall },
+  { labelKey: "analytics", path: "analytics", icon: LineChart },
+  { labelKey: "settings", path: "settings", icon: Settings },
 ];
+
+function buildSidebarNavItems(locale: string, translate: (key: string) => string): SidebarNavItem[] {
+  const prefix = `/${locale}`.replace(/\/{2,}/g, "/");
+  return NAV_DEFINITIONS.map(({ path, labelKey, ...rest }) => ({
+    ...rest,
+    label: translate(labelKey),
+    href: `${prefix}/${path}`.replace(/\/{2,}/g, "/"),
+  }));
+}
+
+export function useSidebarNavItems(): SidebarNavItem[] {
+  const locale = useLocale();
+  const t = useTranslations("sidebarNav");
+  return React.useMemo(() => buildSidebarNavItems(locale, t), [locale, t]);
+}
 
 interface SidebarProps {
   className?: string;
 }
 
 export function Sidebar({ className }: SidebarProps) {
+  const items = useSidebarNavItems();
+  const homeHref = items[0]?.href ?? "/";
+  const tTip = useTranslations("sidebarTip");
+
   return (
     <aside
       className={cn(
@@ -35,23 +63,23 @@ export function Sidebar({ className }: SidebarProps) {
       )}
     >
       <div className="flex items-center justify-between px-5 py-6">
-        <Link href="/dashboard" className="text-lg font-semibold tracking-[-0.04em]">
+        <Link href={homeHref as Route} className="text-lg font-semibold tracking-[-0.04em]">
           Ava Studio
         </Link>
       </div>
       <nav className="flex-1 space-y-1 px-3">
-        {NAV_ITEMS.map((item) => (
+        {items.map((item) => (
           <NavLink key={item.href} href={item.href} label={item.label} icon={item.icon} exact={item.exact} />
         ))}
       </nav>
       <div className="px-4 pb-6">
         <div className="rounded-2xl border border-dashed border-border/60 bg-muted/40 p-4 text-xs text-muted-foreground">
-          <p className="font-semibold text-foreground">🎯 Astuce</p>
-          <p>Appuyez sur ⌘K pour ouvrir la palette et naviguer plus rapidement.</p>
+          <p className="font-semibold text-foreground">{tTip("title")}</p>
+          <p>{tTip("body")}</p>
         </div>
       </div>
     </aside>
   );
 }
 
-export const sidebarNavItems = NAV_ITEMS;
+export const sidebarNavDefinitions = NAV_DEFINITIONS;

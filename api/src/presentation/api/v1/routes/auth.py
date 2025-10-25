@@ -17,6 +17,7 @@ import jwt
 from api.src.core.settings import get_settings
 from api.src.infrastructure.database.session import get_session
 from api.src.infrastructure.persistence.repositories.user_repository import UserRepository
+from api.src.infrastructure.persistence.models.user import User
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 security = HTTPBearer()
@@ -39,6 +40,21 @@ DEFAULT_USER_FIXTURES = [
         "locale": "fr",
     },
 ]
+
+
+def serialize_user(user: User) -> dict:
+    """Normalize user model into public API payload."""
+    return {
+        "id": user.id,
+        "email": user.email,
+        "name": user.name,
+        "phone": user.phone,
+        "locale": user.locale,
+        "image": user.image,
+        "onboarding_completed": user.onboarding_completed,
+        "onboarding_step": user.onboarding_step,
+        "phone_verified": user.phone_verified,
+    }
 
 
 
@@ -92,8 +108,22 @@ class UserResponse(BaseModel):
     name: Optional[str]
     phone: Optional[str]
     locale: str
+    image: Optional[str] = None
     onboarding_completed: bool
     onboarding_step: int
+    phone_verified: bool = False
+
+
+class UserUpdateRequest(BaseModel):
+    """Partial update for authenticated user profile."""
+    name: Optional[str] = Field(default=None, min_length=2, max_length=100)
+    phone: Optional[str] = Field(
+        default=None,
+        pattern=r'^\+?[1-9]\d{1,14}$',
+        description="E.164 phone format, optional",
+    )
+    locale: Optional[str] = Field(default=None, pattern=r'^[a-z]{2}$')
+    image: Optional[str] = Field(default=None, max_length=512)
 
 
 # ============================================================================
@@ -190,7 +220,8 @@ def verify_token(token: str) -> dict:
 # ============================================================================
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    session: AsyncSession = Depends(get_session),
 ):
     """
     Dependency to get current authenticated user from JWT token
@@ -206,8 +237,16 @@ async def get_current_user(
             detail="Invalid token payload"
         )
     
-    # TODO: Fetch user from database when DB is connected
-    return {"id": user_id, **payload}
+    repository = UserRepository(session)
+    user = await repository.get_by_id(user_id)
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+
+    return user
 
 
 # ============================================================================
@@ -263,25 +302,20 @@ async def signup(
     # org_user = OrgUser(user_id=user.id, org_id=org.id, role="OWNER")
     
     # Generate tokens
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": user.id, "email": user.email}
+        data={"sub": user.id, "email": user.email},
+        expires_delta=access_token_expires
     )
     refresh_token = create_refresh_token(
         data={"sub": user.id}
     )
-    
+
     return TokenResponse(
         access_token=access_token,
         refresh_token=refresh_token,
-        expires_in=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
-        user={
-            "id": user.id,
-            "email": user.email,
-            "name": user.name,
-            "locale": user.locale,
-            "onboarding_completed": user.onboarding_completed,
-            "onboarding_step": user.onboarding_step
-        }
+        expires_in=int(access_token_expires.total_seconds()),
+        user=serialize_user(user)
     )
 
 
@@ -335,26 +369,19 @@ async def login(
         data={"sub": user.id}
     )
 
-    user_payload = {
-        "id": user.id,
-        "email": user.email,
-        "name": user.name,
-        "locale": user.locale,
-        "onboarding_completed": user.onboarding_completed,
-        "onboarding_step": user.onboarding_step,
-        "phone": user.phone,
-    }
-    
     return TokenResponse(
         access_token=access_token,
         refresh_token=refresh_token,
         expires_in=int(access_token_expires.total_seconds()),
-        user=user_payload
+        user=serialize_user(user)
     )
 
 
 @router.post("/refresh", response_model=TokenResponse)
-async def refresh_access_token(data: RefreshTokenRequest):
+async def refresh_access_token(
+    data: RefreshTokenRequest,
+    session: AsyncSession = Depends(get_session),
+):
     """
     Refresh access token using refresh token
     
@@ -371,40 +398,91 @@ async def refresh_access_token(data: RefreshTokenRequest):
         )
     
     user_id = payload.get("sub")
-    email = payload.get("email", "")
-    
+
+    repository = UserRepository(session)
+    user = await repository.get_by_id(user_id)
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+
     # Generate new access token
     access_token = create_access_token(
-        data={"sub": user_id, "email": email}
+        data={"sub": user.id, "email": user.email},
+        expires_delta=access_token_expires
     )
-    
+
     return TokenResponse(
         access_token=access_token,
         refresh_token=data.refresh_token,  # Keep same refresh token
-        expires_in=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
-        user={"id": user_id, "email": email}
+        expires_in=int(access_token_expires.total_seconds()),
+        user=serialize_user(user)
     )
 
 
 
 @router.get("/me", response_model=UserResponse)
 async def get_current_user_info(
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Get current authenticated user info
     Protected route example
     """
-    # TODO: Fetch from database
+    payload = serialize_user(current_user)
+
     return UserResponse(
-        id=current_user["id"],
-        email=current_user.get("email", ""),
-        name="Test User",
-        phone=None,
-        locale="en",
-        onboarding_completed=False,
-        onboarding_step=0
+        id=payload["id"],
+        email=payload["email"],
+        name=payload.get("name"),
+        phone=payload.get("phone"),
+        locale=payload.get("locale", "en"),
+        image=payload.get("image"),
+        onboarding_completed=payload.get("onboarding_completed", False),
+        onboarding_step=payload.get("onboarding_step", 0),
+        phone_verified=payload.get("phone_verified", False),
     )
+
+
+@router.patch("/me", response_model=UserResponse)
+async def update_current_user_profile(
+    payload: UserUpdateRequest,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    """
+    Update current authenticated user profile fields.
+    """
+    update_fields = payload.dict(exclude_unset=True, exclude_none=True)
+
+    if not update_fields:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No changes provided",
+        )
+
+    repository = UserRepository(session)
+
+    try:
+        updated_user = await repository.update(current_user.id, **update_fields)
+    except IntegrityError:
+        await session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Phone number already registered",
+        )
+
+    if not updated_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
+    return serialize_user(updated_user)
 
 
 @router.post("/verify-email")

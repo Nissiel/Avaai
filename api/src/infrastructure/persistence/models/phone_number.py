@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
+from typing import Optional
 from uuid import uuid4
 
 from sqlalchemy import JSON, DateTime, Enum as SQLEnum, String
@@ -63,14 +64,14 @@ class PhoneNumber(Base):
     )
 
     # Vapi specific
-    vapi_phone_number_id: Mapped[str | None] = mapped_column(
+    vapi_phone_number_id: Mapped[Optional[str]] = mapped_column(
         String(255),
         nullable=True,
         comment="Vapi phone number ID (for VAPI or VAPI_TWILIO providers)",
     )
 
     # Twilio specific (encrypted in production)
-    twilio_account_sid: Mapped[str | None] = mapped_column(
+    twilio_account_sid: Mapped[Optional[str]] = mapped_column(
         String(255),
         nullable=True,
         comment="Twilio Account SID (encrypted)",

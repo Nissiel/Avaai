@@ -5,6 +5,7 @@
  * AVA HOME PAGE - Divine Landing Experience
  * ============================================================================
  * Marketing hero with feature highlights and CTA buttons.
+ * Footer handled by MarketingShell layout wrapper (DRY principle).
  * ============================================================================
  */
 
@@ -192,47 +193,6 @@ export default function HomePage() {
           </GlassCard>
         </motion.div>
       </div>
-
-      {/* Footer */}
-      <footer className="border-t border-border/50 backdrop-blur-sm">
-        <div className="container mx-auto px-4 py-12">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div>
-              <h3 className="font-bold text-lg mb-4">AVA</h3>
-              <p className="text-sm text-muted-foreground">
-                L'assistant vocal qui change tout.
-              </p>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Produit</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="/onboarding" className="hover:text-primary transition-colors">Créer mon AVA</a></li>
-                <li><a href="/dashboard" className="hover:text-primary transition-colors">Dashboard</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Tarifs</a></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Ressources</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="/README.md" className="hover:text-primary transition-colors">Documentation</a></li>
-                <li><a href="https://docs.vapi.ai" className="hover:text-primary transition-colors">API Vapi</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Blog</a></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Contact</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-primary transition-colors">Support</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Twitter</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">GitHub</a></li>
-              </ul>
-            </div>
-          </div>
-          <div className="mt-12 pt-8 border-t border-border/50 text-center text-sm text-muted-foreground">
-            <p>© 2024 AVA. Fait avec ❤️ et ✨ magie divine.</p>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }
