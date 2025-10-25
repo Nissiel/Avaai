@@ -9,8 +9,9 @@
 'use client';
 
 import * as React from 'react';
-import { Phone, Clock, Settings, Plus, MessageSquare, Mail, DollarSign } from 'lucide-react';
+import type { Route } from "next";
 import Link from 'next/link';
+import { Phone, Clock, Settings, Plus, MessageSquare, Mail, DollarSign } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { GlassCard } from '@/components/ui/glass-card';
 import { FuturisticButton } from '@/components/ui/futuristic-button';
@@ -279,7 +280,9 @@ export default function DashboardPage() {
                     .join(' • ');
                   const contactId =
                     phoneNumber && phoneNumber.trim().length > 0 ? phoneNumber.trim() : 'unknown';
-                  const contactHref = `/${locale}/app/contacts/${encodeURIComponent(contactId)}`;
+                  const contactHref = (
+                    `/${locale}/app/contacts/${encodeURIComponent(contactId)}`
+                  ) as Route;
 
                   return (
                     <div

@@ -52,7 +52,6 @@ interface SidebarProps {
 export function Sidebar({ className }: SidebarProps) {
   const items = useSidebarNavItems();
   const homeHref = items[0]?.href ?? "/";
-  const tTip = useTranslations("sidebarTip");
 
   return (
     <aside
@@ -66,17 +65,11 @@ export function Sidebar({ className }: SidebarProps) {
           Ava Studio
         </Link>
       </div>
-      <nav className="flex-1 space-y-1 px-3">
+      <nav className="flex-1 space-y-1 px-3 pb-6">
         {items.map((item) => (
           <NavLink key={item.href} href={item.href} label={item.label} icon={item.icon} exact={item.exact} />
         ))}
       </nav>
-      <div className="px-4 pb-6">
-        <div className="rounded-2xl border border-dashed border-border/60 bg-muted/40 p-4 text-xs text-muted-foreground">
-          <p className="font-semibold text-foreground">{tTip("title")}</p>
-          <p>{tTip("body")}</p>
-        </div>
-      </div>
     </aside>
   );
 }

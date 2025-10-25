@@ -22,6 +22,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { LabeledSlider } from "@/components/ui/labeled-slider";
 import { createStudioConfigSchema, type StudioConfigInput } from "@/lib/validations/config";
 import { Badge } from "@/components/ui/badge";
+import { backendConfig } from "@/services/backend-service";
 
 const TIMEZONE_OPTIONS = ["europe/paris", "america/new_york", "asia/tokyo"] as const;
 const LANGUAGE_OPTIONS = ["fr", "en", "es"] as const;
@@ -154,9 +155,15 @@ export function StudioSettingsForm({
       // 2. Auto-sync to Vapi after successful save
       try {
         console.log("🔄 Auto-syncing to Vapi...");
-        const vapiResponse = await fetch("http://localhost:8000/api/v1/studio/sync-vapi", {
-          method: "POST",
-        });
+        const vapiResponse = await fetch(
+          `${backendConfig.baseUrl}/api/v1/studio/sync-vapi`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          },
+        );
 
         if (vapiResponse.ok) {
           const vapiResult = await vapiResponse.json();
@@ -167,7 +174,8 @@ export function StudioSettingsForm({
             result.config = { ...result.config, vapiAssistantId: vapiResult.assistantId };
           }
         } else {
-          console.warn("⚠️ Vapi sync failed, but config saved successfully");
+          const detail = await vapiResponse.json().catch(() => ({}));
+          console.warn("⚠️ Vapi sync failed, but config saved successfully", detail);
         }
       } catch (syncError) {
         console.warn("⚠️ Vapi sync error:", syncError);
@@ -274,7 +282,7 @@ export function StudioSettingsForm({
           updateMutation.mutate(values);
         })}>
 
-          <Accordion type="single" collapsible defaultValue="org" className="space-y-4">
+          <Accordion type="single" collapsible className="space-y-4">
 
             {/* 📋 ORGANIZATION SECTION - Professional Design */}
             <AccordionItem value="org" className="border-none">

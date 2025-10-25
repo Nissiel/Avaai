@@ -1,5 +1,3 @@
-import "server-only";
-
 import { cache } from "react";
 
 type BackendAction = "start" | "stop" | "restart";

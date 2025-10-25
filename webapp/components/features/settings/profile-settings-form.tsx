@@ -69,7 +69,15 @@ export function ProfileSettingsForm() {
     mode: "onChange",
   });
 
+  // Watch for form changes
+  const watchedValues = form.watch();
+  
   useEffect(() => {
+    console.log("📝 Form values changed:", watchedValues);
+  }, [watchedValues]);
+
+  useEffect(() => {
+    console.log("🔄 Resetting form with initialValues:", initialValues);
     form.reset(initialValues);
   }, [initialValues, form]);
 
@@ -161,10 +169,23 @@ export function ProfileSettingsForm() {
   });
 
   const onSubmit = (values: ProfileSettingsValues) => {
+    console.log("🚀 Profile form submitted:", values);
     updateProfileMutation.mutate(values);
   };
 
+  const handleReset = () => {
+    console.log("🔄 Resetting form to:", initialValues);
+    form.reset(initialValues);
+  };
+
   const isDirty = form.formState.isDirty;
+
+  console.log("📊 Form state:", {
+    isDirty,
+    isValid: form.formState.isValid,
+    isPending: updateProfileMutation.isPending,
+    errors: form.formState.errors,
+  });
 
   return (
     <GlassCard className="space-y-6" variant="none">
@@ -257,7 +278,7 @@ export function ProfileSettingsForm() {
               type="button"
               variant="ghost"
               className="w-full sm:w-auto"
-              onClick={() => form.reset(initialValues)}
+              onClick={handleReset}
               disabled={updateProfileMutation.isPending || !isDirty}
             >
               <RotateCcw className="mr-2 h-4 w-4" />
@@ -266,7 +287,7 @@ export function ProfileSettingsForm() {
             <Button
               type="submit"
               className="w-full sm:w-auto"
-              disabled={!isDirty || updateProfileMutation.isPending}
+              disabled={!isDirty || !form.formState.isValid || updateProfileMutation.isPending}
             >
               {updateProfileMutation.isPending ? (
                 <>

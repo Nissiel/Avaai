@@ -65,95 +65,88 @@ export function ContactCard({ contact, dateLocale }: ContactCardProps) {
     <GlassCard
       variant="none"
       className={cn(
-        "group flex h-full flex-col gap-4 rounded-xl border",
-        "bg-background/95 backdrop-blur-sm",
+        "group flex h-full flex-col gap-5 rounded-xl border",
+        "bg-card backdrop-blur-sm",
         "transition-all duration-200 cursor-pointer",
-        "hover:border-foreground/20 hover:shadow-md",
-        isHighEngagement ? "border-foreground/15" : "border-border/60",
-        "p-4"
+        "hover:border-border hover:shadow-sm",
+        isHighEngagement ? "border-border/80" : "border-border/50",
+        "p-5"
       )}
     >
       {/* SECTION 1: Header - Clean & Professional */}
-      <div className="flex items-start gap-3">
-        {/* Avatar - Simple & Clean */}
+      <div className="flex items-start gap-4">
+        {/* Avatar - Larger for better visibility (Fitts's Law) */}
         <div className="relative flex-shrink-0">
           <Avatar className={cn(
-            "h-12 w-12 border-2 transition-colors duration-200",
-            isHighEngagement 
-              ? "border-foreground/20 bg-foreground/5" 
-              : "border-border/60 bg-muted/30"
+            "h-14 w-14 border-2 transition-colors duration-200",
+            "border-border bg-muted"
           )}>
-            <AvatarFallback className={cn(
-              "text-sm font-semibold",
-              isHighEngagement 
-                ? "bg-foreground/10 text-foreground" 
-                : "bg-muted text-muted-foreground"
-            )}>
+            <AvatarFallback className="text-base font-semibold bg-muted text-foreground">
               {getInitials(displayName)}
             </AvatarFallback>
           </Avatar>
           
-          {/* Status indicator - Minimal */}
+          {/* Status indicator - Subtle active dot */}
           {isHighEngagement && (
-            <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-500 border-2 border-background" />
+            <div className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-emerald-500 border-2 border-card" />
           )}
         </div>
 
         {/* Name + Info - Clear Hierarchy */}
-        <div className="flex-1 min-w-0 space-y-1">
+        <div className="flex-1 min-w-0 space-y-1.5">
           <h3 className="text-base font-semibold text-foreground truncate">
             {displayName}
           </h3>
           
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Phone className="h-3 w-3 flex-shrink-0" />
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Phone className="h-3.5 w-3.5 flex-shrink-0" />
             <span className="truncate">{subtitle}</span>
           </div>
         </div>
 
-        {/* Call Count Badge - Professional */}
+        {/* Call Count Badge - Larger & More Visible */}
         <Badge 
-          variant={isHighEngagement ? "brand" : "outline"}
+          variant="outline"
           className={cn(
-            "text-sm font-semibold px-2.5 py-1",
-            !isHighEngagement && "border-border/60 text-muted-foreground"
+            "text-base font-semibold px-3 py-1.5 border-border",
+            isHighEngagement && "bg-muted/50"
           )}
         >
           {contact.callCount}
         </Badge>
       </div>
 
-      {/* SECTION 2: Stats - Clean Grid */}
-      <div className="grid grid-cols-3 gap-2 pt-2 border-t border-border/40">
+      {/* SECTION 2: Stats - Larger Grid with Better Spacing */}
+      <div className="grid grid-cols-3 gap-3 pt-3 border-t border-border/60">
         {/* Stat 1: Average Duration */}
-        <div className="flex flex-col items-center gap-1.5 p-2 rounded-lg bg-muted/30">
-          <Clock className="h-4 w-4 text-muted-foreground" />
-          <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+        <div className="flex flex-col items-center gap-2 p-3 rounded-lg border border-border/50 bg-muted/20">
+          <Clock className="h-5 w-5 text-muted-foreground" />
+          <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
             {t("averageDuration")}
           </span>
-          <span className="text-sm font-semibold text-foreground">
+          <span className="text-base font-semibold text-foreground">
             {averageDuration}
           </span>
         </div>
 
         {/* Stat 2: Total Duration */}
-        <div className="flex flex-col items-center gap-1.5 p-2 rounded-lg bg-muted/30">
-          <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+        <div className="flex flex-col items-center gap-2 p-3 rounded-lg border border-border/50 bg-muted/20">
+          <TrendingUp className="h-5 w-5 text-muted-foreground" />
+          <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
             {t("totalDuration")}
           </span>
-          <span className="text-sm font-semibold text-foreground">
+          <span className="text-base font-semibold text-foreground">
             {totalDuration}
           </span>
         </div>
 
         {/* Stat 3: Last Contact */}
-        <div className="flex flex-col items-center gap-1.5 p-2 rounded-lg bg-muted/30">
-          <Calendar className="h-4 w-4 text-muted-foreground" />
-          <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+        <div className="flex flex-col items-center gap-2 p-3 rounded-lg border border-border/50 bg-muted/20">
+          <Calendar className="h-5 w-5 text-muted-foreground" />
+          <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
             {t("lastContact")}
           </span>
-          <span className="text-xs font-semibold text-foreground">
+          <span className="text-sm font-semibold text-foreground">
             {lastContactLabel}
           </span>
         </div>
