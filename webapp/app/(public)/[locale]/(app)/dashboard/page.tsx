@@ -280,10 +280,7 @@ export default function DashboardPage() {
                     .join(' • ');
                   const contactId =
                     phoneNumber && phoneNumber.trim().length > 0 ? phoneNumber.trim() : 'unknown';
-                  const contactHref = {
-                    pathname: '/[locale]/app/contacts/[contactId]',
-                    params: { locale, contactId },
-                  } as const;
+                  const contactHref = `/${locale}/app/contacts/${encodeURIComponent(contactId)}`;
 
                   return (
                     <div
