@@ -1,6 +1,6 @@
 "use client";
 
-import { LogOut } from "lucide-react";
+import { LogOut, RefreshCw } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useLocale } from "next-intl";
@@ -48,6 +48,7 @@ export function UserMenu() {
         window.localStorage.removeItem("access_token");
         window.localStorage.removeItem("refresh_token");
         window.localStorage.removeItem("remember_me");
+        window.localStorage.removeItem("onboarding_completed");
       }
       
       // Sign out from NextAuth (no redirect from NextAuth)
@@ -62,6 +63,17 @@ export function UserMenu() {
       const loginUrl = `/${locale}/login`.replace(/\/{2,}/g, "/");
       window.location.href = loginUrl;
     }
+  };
+
+  const handleRestartOnboarding = () => {
+    // Clear onboarding completion flag
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("onboarding_completed");
+    }
+    
+    // Navigate to onboarding
+    const onboardingUrl = `/${locale}/onboarding`.replace(/\/{2,}/g, "/");
+    router.push(onboardingUrl);
   };
 
   return (
@@ -85,6 +97,17 @@ export function UserMenu() {
           <p className="font-semibold text-foreground">{displayName}</p>
           {email ? <p className="text-muted-foreground">{email}</p> : null}
         </div>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onSelect={(event) => {
+            event.preventDefault();
+            handleRestartOnboarding();
+          }}
+          className="gap-2 text-muted-foreground text-xs"
+        >
+          <RefreshCw className="h-3 w-3" />
+          Refaire l'onboarding
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onSelect={(event) => {

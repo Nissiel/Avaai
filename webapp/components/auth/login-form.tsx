@@ -125,8 +125,14 @@ export function LoginForm() {
       });
 
       // Redirection avec locale préservée
-      const isFirstLogin = !data.user?.onboarding_completed;
-      if (isFirstLogin) {
+      // Check localStorage first (faster + offline support)
+      const localOnboardingCompleted = typeof window !== "undefined" 
+        ? localStorage.getItem("onboarding_completed") === "true"
+        : false;
+      
+      const isOnboardingCompleted = localOnboardingCompleted || data.user?.onboarding_completed;
+      
+      if (!isOnboardingCompleted) {
         router.push(`/${locale}/onboarding`);
       } else {
         router.push(`/${locale}/dashboard`);

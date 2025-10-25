@@ -296,11 +296,17 @@ export function OnboardingWizard() {
           await assistantMutation.mutateAsync(assistantPayload);
           setHasLaunched(true);
           
-          // Mark onboarding as completed in the database
+          // Mark onboarding as completed in the database AND localStorage
           try {
             console.log("🔄 Calling completeOnboarding...");
             const updatedUser = await completeOnboarding();
-            console.log("✅ Onboarding marked as completed:", updatedUser);
+            console.log("✅ Onboarding marked as completed in DB:", updatedUser);
+            
+            // Persist onboarding completion in localStorage (backup)
+            if (typeof window !== "undefined") {
+              localStorage.setItem("onboarding_completed", "true");
+              console.log("✅ Onboarding completion persisted in localStorage");
+            }
             
             // Update local session to reflect onboarding completion
             if (session?.user) {
@@ -316,7 +322,11 @@ export function OnboardingWizard() {
             }
           } catch (onboardingError) {
             console.error("❌ Failed to mark onboarding as completed:", onboardingError);
-            // Non-blocking: Continue even if this fails
+            // Fallback: At least save in localStorage
+            if (typeof window !== "undefined") {
+              localStorage.setItem("onboarding_completed", "true");
+              console.log("⚠️ Fallback: Saved onboarding_completed in localStorage only");
+            }
           }
           
           toast.success(t("success.launch", { defaultValue: "Ava est prête à prendre vos appels." }));
