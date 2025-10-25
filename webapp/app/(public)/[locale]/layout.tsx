@@ -1,5 +1,4 @@
 import { AppProviders } from "@/providers/app-providers";
-import { inter, jetbrains } from "@/lib/fonts";
 import { getCurrentSession } from "@/lib/auth/server";
 import { getDirection, isLocale, locales, type Locale } from "@/lib/i18n/locales";
 import { notFound } from "next/navigation";
@@ -29,12 +28,12 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
   const direction = getDirection(localeParam);
 
   return (
-    <html lang={localeParam} dir={direction} className={`${inter.variable} ${jetbrains.variable}`}> 
-      <body className="min-h-screen bg-background antialiased">
-        <NextIntlClientProvider locale={localeParam} messages={messages} timeZone="UTC">
-          <AppProviders session={session}>{children}</AppProviders>
-        </NextIntlClientProvider>
-      </body>
-    </html>
+    <NextIntlClientProvider locale={localeParam} messages={messages} timeZone="UTC">
+      <AppProviders session={session}>
+        <div dir={direction} className="min-h-screen bg-background antialiased">
+          {children}
+        </div>
+      </AppProviders>
+    </NextIntlClientProvider>
   );
 }

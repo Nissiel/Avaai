@@ -48,6 +48,10 @@ class CallRecord(Base):
                 self.duration_seconds = int(payload["durationSeconds"])  # type: ignore[arg-type]
             except (TypeError, ValueError):
                 pass
+        # Calculate duration if not provided but we have timestamps
+        elif self.started_at and self.ended_at:
+            delta = self.ended_at - self.started_at
+            self.duration_seconds = int(delta.total_seconds())
 
         if "cost" in payload:
             try:

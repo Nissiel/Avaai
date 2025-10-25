@@ -1,7 +1,7 @@
 import "./globals.css";
 
 import type { Metadata, Viewport } from "next";
-import { AppProviders } from "@/providers/app-providers";
+import { inter, jetbrains } from "@/lib/fonts";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://app.ava.ai"),
@@ -70,10 +70,8 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: React.PropsWithChildren) {
   return (
-    <html lang="en">
-      <body>
-        <AppProviders>{children}</AppProviders>
-      </body>
+    <html lang="en" className={`${inter.variable} ${jetbrains.variable}`}>
+      <body className="min-h-screen bg-background antialiased">{children}</body>
     </html>
   );
 }

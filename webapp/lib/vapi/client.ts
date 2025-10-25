@@ -15,11 +15,17 @@ import { VapiClient } from '@vapi-ai/server-sdk';
  * ============================================================================
  */
 
-const VAPI_API_KEY = process.env.VAPI_API_KEY || 'temp_development_key';
+const RAW_VAPI_API_KEY = process.env.VAPI_API_KEY?.trim();
+const VAPI_API_KEY =
+  RAW_VAPI_API_KEY &&
+  RAW_VAPI_API_KEY !== 'temp_development_key' &&
+  RAW_VAPI_API_KEY !== 'demo'
+    ? RAW_VAPI_API_KEY
+    : '';
 const VAPI_PUBLIC_KEY_ENV = process.env.VAPI_PUBLIC_KEY || '';
 
 // Validation non-blocking pour le développement
-if (!process.env.VAPI_API_KEY && typeof window === 'undefined') {
+if (!VAPI_API_KEY && typeof window === 'undefined') {
   console.warn('\n⚠️  ══════════════════════════════════════════════════════');
   console.warn('⚠️  VAPI_API_KEY not configured in .env file');
   console.warn('⚠️  Get your API key at: https://dashboard.vapi.ai/api-keys');
@@ -129,6 +135,12 @@ export interface VapiCall {
  * Create an AVA assistant with optimal defaults
  */
 export async function createAvaAssistant(config: AvaAssistantConfig) {
+  if (!isVapiConfigured()) {
+    return {
+      success: false as const,
+      error: 'Vapi client not configured. Please set VAPI_API_KEY.',
+    };
+  }
   try {
     const modelConfig = config.model ?? {
       provider: "openai" as const,
@@ -186,6 +198,12 @@ export async function updateAvaAssistant(
   assistantId: string,
   config: Partial<AvaAssistantConfig>
 ) {
+  if (!isVapiConfigured()) {
+    return {
+      success: false as const,
+      error: 'Vapi client not configured. Please set VAPI_API_KEY.',
+    };
+  }
   try {
     const modelPayload =
       config.model || config.systemPrompt

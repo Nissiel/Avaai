@@ -18,7 +18,8 @@
       "billing": "Facturation",
       "team": "Équipe",
       "settings": "Paramètres",
-      "logs": "Journal"
+      "logs": "Journal",
+      "contacts": "Contacts"
     },
     "status": {
       "connected": "Connecté",
@@ -92,28 +93,32 @@
     "privacy": "Confidentialité",
     "terms": "Conditions",
     "security": "Sécurité",
-    "product": "Produit",
-    "resources": "Ressources",
+    "product": "Product",
+    "resources": "Resources",
     "support": "Support",
-    "taglineFooter": "La réceptionniste IA qui capte chaque opportunité 24/7.",
+    "cta": {
+      "primary": "Start onboarding",
+      "secondary": "Talk to an expert"
+    },
+    "taglineFooter": "The AI receptionist that captures every opportunity 24/7.",
     "fallback": {
       "badge": "Ava Studio",
-      "title": "Votre réceptionniste IA toujours disponible",
-      "subtitle": "Concevez, lancez et pilotez une assistante vocale qui décroche, qualifie et planifie les rendez-vous en quelques minutes.",
-      "primary": "Commencer maintenant",
-      "secondary": "Voir la démo",
+      "title": "Your AI receptionist is always available",
+      "subtitle": "Design, launch, and operate a human-level voice assistant that greets callers, qualifies leads, and schedules appointments in minutes.",
+      "primary": "Start now",
+      "secondary": "Watch the demo",
       "stats": {
         "calls": {
-          "value": "99,9%",
-          "label": "Appels décrochés"
+          "value": "99.9%",
+          "label": "Calls answered"
         },
         "csat": {
-          "value": "4,9/5",
-          "label": "Satisfaction moyenne"
+          "value": "4.9/5",
+          "label": "Satisfaction score"
         },
         "setup": {
           "value": "3 min",
-          "label": "Mise en place moyenne"
+          "label": "Average setup"
         }
       }
     }
@@ -167,25 +172,23 @@
     "pageTitle": "Onboarding d'Ava",
     "pageSubtitle": "Finalisez les étapes pour lancer Ava. Vous pourrez les revoir dans Ava Studio."
   },
-  "sidebarNav": {
-    "dashboard": "Tableau de bord",
-    "assistants": "Assistants",
-    "calls": "Appels",
-    "analytics": "Analytics",
-    "settings": "Paramètres"
-  },
-  "sidebarTip": {
-    "title": "🎯 Astuce",
-    "body": "Appuyez sur ⌘K pour ouvrir la palette de commandes et naviguer plus vite."
-  },
-  "localeSwitcher": {
-    "ariaLabel": "Changer de langue",
-    "active": "Actif"
-  },
   "dashboardPage": {
+    "assistants": {
+      "title": "Vos assistantes",
+      "subtitle": "Actives",
+      "loading": "Chargement...",
+      "empty": "Aucune assistante pour le moment",
+      "configure": "Configurer",
+      "alerts": {
+        "notConfigured": "Configuration Vapi introuvable. Ajoutez votre clé API Vapi pour synchroniser les assistantes.",
+        "fetchFailed": "Impossible de charger vos assistantes pour le moment.",
+        "parseFailed": "Réponse inattendue du service assistantes Vapi.",
+        "empty": "Aucune assistante synchronisée pour l'instant."
+      }
+    },
+    "cta": "Ouvrir le studio assistants",
     "title": "Tableau de bord",
-    "subtitle": "Heureux de vous revoir ! Voici l’activité de vos assistantes Ava.",
-    "cta": "Nouvelle assistante",
+    "subtitle": "Ravi de vous revoir ! Voici l'activité de vos assistantes Ava.",
     "loading": "Chargement du tableau de bord...",
     "error": "Erreur lors du chargement du tableau de bord",
     "stats": {
@@ -201,151 +204,272 @@
       "successRate": "Appels sans escalade",
       "totalCost": "Période de facturation"
     },
+    "quick": {
+      "title": "Actions rapides",
+      "viewAnalytics": "Voir les analytics",
+      "manageAssistants": "Gérer les assistantes",
+      "newContact": "Nouveau contact",
+      "testCall": "Appel test"
+    },
+    "activity": {
+      "title": "Vue d'ensemble",
+      "subtitle": "Suivez vos appels et performances en temps réel"
+    },
     "recent": {
       "title": "Appels récents",
       "loading": "Chargement...",
       "empty": "Aucun appel pour l'instant",
       "unknownNumber": "Numéro inconnu",
-      "noTranscript": "Pas de transcription disponible",
+      "noTranscript": "Aucun transcript disponible",
       "view": "Voir",
       "send": "Envoyer le transcript",
       "free": "Gratuit",
-      "toastSuccess": "Transcription envoyée par email !",
-      "toastError": "Impossible d'envoyer la transcription"
+      "toastSuccess": "Transcript envoyé par email !",
+      "toastError": "Impossible d'envoyer le transcript",
+      "seeAll": "Voir tous les appels"
     }
   },
   "assistantsPage": {
-    "title": "Assistants",
-    "subtitle": "Gérez vos personas vocaux, ajustez leur personnalité et connectez-les à vos numéros.",
-    "cta": "Créer un assistant",
-    "list": {
-      "title": "Vos assistants",
-      "description": "Ils apparaîtront ici dès qu’ils seront synchronisés depuis Vapi.",
-      "empty": "Connectez votre compte Vapi pour afficher les assistants existants."
+    "hero": {
+      "badge": "Studio assistants",
+      "title": "Créez vos réceptionnistes Ava sur mesure",
+      "subtitle": "{count, plural, =0 {Commencez en créant votre première assistante vocale.} one {{countFormatted} assistante prête à répondre.} other {{countFormatted} assistantes prêtes à répondre.}}",
+      "actions": {
+        "create": "Nouvelle assistante",
+        "library": "Bibliothèque de playbooks"
+      },
+      "metrics": {
+        "total": "{count, plural, =0 {Aucune assistante encore} one {{countFormatted} assistante configurée} other {{countFormatted} assistantes configurées}}"
+      }
+    },
+    "library": {
+      "title": "Bibliothèque d’assistantes",
+      "subtitle": "Basculez entre vos personas et focalisez-en une pour la modifier.",
+      "count": "{count, plural, =0 {Aucune assistante} one {{countFormatted} assistante} other {{countFormatted} assistantes}}",
+      "select": "Ouvrir dans le designer",
+      "active": "Active",
+      "empty": {
+        "title": "Vous n’avez pas encore créé d’assistante",
+        "subtitle": "Créez autant de personas que nécessaire. Chaque assistante peut avoir son ton, son script et sa voix.",
+        "cta": "Créer votre première assistante"
+      },
+      "warnings": {
+        "notConfigured": "Connectez votre compte Vapi pour retrouver vos assistantes existantes.",
+        "fetchFailed": "Impossible de joindre le service des assistantes pour le moment.",
+        "parseFailed": "Le service des assistantes a renvoyé un format inattendu.",
+        "empty": "Vapi n’a renvoyé aucune assistante pour l’instant."
+      },
+      "meta": {
+        "unavailable": "Date de création inconnue"
+      }
+    },
+    "designer": {
+      "title": "Assistant designer",
+      "subtitle": "Affinez persona, script, voix, routage et intégrations pour l’assistante sélectionnée.",
+      "helper": "Sélectionnez une assistante dans la colonne de gauche pour la lier, puis enregistrez afin de pousser les mises à jour vers Vapi et vos appelants."
     }
   },
-  "callsPage": {
-    "title": "Appels",
-    "subtitle": "{count} appels analysés • Les nouveaux appels arrivent en temps réel",
-    "searchPlaceholder": "Recherche rapide (numéro, assistant, transcription...)",
-    "statusPlaceholder": "Statut",
-    "status": {
-      "any": "Tous les statuts",
-      "in-progress": "En cours",
-      "ended": "Terminés",
-      "failed": "Échecs"
-    },
-    "duration": "{minutes}min {seconds}s",
-    "unknownNumber": "Numéro inconnu",
-    "noTranscript": "Pas de transcription enregistrée",
-    "empty": "Aucun appel trouvé pour ce filtre."
-  },
   "settingsPage": {
+    "movedNotice": {
+      "title": "Où sont les paramètres studio ?",
+      "subtitle": "La création et la personnalisation des assistantes se font désormais depuis la page Assistantes.",
+      "cta": "Accéder au studio des assistantes"
+    },
     "header": {
-      "title": "Paramètres",
-      "subtitle": "Gérez vos informations personnelles et configurez votre studio Ava."
+      "title": "Settings",
+      "subtitle": "Manage your personal details and configure your Ava studio."
     },
     "tabs": {
-      "profile": "Profil",
-      "studio": "Paramètres studio"
+      "profile": "Profile",
+      "studio": "Studio settings"
     },
     "profile": {
-      "title": "Profil utilisateur",
-      "description": "Ces informations apparaissent dans les notifications et échanges clients.",
+      "title": "User profile",
+      "description": "Your details appear in notifications and customer communications.",
       "form": {
-        "name": "Nom complet",
+        "name": "Full name",
         "email": "Email",
-        "phone": "Téléphone (optionnel)",
-        "phonePlaceholder": "+33 6 12 34 56 78",
-        "locale": "Langue par défaut"
+        "phone": "Phone (optional)",
+        "phonePlaceholder": "+1 415 555 0100",
+        "locale": "Default language"
       },
       "actions": {
-        "reset": "Réinitialiser",
-        "save": "Enregistrer",
-        "saving": "Enregistrement..."
+        "reset": "Reset",
+        "save": "Save",
+        "saving": "Saving..."
       },
       "messages": {
-        "success": "Profil mis à jour avec succès",
-        "error": "Impossible de mettre à jour le profil",
-        "sessionExpired": "Session expirée. Veuillez vous reconnecter."
+        "success": "Profile updated successfully",
+        "error": "Unable to update profile",
+        "sessionExpired": "Session expired. Please sign in again."
       },
       "errors": {
-        "nameMin": "Le nom doit contenir au moins 2 caractères",
-        "nameMax": "Le nom ne peut pas dépasser 100 caractères",
-        "email": "Veuillez saisir un email valide",
-        "phone": "Renseignez un numéro international (+33 ...)",
-        "locale": "Veuillez sélectionner une langue"
+        "nameMin": "Name must contain at least 2 characters",
+        "nameMax": "Name cannot exceed 100 characters",
+        "email": "Please enter a valid email",
+        "phone": "Provide an international number (+1 ...)",
+        "locale": "Please select a language"
       }
     },
     "studio": {
-      "title": "Paramètres studio",
-      "description": "Définissez l'identité de votre organisation et la personnalité d'Ava.",
-      "refresh": "Actualiser",
-      "loading": "Chargement de la configuration studio…",
-      "error": "Impossible de charger la configuration. Réessayez.",
+      "title": "Studio settings",
+      "description": "Define your organisation identity and Ava personality.",
+      "refresh": "Refresh",
+      "loading": "Loading studio configuration…",
+      "error": "We couldn't load the configuration. Please try again.",
       "form": {
-        "organizationName": "Nom de l'organisation",
-        "adminEmail": "Email administrateur",
-        "timezone": "Fuseau horaire",
-        "language": "Langue principale",
-        "persona": "Persona d'Ava",
-        "tone": "Ton de voix",
-        "guidelines": "Instructions et directives",
-        "phoneNumber": "Numéro principal",
-        "businessHours": "Plage horaire",
-        "fallbackEmail": "Email de secours",
-        "summaryEmail": "Email des résumés",
-        "smtpServer": "Serveur SMTP",
-        "smtpPort": "Port SMTP",
-        "smtpUsername": "Identifiant SMTP",
-        "smtpPassword": "Mot de passe SMTP"
+        "organizationName": "Organization name",
+        "adminEmail": "Admin email",
+        "timezone": "Timezone",
+        "language": "Primary language",
+        "persona": "Ava persona",
+        "tone": "Voice tone",
+        "guidelines": "Instructions & guidelines",
+        "phoneNumber": "Main number",
+        "businessHours": "Business hours",
+        "fallbackEmail": "Fallback email",
+        "summaryEmail": "Summary email",
+        "smtpServer": "SMTP server",
+        "smtpPort": "SMTP port",
+        "smtpUsername": "SMTP username",
+        "smtpPassword": "SMTP password"
       },
-      "smtpDescription": "Configurez l'email d'envoi des rapports et notifications automatiques.",
+      "smtpDescription": "Configure the sender for automated reports and notifications.",
       "actions": {
-        "reset": "Réinitialiser",
-        "save": "Enregistrer",
-        "saving": "Enregistrement..."
+        "reset": "Reset",
+        "save": "Save",
+        "saving": "Saving..."
       },
       "messages": {
-        "success": "Configuration studio sauvegardée",
-        "error": "Impossible d'enregistrer la configuration"
+        "success": "Studio configuration updated successfully",
+        "error": "Unable to save configuration"
       },
       "errors": {
-        "required": "Ce champ est requis",
-        "email": "Veuillez saisir un email valide"
+        "required": "Please fill in this field",
+        "email": "Enter a valid email"
       },
       "options": {
         "timezone": {
           "europe/paris": "Europe / Paris",
-          "america/new_york": "Amérique / New York",
-          "asia/tokyo": "Asie / Tokyo"
+          "america/new_york": "America / New York",
+          "asia/tokyo": "Asia / Tokyo"
         },
         "language": {
-          "fr": "Français",
-          "en": "Anglais",
-          "es": "Espagnol"
+          "fr": "French",
+          "en": "English",
+          "es": "Spanish"
         },
         "persona": {
-          "secretary": "Assistante exécutive",
-          "concierge": "Concierge premium",
-          "sdr": "Développement commercial",
-          "cs": "Service client"
+          "secretary": "Executive assistant",
+          "concierge": "Premium concierge",
+          "sdr": "Sales development",
+          "cs": "Customer success"
         },
         "tone": {
-          "warm": "Chaleureux",
-          "professional": "Professionnel",
-          "energetic": "Énergique"
+          "warm": "Warm",
+          "professional": "Professional",
+          "energetic": "Energetic"
         }
       }
     }
   },
+  "sidebarNav": {
+    "dashboard": "Tableau de bord",
+    "assistants": "Assistants",
+    "contacts": "Contacts",
+    "calls": "Calls",
+    "profile": "Profil"
+  },
+  "sidebarTip": {
+    "title": "🎯 Astuce",
+    "body": "Appuyez sur ⌘K pour ouvrir la palette de commandes et naviguer plus vite."
+  },
+  "contactsPage": {
+    "title": "Contacts",
+    "subtitle": "{contacts} contacts • {calls} appels au total",
+    "searchPlaceholder": "Rechercher par nom ou numéro...",
+    "sort": {
+      "recent": "Dernier appel",
+      "frequent": "Plus d'appels",
+      "oldest": "Premier contact"
+    },
+    "card": {
+      "callCount": "{count, plural, one {# appel} other {# appels}}",
+      "averageDuration": "Durée moyenne",
+      "totalDuration": "Durée totale",
+      "lastContact": "Dernier contact",
+      "unknownDate": "Date inconnue",
+      "unknownDuration": "—",
+      "unknownNumber": "Numéro inconnu"
+    },
+    "detail": {
+      "back": "Retour aux contacts",
+      "badge": "Profil contact",
+      "unknownPhone": "Numéro indisponible",
+      "alias": {
+        "add": "Ajouter un nom",
+        "edit": "Modifier le nom",
+        "remove": "Supprimer le nom",
+        "save": "Enregistrer",
+        "cancel": "Annuler",
+        "placeholder": "Prénom et nom"
+      },
+      "metrics": {
+        "callCount": "Appels",
+        "totalDuration": "Durée totale",
+        "averageDuration": "Durée moyenne",
+        "lastCall": "Dernier appel",
+        "firstCall": "Premier appel",
+        "unknown": "—"
+      },
+      "timeline": {
+        "title": "Historique des appels",
+        "subtitle": "{count, plural, one {# appel enregistré} other {# appels enregistrés}}",
+        "empty": "Aucun appel enregistré pour ce contact pour le moment.",
+        "viewTranscript": "Voir le transcript",
+        "hideTranscript": "Masquer le transcript",
+        "loadingTranscript": "Chargement du transcript...",
+        "noTranscript": "Aucun transcript disponible pour cet appel.",
+        "unknownDate": "Date inconnue",
+        "unknownDuration": "—",
+        "unknownCost": "Coût inconnu",
+        "unknownAssistant": "Assistant inconnu",
+        "free": "Gratuit"
+      },
+      "notFound": {
+        "title": "Ce contact n'est pas encore disponible",
+        "subtitle": "Enregistrez un appel ou actualisez pour synchroniser les dernières activités."
+      }
+    },
+    "emptyTitle": "Aucun contact pour le moment",
+    "emptyDescription": "Vos contacts apparaîtront ici dès que vous commencerez à recevoir des appels."
+  },
+  "localeSwitcher": {
+    "ariaLabel": "Change language",
+    "active": "Active"
+  },
+  "callsPage": {
+    "title": "Calls",
+    "subtitle": "{count} calls analysed • New calls stream in real time",
+    "searchPlaceholder": "Search by phone, transcript, or ID...",
+    "statusPlaceholder": "Filter by status",
+    "duration": "{minutes}m {seconds}s",
+    "unknownNumber": "Unknown number",
+    "noTranscript": "No transcript available",
+    "empty": "No calls match this filter.",
+    "status": {
+      "any": "All statuses",
+      "in-progress": "In progress",
+      "ended": "Ended",
+      "failed": "Failed"
+    }
+  },
   "analyticsPage": {
-    "title": "Analytics détaillés",
-    "subtitle": "Suivez le volume d'appels, le sentiment et les sujets clés en temps réel pour optimiser Ava."
+    "title": "Detailed analytics",
+    "subtitle": "Track call volume, sentiment, and key topics in real time to optimise Ava."
   },
   "userMenu": {
     "signedInAs": "Connecté en tant que",
-    "profile": "Profil",
-    "studio": "Paramètres studio"
+    "profile": "Profil"
   }
 }

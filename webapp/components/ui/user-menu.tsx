@@ -1,6 +1,6 @@
 "use client";
 
-import { User2, LogOut, Settings } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useLocale } from "next-intl";
@@ -38,9 +38,16 @@ export function UserMenu() {
   const displayName = session?.user?.name ?? session?.user?.email ?? tMenu("profile");
   const email = session?.user?.email ?? "";
 
-  const handleNavigate = (section: "profile" | "studio") => {
-    const pathLocale = locale ?? "fr";
-    router.push(`/${pathLocale}/settings?section=${section}`);
+  const handleSignOut = async () => {
+    clearPersistedSession();
+    setSession(null);
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem("access_token");
+      window.localStorage.removeItem("refresh_token");
+      window.localStorage.removeItem("remember_me");
+    }
+    await signOut({ redirect: false });
+    router.push(`/${locale}/login`.replace(/\/{2,}/g, "/"));
   };
 
   return (
@@ -68,35 +75,7 @@ export function UserMenu() {
         <DropdownMenuItem
           onSelect={(event) => {
             event.preventDefault();
-            handleNavigate("profile");
-          }}
-          className="gap-2"
-        >
-          <User2 className="h-4 w-4" />
-          {tMenu("profile")}
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onSelect={(event) => {
-            event.preventDefault();
-            handleNavigate("studio");
-          }}
-          className="gap-2"
-        >
-          <Settings className="h-4 w-4" />
-          {tMenu("studio")}
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          onSelect={(event) => {
-            event.preventDefault();
-            clearPersistedSession();
-            setSession(null);
-            if (typeof window !== "undefined") {
-              window.localStorage.removeItem("access_token");
-              window.localStorage.removeItem("refresh_token");
-              window.localStorage.removeItem("remember_me");
-            }
-            void signOut({ callbackUrl: "/" });
+            void handleSignOut();
           }}
           className="gap-2 text-destructive"
         >

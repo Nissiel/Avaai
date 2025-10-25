@@ -1,7 +1,11 @@
 import type { ReactNode } from "react";
 
-import { MarketingShell } from "@/components/layouts/marketing-shell";
+import { AppProviders } from "@/providers/app-providers";
 
 export default function PublicLayout({ children }: { children: ReactNode }) {
-  return <MarketingShell>{children}</MarketingShell>;
+  return (
+    <AppProviders>
+      {children}
+    </AppProviders>
+  );
 }

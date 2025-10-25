@@ -7,6 +7,7 @@ type CallsState = {
   setCalls: (calls: CallSummary[]) => void;
   upsertCall: (call: CallSummary) => void;
   prependCall: (call: CallSummary) => void;
+  removeCall: (callId: string) => void;
 };
 
 export const useCallsStore = create<CallsState>((set) => ({
@@ -27,4 +28,8 @@ export const useCallsStore = create<CallsState>((set) => ({
       const withoutDuplicate = state.calls.filter((item) => item.id !== call.id);
       return { calls: [call, ...withoutDuplicate] };
     }),
+  removeCall: (callId) =>
+    set((state) => ({
+      calls: state.calls.filter((item) => item.id !== callId),
+    })),
 }));

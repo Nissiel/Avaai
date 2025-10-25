@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import type { Route } from "next";
-import { GaugeCircle, Bot, PhoneCall, LineChart, Settings, type LucideIcon } from "lucide-react";
+import { GaugeCircle, Bot, Users, UserCog, type LucideIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
 
@@ -26,9 +26,8 @@ type SidebarNavDefinition = {
 const NAV_DEFINITIONS: SidebarNavDefinition[] = [
   { labelKey: "dashboard", path: "dashboard", icon: GaugeCircle, exact: true },
   { labelKey: "assistants", path: "app/assistants", icon: Bot },
-  { labelKey: "calls", path: "app/calls", icon: PhoneCall },
-  { labelKey: "analytics", path: "analytics", icon: LineChart },
-  { labelKey: "settings", path: "settings", icon: Settings },
+  { labelKey: "contacts", path: "app/contacts", icon: Users },
+  { labelKey: "profile", path: "settings?section=profile", icon: UserCog },
 ];
 
 function buildSidebarNavItems(locale: string, translate: (key: string) => string): SidebarNavItem[] {

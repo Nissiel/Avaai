@@ -4,7 +4,7 @@ Repository functions for persisting and querying call records.
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Iterable, Optional, Sequence
 
 from sqlalchemy import Select, select
@@ -86,6 +86,48 @@ async def get_call_by_id(session: AsyncSession, call_id: str) -> CallRecord | No
     return await session.get(CallRecord, call_id)
 
 
+async def delete_call_record(session: AsyncSession, call_id: str, tenant_id: str) -> bool:
+    """Delete a call record if it belongs to the tenant."""
+
+    call = await session.get(CallRecord, call_id)
+    if not call or str(call.tenant_id) != str(tenant_id):
+        return False
+
+    await session.delete(call)
+    await session.commit()
+    return True
+
+
+async def scrub_transcript_if_expired(
+    session: AsyncSession,
+    call: CallRecord,
+    *,
+    now: datetime,
+    retention: timedelta,
+) -> bool:
+    """
+    Remove transcript if older than the retention window.
+
+    Returns True if the transcript was scrubbed.
+    """
+
+    if not call.transcript or not call.started_at:
+        return False
+
+    started_at = call.started_at
+    if started_at.tzinfo is None:
+        started_at = started_at.replace(tzinfo=timezone.utc)
+    else:
+        started_at = started_at.astimezone(timezone.utc)
+
+    if started_at <= now - retention:
+        call.transcript = None
+        await session.flush()
+        return True
+
+    return False
+
+
 __all__ = [
     "CallRecord",
     "upsert_calls",
@@ -93,4 +135,6 @@ __all__ = [
     "get_calls_in_range",
     "get_call_by_id",
     "prune_old_calls",
+    "delete_call_record",
+    "scrub_transcript_if_expired",
 ]

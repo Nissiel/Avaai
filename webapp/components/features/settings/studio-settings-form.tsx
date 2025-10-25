@@ -38,7 +38,15 @@ const VOICE_PROVIDER_OPTIONS = [
 
 type StudioConfigResponse = StudioConfigInput;
 
-export function StudioSettingsForm() {
+export interface StudioSettingsFormProps {
+  linkedAssistantId?: string | null;
+  onLinkedAssistantChange?: (assistantId: string | null) => void;
+}
+
+export function StudioSettingsForm({
+  linkedAssistantId,
+  onLinkedAssistantChange,
+}: StudioSettingsFormProps = {}) {
   const t = useTranslations("settingsPage.studio");
   const tActions = useTranslations("settingsPage.studio.actions");
   const tMessages = useTranslations("settingsPage.studio.messages");
@@ -101,8 +109,24 @@ export function StudioSettingsForm() {
     if (configQuery.data) {
       console.log("📥 Config Data Loaded:", configQuery.data);
       form.reset(configQuery.data);
+      if (typeof linkedAssistantId === "undefined") {
+        onLinkedAssistantChange?.(configQuery.data.vapiAssistantId ?? null);
+      }
     }
-  }, [configQuery.data, form]);
+  }, [configQuery.data, form, linkedAssistantId, onLinkedAssistantChange]);
+
+  useEffect(() => {
+    if (typeof linkedAssistantId === "undefined") {
+      return;
+    }
+    const currentValue = form.getValues("vapiAssistantId");
+    if (linkedAssistantId !== currentValue) {
+      form.setValue("vapiAssistantId", linkedAssistantId, {
+        shouldDirty: linkedAssistantId !== configQuery.data?.vapiAssistantId,
+        shouldTouch: true,
+      });
+    }
+  }, [linkedAssistantId, configQuery.data?.vapiAssistantId, form]);
 
   const updateMutation = useMutation<{ success?: boolean; config?: StudioConfigInput }, Error, StudioConfigInput>({
     mutationFn: async (values) => {
@@ -156,6 +180,7 @@ export function StudioSettingsForm() {
       const nextConfig = data.config ?? variables;
       queryClient.setQueryData(["studio-config"], nextConfig);
       form.reset(nextConfig);
+      onLinkedAssistantChange?.(nextConfig.vapiAssistantId ?? null);
       toast.success("✅ Configuration saved and synced to Vapi!", {
         description: "Your AI assistant is now up to date",
       });
@@ -237,7 +262,7 @@ export function StudioSettingsForm() {
             updateMutation.mutate(values);
           })}>
             
-            <Accordion type="multiple" defaultValue={["org", "ai", "voice", "conversation"]} className="space-y-4">
+            <Accordion type="multiple" defaultValue={[]} className="space-y-4">
               
               {/* 📋 ORGANIZATION SECTION */}
               <AccordionItem value="org" className="border-none">
@@ -712,23 +737,7 @@ export function StudioSettingsForm() {
             </Accordion>
 
             {/* SAVE BUTTONS */}
-            <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:items-center sm:justify-between border-t pt-6">
-              <Button
-                type="button"
-                variant="ghost"
-                className="w-full sm:w-auto"
-                onClick={() => {
-                  console.log("🔄 Reset Button Clicked");
-                  if (configQuery.data) {
-                    form.reset(configQuery.data);
-                    toast.info("Form reset to saved values");
-                  }
-                }}
-                disabled={updateMutation.isPending}
-              >
-                <RotateCcw className="mr-2 h-4 w-4" />
-                {tActions("reset")}
-              </Button>
+            <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:items-center sm:justify-end border-t pt-6">
               <Button
                 type="submit"
                 className="w-full sm:w-auto"

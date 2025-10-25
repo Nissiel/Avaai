@@ -4,8 +4,8 @@ import * as React from "react";
 import Link from "next/link";
 import { useLocale } from "next-intl";
 
-import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/navigation/theme-toggle";
+import { Button } from "@/components/ui/button";
 import { fallbackLocale, isLocale, type Locale } from "@/lib/i18n/locales";
 import { translate } from "@/lib/translation";
 
@@ -33,10 +33,10 @@ export function MarketingShell({ children }: { children: React.ReactNode }) {
   };
 
   const quickLinks: { label: string; href: string }[] = [
-    { label: translate(locale, "marketing.features", "Features"), href: routes.features },
-    { label: translate(locale, "marketing.pricing", "Pricing"), href: routes.pricing },
-    { label: translate(locale, "marketing.faq", "FAQ"), href: routes.faq },
-    { label: translate(locale, "common.cta.start", "Get started"), href: routes.onboarding },
+  { label: translate(locale, "marketing.features", "Features"), href: routes.features },
+  { label: translate(locale, "marketing.pricing", "Pricing"), href: routes.pricing },
+  { label: translate(locale, "marketing.faq", "FAQ"), href: routes.faq },
+  { label: translate(locale, "common.cta.start", "Get started"), href: routes.onboarding },
   ];
 
   const footerColumns: {
@@ -46,7 +46,7 @@ export function MarketingShell({ children }: { children: React.ReactNode }) {
     {
       title: translate(locale, "marketing.product", "Product"),
       links: [
-        { label: translate(locale, "common.cta.primary", "Create my Ava"), href: routes.onboarding },
+  { label: translate(locale, "marketing.cta.primary", "Start onboarding"), href: routes.onboarding },
         { label: "Dashboard", href: "/dashboard" },
         { label: translate(locale, "marketing.features", "Features"), href: routes.features },
       ],
@@ -74,17 +74,8 @@ export function MarketingShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <div className="px-4 pt-8">
-        <div className="mx-auto flex w-full max-w-screen-xl flex-col gap-6">
-          <div className="flex justify-end">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => (window.location.href = routes.onboarding)}
-            >
-              {translate(locale, "common.cta.primary", "Create my Ava")}
-            </Button>
-          </div>
+        <div className="mx-auto flex w-full max-w-screen-xl items-center justify-end">
+          <ThemeToggle />
         </div>
       </div>
 

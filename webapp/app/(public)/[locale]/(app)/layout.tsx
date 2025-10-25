@@ -17,6 +17,12 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
         <main className="flex-1 px-6 py-8">
           <div className="mx-auto w-full max-w-6xl space-y-8">{children}</div>
         </main>
+        <footer className="border-t border-border/40 px-6 py-4">
+          <div className="mx-auto w-full max-w-6xl flex items-center justify-between text-xs text-muted-foreground">
+            <p>© 2025 Ava.ai · Your AI Secretary</p>
+            <p>Made with ❤️ by the Ava team</p>
+          </div>
+        </footer>
       </div>
     </div>
   );

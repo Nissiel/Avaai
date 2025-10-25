@@ -18,7 +18,8 @@
       "billing": "חיוב",
       "team": "צוות",
       "settings": "הגדרות",
-      "logs": "לוגים"
+      "logs": "לוגים",
+      "contacts": "Contacts"
     },
     "status": {
       "connected": "מחובר",
@@ -76,7 +77,12 @@
     },
     "or": "או המשיכו עם",
     "oauth": "המשיכו עם {provider}",
-    "policy": "בהמשך אתם מאשרים את התנאים ומדיניות הפרטיות של Ava.ai."
+    "policy": "בהמשך אתם מאשרים את התנאים ומדיניות הפרטיות של Ava.ai.",
+    "login": {
+      "title": "Sign in",
+      "subtitle": "Sign in with your email or phone number",
+      "description": "Access your AVA account"
+    }
   },
   "marketing": {
     "features": "יכולות",
@@ -87,28 +93,32 @@
     "privacy": "פרטיות",
     "terms": "תנאים",
     "security": "אבטחה",
-    "product": "מוצר",
-    "resources": "משאבים",
-    "support": "תמיכה",
-    "taglineFooter": "העוזרת הקולית שלא מפספסת אף הזדמנות, 24/7.",
+    "product": "Product",
+    "resources": "Resources",
+    "support": "Support",
+    "cta": {
+      "primary": "Start onboarding",
+      "secondary": "Talk to an expert"
+    },
+    "taglineFooter": "The AI receptionist that captures every opportunity 24/7.",
     "fallback": {
       "badge": "Ava Studio",
-      "title": "הקבלה הקולית שתמיד זמינה",
-      "subtitle": "תכננו והשיקו עוזרת טלפונית שמקבלת שיחות, מסננת לידים וקובעת פגישות תוך דקות ספורות.",
-      "primary": "התחילו עכשיו",
-      "secondary": "צפו בהדגמה",
+      "title": "Your AI receptionist is always available",
+      "subtitle": "Design, launch, and operate a human-level voice assistant that greets callers, qualifies leads, and schedules appointments in minutes.",
+      "primary": "Start now",
+      "secondary": "Watch the demo",
       "stats": {
         "calls": {
           "value": "99.9%",
-          "label": "שיחות נענות"
+          "label": "Calls answered"
         },
         "csat": {
           "value": "4.9/5",
-          "label": "ציון שביעות רצון"
+          "label": "Satisfaction score"
         },
         "setup": {
-          "value": "3 דק׳",
-          "label": "הגדרה ממוצעת"
+          "value": "3 min",
+          "label": "Average setup"
         }
       }
     }
@@ -162,27 +172,25 @@
     "pageTitle": "אונבורדינג אווה",
     "pageSubtitle": "השלימו את השלבים כדי להפעיל את אווה. תמיד אפשר לחזור אליהם מ-Ava Studio."
   },
-  "sidebarNav": {
-    "dashboard": "לוח מחוונים",
-    "assistants": "עוזרים",
-    "calls": "שיחות",
-    "analytics": "ניתוחים",
-    "settings": "הגדרות"
-  },
-  "sidebarTip": {
-    "title": "🎯 טיפ",
-    "body": "לחצו ‎⌘K כדי לפתוח את חלונית הפקודות ולהתקדם מהר יותר."
-  },
-  "localeSwitcher": {
-    "ariaLabel": "שינוי שפה",
-    "active": "פעיל"
-  },
   "dashboardPage": {
+    "assistants": {
+      "title": "העוזרות שלך",
+      "subtitle": "פעילות",
+      "loading": "טוען...",
+      "empty": "אין עוזרות עדיין",
+      "configure": "הגדר",
+      "alerts": {
+        "notConfigured": "קונפיגורציית Vapi חסרה. הוסיפו מפתח API תקף לסנכרון עוזרות.",
+        "fetchFailed": "לא ניתן לטעון את העוזרות כרגע.",
+        "parseFailed": "התשובה משירות העוזרות לא תקינה.",
+        "empty": "אין עוזרות מסונכרנות עדיין."
+      }
+    },
+    "cta": "פתיחת סטודיו העוזרות",
     "title": "לוח מחוונים",
-    "subtitle": "ברוך שובך! כך נראית הפעילות של העוזרות של Ava.",
-    "cta": "עוזר חדש",
+    "subtitle": "ברוך הבא! הנה מה שקורה עם העוזרות של Ava.",
     "loading": "טוען את לוח המחוונים...",
-    "error": "שגיאה בטעינת לוח המחוונים",
+    "error": "אירעה שגיאה בטעינת לוח המחוונים",
     "stats": {
       "totalCalls": "סה\"כ שיחות",
       "activeUsers": "משתמשים פעילים",
@@ -192,155 +200,276 @@
     },
     "statsHelpers": {
       "totalCalls": "7 הימים האחרונים",
-      "avgDuration": "דקות לשיחה",
-      "successRate": "שיחות שהסתיימו ללא הסלמה",
-      "totalCost": "תקופת חיוב"
+      "avgDuration": "דקות לכל שיחה",
+      "successRate": "שיחות ללא הסלמה",
+      "totalCost": "תקופת החיוב הנוכחית"
+    },
+    "quick": {
+      "title": "פעולות מהירות",
+      "viewAnalytics": "צפייה בניתוחים",
+      "manageAssistants": "ניהול עוזרות",
+      "newContact": "איש קשר חדש",
+      "testCall": "שיחת בדיקה"
+    },
+    "activity": {
+      "title": "סקירת פעילות",
+      "subtitle": "עקבו אחרי שיחות וביצועים בזמן אמת"
     },
     "recent": {
       "title": "שיחות אחרונות",
       "loading": "טוען...",
       "empty": "אין שיחות עדיין",
-      "unknownNumber": "מספר לא מוכר",
+      "unknownNumber": "מספר לא ידוע",
       "noTranscript": "אין תמלול זמין",
       "view": "צפה",
       "send": "שלח תמלול במייל",
       "free": "ללא עלות",
       "toastSuccess": "התמלול נשלח במייל!",
-      "toastError": "שליחת התמלול נכשלה"
+      "toastError": "שליחת התמלול נכשלה",
+      "seeAll": "לכל השיחות"
     }
   },
   "assistantsPage": {
-    "title": "עוזרים",
-    "subtitle": "נהלו את דמויות הקול, התאימו אישיות וחברו למספרים.",
-    "cta": "יצירת עוזר",
-    "list": {
-      "title": "העוזרים שלך",
-      "description": "הם יופיעו כאן מיד כשהם מסונכרנים מ-Vapi.",
-      "empty": "התחברו לחשבון Vapi כדי לראות עוזרים קיימים."
+    "hero": {
+      "badge": "סטודיו לעוזרת",
+      "title": "עצבו את עוזרות Ava בדיוק לצרכים שלכם",
+      "subtitle": "{count, plural, =0 {התחילו ביצירת העוזרת הקולית הראשונה שלכם.} one {עוזרת אחת מוכנה לענות למתקשרים.} other {{countFormatted} עוזרות מוכנות לענות למתקשרים.}}",
+      "actions": {
+        "create": "עוזרת חדשה",
+        "library": "ספריית פלייבוקים"
+      },
+      "metrics": {
+        "total": "{count, plural, =0 {אין עוזרות עדיין} one {עוזרת אחת מוגדרת} other {{countFormatted} עוזרות מוגדרות}}"
+      }
+    },
+    "library": {
+      "title": "ספריית העוזרות",
+      "subtitle": "עברו בין פרסונות ובחרו אחת לעריכה בבונה.",
+      "count": "{count, plural, =0 {אין עוזרות} one {עוזרת אחת} other {{countFormatted} עוזרות}}",
+      "select": "עריכה בבונה",
+      "active": "פעילה",
+      "empty": {
+        "title": "עוד לא יצרתם עוזרת",
+        "subtitle": "צרו כמה פרסונות שתרצו. לכל עוזרת מוגדר טון, תסריט וקול משלה.",
+        "cta": "צרו עוזרת ראשונה"
+      },
+      "warnings": {
+        "notConfigured": "התחברו לחשבון Vapi כדי לטעון עוזרות קיימות.",
+        "fetchFailed": "לא הצלחנו להגיע לשירות העוזרות כרגע.",
+        "parseFailed": "השירות החזיר מבנה בלתי צפוי.",
+        "empty": "Vapi עדיין לא החזיר עוזרות עבורכם."
+      },
+      "meta": {
+        "unavailable": "תאריך יצירה לא זמין"
+      }
+    },
+    "designer": {
+      "title": "בונה העוזרת",
+      "subtitle": "כווננו פרסונה, תסריט, קול, ניתוב ואינטגרציות עבור העוזרת שבחרתם.",
+      "helper": "בחרו עוזרת בעמודה השמאלית כדי לקשר אותה, ואז שמרו כדי לדחוף את העדכונים ל-Vapi ולמתקשרים מיד."
     }
   },
-  "callsPage": {
-    "title": "שיחות",
-    "subtitle": "{count} שיחות נותחו • שיחות חדשות מוזרמות בזמן אמת",
-    "searchPlaceholder": "חיפוש מהיר (מספר, עוזר, תמלול...)",
-    "statusPlaceholder": "סטטוס",
-    "status": {
-      "any": "כל הסטטוסים",
-      "in-progress": "בתהליך",
-      "ended": "הושלמו",
-      "failed": "נכשלו"
-    },
-    "duration": "{minutes}דק {seconds}שנ'",
-    "unknownNumber": "מספר לא מוכר",
-    "noTranscript": "אין תמלול זמין",
-    "empty": "לא נמצאו שיחות לתצוגה זו."
-  },
   "settingsPage": {
+    "movedNotice": {
+      "title": "מחפשים את הגדרות הסטודיו?",
+      "subtitle": "יצירת העוזרות וההתאמות עברו לעמוד העוזרות.",
+      "cta": "פתחו את סטודיו העוזרות"
+    },
     "header": {
-      "title": "הגדרות",
-      "subtitle": "נהלו את הפרטים האישיים וקבעו את הגדרות הסטודיו של Ava."
+      "title": "Settings",
+      "subtitle": "Manage your personal details and configure your Ava studio."
     },
     "tabs": {
-      "profile": "פרופיל",
-      "studio": "הגדרות סטודיו"
+      "profile": "Profile",
+      "studio": "Studio settings"
     },
     "profile": {
-      "title": "פרופיל משתמש",
-      "description": "הפרטים שלכם מוצגים בהתראות ובתקשורת עם לקוחות.",
+      "title": "User profile",
+      "description": "Your details appear in notifications and customer communications.",
       "form": {
-        "name": "שם מלא",
-        "email": "אימייל",
-        "phone": "טלפון (אופציונלי)",
-        "phonePlaceholder": "+972 50 123 4567",
-        "locale": "שפה ברירת מחדל"
+        "name": "Full name",
+        "email": "Email",
+        "phone": "Phone (optional)",
+        "phonePlaceholder": "+1 415 555 0100",
+        "locale": "Default language"
       },
       "actions": {
-        "reset": "איפוס",
-        "save": "שמירה",
-        "saving": "שומר..."
+        "reset": "Reset",
+        "save": "Save",
+        "saving": "Saving..."
       },
       "messages": {
-        "success": "הפרופיל עודכן בהצלחה",
-        "error": "לא ניתן לעדכן את הפרופיל",
-        "sessionExpired": "תם תוקף ההתחברות. אנא התחברו מחדש."
+        "success": "Profile updated successfully",
+        "error": "Unable to update profile",
+        "sessionExpired": "Session expired. Please sign in again."
       },
       "errors": {
-        "nameMin": "השם חייב להכיל לפחות 2 תווים",
-        "nameMax": "השם לא יכול לעלות על 100 תווים",
-        "email": "אנא הזינו אימייל תקין",
-        "phone": "הזינו מספר בינלאומי (+972 ...)",
-        "locale": "בחרו שפה"
+        "nameMin": "Name must contain at least 2 characters",
+        "nameMax": "Name cannot exceed 100 characters",
+        "email": "Please enter a valid email",
+        "phone": "Provide an international number (+1 ...)",
+        "locale": "Please select a language"
       }
     },
     "studio": {
-      "title": "הגדרות סטודיו",
-      "description": "הגדירו את זהות הארגון ואת האישיות של Ava.",
-      "refresh": "רענון",
-      "loading": "טוען את הגדרות הסטודיו…",
-      "error": "לא הצלחנו לטעון את ההגדרות. נסו שוב.",
+      "title": "Studio settings",
+      "description": "Define your organisation identity and Ava personality.",
+      "refresh": "Refresh",
+      "loading": "Loading studio configuration…",
+      "error": "We couldn't load the configuration. Please try again.",
       "form": {
-        "organizationName": "שם הארגון",
-        "adminEmail": "אימייל מנהל",
-        "timezone": "אזור זמן",
-        "language": "שפה ראשית",
-        "persona": "דמות של Ava",
-        "tone": "טון דיבור",
-        "guidelines": "הנחיות",
-        "phoneNumber": "מספר ראשי",
-        "businessHours": "שעות פעילות",
-        "fallbackEmail": "אימייל גיבוי",
-        "summaryEmail": "אימייל סיכומים",
-        "smtpServer": "שרת SMTP",
-        "smtpPort": "פורט SMTP",
-        "smtpUsername": "שם משתמש SMTP",
-        "smtpPassword": "סיסמת SMTP"
+        "organizationName": "Organization name",
+        "adminEmail": "Admin email",
+        "timezone": "Timezone",
+        "language": "Primary language",
+        "persona": "Ava persona",
+        "tone": "Voice tone",
+        "guidelines": "Instructions & guidelines",
+        "phoneNumber": "Main number",
+        "businessHours": "Business hours",
+        "fallbackEmail": "Fallback email",
+        "summaryEmail": "Summary email",
+        "smtpServer": "SMTP server",
+        "smtpPort": "SMTP port",
+        "smtpUsername": "SMTP username",
+        "smtpPassword": "SMTP password"
       },
-      "smtpDescription": "הגדירו את כתובת השולח לדוחות ולהתראות האוטומטיות.",
+      "smtpDescription": "Configure the sender for automated reports and notifications.",
       "actions": {
-        "reset": "איפוס",
-        "save": "שמירה",
-        "saving": "שומר..."
+        "reset": "Reset",
+        "save": "Save",
+        "saving": "Saving..."
       },
       "messages": {
-        "success": "ההגדרות נשמרו בהצלחה",
-        "error": "לא ניתן לשמור את ההגדרות"
+        "success": "Studio configuration updated successfully",
+        "error": "Unable to save configuration"
       },
       "errors": {
-        "required": "אנא מלאו את השדה",
-        "email": "הזינו כתובת אימייל תקינה"
+        "required": "Please fill in this field",
+        "email": "Enter a valid email"
       },
       "options": {
         "timezone": {
-          "europe/paris": "אירופה / פריז",
-          "america/new_york": "אמריקה / ניו יורק",
-          "asia/tokyo": "אסיה / טוקיו"
+          "europe/paris": "Europe / Paris",
+          "america/new_york": "America / New York",
+          "asia/tokyo": "Asia / Tokyo"
         },
         "language": {
-          "fr": "צרפתית",
-          "en": "אנגלית",
-          "es": "ספרדית"
+          "fr": "French",
+          "en": "English",
+          "es": "Spanish"
         },
         "persona": {
-          "secretary": "עוזרת מנהלים",
-          "concierge": "קונסיירז' פרימיום",
-          "sdr": "פיתוח מכירות",
-          "cs": "שירות לקוחות"
+          "secretary": "Executive assistant",
+          "concierge": "Premium concierge",
+          "sdr": "Sales development",
+          "cs": "Customer success"
         },
         "tone": {
-          "warm": "חמים",
-          "professional": "מקצועי",
-          "energetic": "אנרגטי"
+          "warm": "Warm",
+          "professional": "Professional",
+          "energetic": "Energetic"
         }
       }
     }
   },
+  "sidebarNav": {
+    "dashboard": "לוח מחוונים",
+    "assistants": "עוזרים",
+    "contacts": "אנשי קשר",
+    "calls": "Calls",
+    "profile": "פרופיל"
+  },
+  "sidebarTip": {
+    "title": "🎯 טיפ",
+    "body": "לחצו ‎⌘K כדי לפתוח את חלונית הפקודות ולהתקדם מהר יותר."
+  },
+  "contactsPage": {
+    "title": "אנשי קשר",
+    "subtitle": "{contacts} אנשי קשר • {calls} שיחות בסך הכל",
+    "searchPlaceholder": "חיפוש לפי שם או מספר...",
+    "sort": {
+      "recent": "שיחה אחרונה",
+      "frequent": "הכי הרבה שיחות",
+      "oldest": "שיחה ראשונה"
+    },
+    "card": {
+      "callCount": "{count, plural, one {שיחה אחת} other {# שיחות}}",
+      "averageDuration": "משך ממוצע",
+      "totalDuration": "משך מצטבר",
+      "lastContact": "מגע אחרון",
+      "unknownDate": "תאריך לא ידוע",
+      "unknownDuration": "—",
+      "unknownNumber": "מספר לא ידוע"
+    },
+    "detail": {
+      "back": "חזרה לאנשי קשר",
+      "badge": "פרופיל איש קשר",
+      "unknownPhone": "מספר לא זמין",
+      "alias": {
+        "add": "הוספת שם",
+        "edit": "עריכת שם",
+        "remove": "הסרת שם",
+        "save": "שמירה",
+        "cancel": "ביטול",
+        "placeholder": "שם פרטי ומשפחה"
+      },
+      "metrics": {
+        "callCount": "שיחות",
+        "totalDuration": "משך מצטבר",
+        "averageDuration": "משך ממוצע",
+        "lastCall": "שיחה אחרונה",
+        "firstCall": "שיחה ראשונה",
+        "unknown": "—"
+      },
+      "timeline": {
+        "title": "היסטוריית שיחות",
+        "subtitle": "{count, plural, one {שיחה אחת מתועדת} other {‏# שיחות מתועדות}}",
+        "empty": "עדיין אין שיחות מתועדות לאיש קשר זה.",
+        "viewTranscript": "הצג תמלול",
+        "hideTranscript": "הסתר תמלול",
+        "loadingTranscript": "טוען תמלול...",
+        "noTranscript": "אין תמלול זמין לשיחה זו.",
+        "unknownDate": "תאריך לא ידוע",
+        "unknownDuration": "—",
+        "unknownCost": "עלות לא ידועה",
+        "unknownAssistant": "עוזרת לא ידועה",
+        "free": "ללא עלות"
+      },
+      "notFound": {
+        "title": "עדיין לא מצאנו את איש הקשר הזה",
+        "subtitle": "בצעו שיחה או רעננו כדי לסנכרן את הפעילות האחרונה."
+      }
+    },
+    "emptyTitle": "אין אנשי קשר עדיין",
+    "emptyDescription": "אנשי הקשר שלכם יופיעו כאן ברגע שתתחילו לקבל שיחות."
+  },
+  "localeSwitcher": {
+    "ariaLabel": "Change language",
+    "active": "Active"
+  },
+  "callsPage": {
+    "title": "Calls",
+    "subtitle": "{count} calls analysed • New calls stream in real time",
+    "searchPlaceholder": "Search by phone, transcript, or ID...",
+    "statusPlaceholder": "Filter by status",
+    "duration": "{minutes}m {seconds}s",
+    "unknownNumber": "Unknown number",
+    "noTranscript": "No transcript available",
+    "empty": "No calls match this filter.",
+    "status": {
+      "any": "All statuses",
+      "in-progress": "In progress",
+      "ended": "Ended",
+      "failed": "Failed"
+    }
+  },
   "analyticsPage": {
-    "title": "ניתוחים מפורטים",
-    "subtitle": "עקבו אחרי נפח השיחות, תחושות והנושאים המרכזיים בזמן אמת כדי לייעל את Ava."
+    "title": "Detailed analytics",
+    "subtitle": "Track call volume, sentiment, and key topics in real time to optimise Ava."
   },
   "userMenu": {
-    "signedInAs": "מחוברים בשם",
-    "profile": "פרופיל",
-    "studio": "הגדרות סטודיו"
+    "signedInAs": "מחובר כעת",
+    "profile": "פרופיל"
   }
 }

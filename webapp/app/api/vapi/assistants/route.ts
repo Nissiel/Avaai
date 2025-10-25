@@ -121,10 +121,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ success: true, assistants });
   } catch (error) {
     console.error("Error fetching assistants:", error);
-    return NextResponse.json(
-      { success: false, error: "Failed to fetch assistants" },
-      { status: 500 },
-    );
+    const message = error instanceof Error ? error.message : "Failed to fetch assistants";
+    return NextResponse.json({ success: false, error: message, assistants: [] }, { status: 502 });
   }
 }
 

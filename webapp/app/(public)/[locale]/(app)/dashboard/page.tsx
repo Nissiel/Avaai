@@ -9,11 +9,9 @@
 'use client';
 
 import * as React from 'react';
-import { motion } from 'framer-motion';
-import { Phone, Clock, TrendingUp, Settings, Plus, MessageSquare, Mail, DollarSign } from 'lucide-react';
+import { Phone, Clock, Settings, Plus, MessageSquare, Mail, DollarSign } from 'lucide-react';
+import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
-import type { Locale as DateFnsLocale } from 'date-fns';
-import { enUS, fr, he } from 'date-fns/locale';
 import { GlassCard } from '@/components/ui/glass-card';
 import { FuturisticButton } from '@/components/ui/futuristic-button';
 import { useQuery, useMutation } from '@tanstack/react-query';
@@ -21,18 +19,15 @@ import { CallTranscriptViewer } from '@/components/app/call-transcript-viewer';
 import { toast } from 'sonner';
 
 import { getAnalyticsOverview } from '@/lib/api/analytics';
-import { listAssistants } from '@/lib/api/assistants';
+import { listAssistants, type AssistantsResult } from '@/lib/api/assistants';
 import { sendCallTranscriptEmail } from '@/lib/api/calls';
-import type { AssistantSummary, DashboardAnalytics } from '@/lib/dto';
+import type { DashboardAnalytics } from '@/lib/dto';
 import { useAssistantsStore } from '@/lib/stores/assistants-store';
 import { useCallsStore } from '@/lib/stores/calls-store';
 import type { Locale as SupportedLocale } from '@/lib/i18n/locales';
-
-const DATE_LOCALE_MAP: Record<SupportedLocale, DateFnsLocale> = {
-  en: enUS,
-  fr,
-  he,
-};
+import { formatDuration } from '@/lib/formatters/duration';
+import { humanizeIdentifier } from '@/lib/formatters/name';
+import { useContactAliasStore } from '@/lib/stores/contact-alias-store';
 
 const CURRENCY_BY_LOCALE: Record<SupportedLocale, string> = {
   en: 'USD',
@@ -43,8 +38,8 @@ const CURRENCY_BY_LOCALE: Record<SupportedLocale, string> = {
 export default function DashboardPage() {
   const t = useTranslations('dashboardPage');
   const tStatus = useTranslations('callsPage.status');
+  const tAssistants = useTranslations('dashboardPage.assistants');
   const locale = useLocale() as SupportedLocale;
-  const dateLocale = DATE_LOCALE_MAP[locale] ?? enUS;
   const numberFormatter = React.useMemo(() => new Intl.NumberFormat(locale), [locale]);
   const currencyFormatter = React.useMemo(
     () =>
@@ -57,6 +52,7 @@ export default function DashboardPage() {
   );
   const [mounted, setMounted] = React.useState(false);
   const [selectedCall, setSelectedCall] = React.useState<any | null>(null);
+  const aliases = useContactAliasStore((state) => state.aliases);
   
   const analyticsQuery = useQuery<DashboardAnalytics>({
     queryKey: ['dashboard', 'analytics'],
@@ -65,7 +61,7 @@ export default function DashboardPage() {
     enabled: mounted, // Only fetch after mount
   });
 
-  const assistantsQuery = useQuery<AssistantSummary[]>({
+  const assistantsQuery = useQuery<AssistantsResult>({
     queryKey: ['assistants'],
     queryFn: listAssistants,
     staleTime: 60_000,
@@ -86,11 +82,35 @@ export default function DashboardPage() {
 
   const overview = analyticsQuery.data?.overview ?? null;
   const calls = analyticsQuery.data?.calls ?? [];
-  const assistants = assistantsQuery.data ?? [];
+  const assistantsResult = assistantsQuery.data ?? { assistants: [], warning: undefined, configured: undefined };
+  const assistants = assistantsResult.assistants ?? [];
+  const assistantsWarning = assistantsResult.warning;
   const loading = !mounted || analyticsQuery.isLoading || assistantsQuery.isLoading;
   const error = analyticsQuery.error || assistantsQuery.error;
   const setAssistants = useAssistantsStore((state) => state.setAssistants);
   const setCalls = useCallsStore((state) => state.setCalls);
+
+  const assistantsWarningMessage = React.useMemo(() => {
+    if (!assistantsWarning) return null;
+    switch (assistantsWarning.code) {
+      case 'NOT_CONFIGURED':
+        return tAssistants('alerts.notConfigured');
+      case 'PARSE_FAILED':
+        return tAssistants('alerts.parseFailed');
+      case 'EMPTY_RESPONSE':
+        return tAssistants('alerts.empty');
+      case 'FETCH_FAILED':
+      default:
+        return tAssistants('alerts.fetchFailed');
+    }
+  }, [assistantsWarning, tAssistants]);
+
+  const assistantsWarningDescription =
+    assistantsWarning?.message && assistantsWarning.message !== assistantsWarningMessage
+      ? assistantsWarning.message
+      : undefined;
+
+  const lastAssistantsWarning = React.useRef<string | null>(null);
 
   // Client-only mounting guard to prevent hydration mismatch
   React.useEffect(() => {
@@ -98,15 +118,28 @@ export default function DashboardPage() {
   }, []);
 
   React.useEffect(() => {
-    if (assistants.length) {
-      setAssistants(assistants);
-    }
+    setAssistants(assistants);
   }, [assistants, setAssistants]);
 
   React.useEffect(() => {
-    if (calls.length) {
-      setCalls(calls);
+    if (!assistantsWarningMessage) {
+      lastAssistantsWarning.current = null;
+      return;
     }
+
+    if (lastAssistantsWarning.current === assistantsWarningMessage) {
+      return;
+    }
+
+    lastAssistantsWarning.current = assistantsWarningMessage;
+    toast.error(
+      assistantsWarningMessage,
+      assistantsWarningDescription ? { description: assistantsWarningDescription } : undefined,
+    );
+  }, [assistantsWarningDescription, assistantsWarningMessage]);
+
+  React.useEffect(() => {
+    setCalls(calls);
   }, [calls, setCalls]);
 
   // Show loading state during SSR hydration
@@ -141,14 +174,22 @@ export default function DashboardPage() {
           <h1 className="text-4xl font-bold tracking-tight">{t('title')}</h1>
           <p className="text-muted-foreground mt-2">{t('subtitle')}</p>
         </div>
-        <FuturisticButton size="lg" className="gap-2">
-          <Plus className="h-5 w-5" />
-          {t('cta')}
-        </FuturisticButton>
+        <Link href={`/${locale}/app/assistants`.replace(/\/{2,}/g, '/') as any}>
+          <FuturisticButton 
+            size="lg" 
+            variant="primary"
+            glow
+            className="relative overflow-hidden bg-gradient-to-r from-primary via-primary/90 to-primary/80 hover:from-primary/90 hover:via-primary hover:to-primary shadow-lg shadow-primary/50 transition-all duration-300 hover:shadow-xl hover:shadow-primary/60 hover:scale-105 px-8"
+          >
+            <span className="relative z-10 font-bold tracking-wider text-base">
+              Launch Studio
+            </span>
+          </FuturisticButton>
+        </Link>
       </div>
 
       {/* Quick Stats */}
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {[
           {
             key: 'total-calls',
@@ -161,21 +202,9 @@ export default function DashboardPage() {
           {
             key: 'avg-duration',
             label: t('stats.avgDuration'),
-            value: loading ? '…' : overview?.avgDuration ?? '—',
+            value: loading ? '…' : formatDuration(overview?.avgDurationSeconds, locale),
             helper: t('statsHelpers.avgDuration'),
             icon: Clock,
-            show: true,
-          },
-          {
-            key: 'success-rate',
-            label: t('stats.successRate'),
-            value: loading
-              ? '…'
-              : overview?.satisfaction != null
-              ? `${Math.round((overview.satisfaction ?? 0) * 100)}%`
-              : '—',
-            helper: t('statsHelpers.successRate'),
-            icon: TrendingUp,
             show: true,
           },
           {
@@ -198,12 +227,11 @@ export default function DashboardPage() {
             return (
               <GlassCard key={item.key} className="p-6">
                 <div className="flex items-center justify-between">
-                  <div>
+                  <div className="flex-1">
                     <p className="text-sm font-medium text-muted-foreground">{item.label}</p>
                     <p className="text-3xl font-bold mt-2">{item.value}</p>
-                    {item.helper ? <p className="text-xs text-muted-foreground mt-1">{item.helper}</p> : null}
                   </div>
-                  <Icon className="h-8 w-8 text-primary" />
+                  {item.key !== 'total-cost' && <Icon className="h-8 w-8 text-primary" />}
                 </div>
               </GlassCard>
             );
@@ -211,71 +239,78 @@ export default function DashboardPage() {
       </div>
 
       {/* Recent Activity */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        <GlassCard className="p-6">
-          <h2 className="text-xl font-semibold mb-4">{t('recent.title')}</h2>
+      <GlassCard className="p-6">
+        <h2 className="text-xl font-semibold mb-4">{t('recent.title')}</h2>
           {loading ? (
             <p className="text-muted-foreground">{t('recent.loading')}</p>
           ) : calls.length === 0 ? (
             <p className="text-muted-foreground">{t('recent.empty')}</p>
           ) : (
             <div className="space-y-4">
-              {calls.slice(0, 5).map((call: any) => (
-                <div key={call.id} className="flex items-center justify-between p-4 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
-                  <div className="flex-1">
-                    <p className="font-medium">{call.customerNumber || t('recent.unknownNumber')}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {tStatus(call.status as string, { defaultMessage: call.status })} • {call.cost ? currencyFormatter.format(call.cost) : t('recent.free')}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <FuturisticButton
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => setSelectedCall(call)}
-                      className="gap-2"
-                    >
-                      <MessageSquare className="h-4 w-4" />
-                      {t('recent.view')}
-                    </FuturisticButton>
-                    <FuturisticButton
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => emailMutation.mutate(call.id)}
-                      disabled={emailMutation.isPending}
-                      className="gap-2"
-                    >
-                      <Mail className="h-4 w-4" />
-                      {t('recent.send')}
-                    </FuturisticButton>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </GlassCard>
+              {calls.slice(0, 5).map((call: any) => {
+                const phoneNumber: string = call.customerNumber || '';
+                const alias = phoneNumber ? aliases[phoneNumber] : undefined;
+                const normalizedPhone = phoneNumber ? humanizeIdentifier(phoneNumber) : '';
+                const displayName = alias?.trim().length
+                  ? humanizeIdentifier(alias)
+                  : normalizedPhone || t('recent.unknownNumber');
+                const phoneLabel = alias?.trim().length ? phoneNumber : null;
+                const durationLabel =
+                  typeof call.durationSeconds === 'number'
+                    ? formatDuration(call.durationSeconds, locale)
+                    : null;
 
-        <GlassCard className="p-6">
-          <h2 className="text-xl font-semibold mb-4">{t('assistants.title')}</h2>
-          {loading ? (
-            <p className="text-muted-foreground">{t('assistants.loading')}</p>
-          ) : assistants.length === 0 ? (
-            <p className="text-muted-foreground">{t('assistants.empty')}</p>
-          ) : (
-            <div className="space-y-4">
-              {assistants.map((assistant: any) => (
-                <div key={assistant.id} className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">{assistant.name}</p>
-                    <p className="text-sm text-muted-foreground">{t('assistants.subtitle')}</p>
+                let costLabel: string | null = null;
+                if (typeof call.cost === 'number') {
+                  costLabel = call.cost === 0 ? t('recent.free') : currencyFormatter.format(call.cost);
+                }
+
+                const metadata = [
+                  tStatus(call.status as string, { defaultMessage: call.status }),
+                  durationLabel,
+                  costLabel,
+                ]
+                  .filter(Boolean)
+                  .join(' • ');
+
+                return (
+                  <div key={call.id} className="flex items-center justify-between p-4 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
+                    <div className="flex-1 space-y-1">
+                      <p className="font-medium">{displayName}</p>
+                      {phoneLabel ? (
+                        <p className="text-xs font-mono uppercase tracking-wide text-muted-foreground/70">
+                          {phoneLabel}
+                        </p>
+                      ) : null}
+                      <p className="text-sm text-muted-foreground">{metadata}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <FuturisticButton
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setSelectedCall(call)}
+                        className="gap-2"
+                      >
+                        <MessageSquare className="h-4 w-4" />
+                        {t('recent.view')}
+                      </FuturisticButton>
+                      <FuturisticButton
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => emailMutation.mutate(call.id)}
+                        disabled={emailMutation.isPending}
+                        className="gap-2"
+                      >
+                        <Mail className="h-4 w-4" />
+                        {t('recent.send')}
+                      </FuturisticButton>
+                    </div>
                   </div>
-                  <Settings className="h-5 w-5 text-muted-foreground" />
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </GlassCard>
-      </div>
 
       {/* Transcript Viewer Modal */}
       {selectedCall && (

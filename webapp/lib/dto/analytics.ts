@@ -8,7 +8,7 @@ export interface AnalyticsPeriod {
 export interface AnalyticsOverview {
   totalCalls: number;
   activeNow: number;
-  avgDuration: string;
+  avgDurationSeconds: number;
   satisfaction: number;
   totalCost?: number;
   period: AnalyticsPeriod;

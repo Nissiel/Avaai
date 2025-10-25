@@ -114,3 +114,11 @@ export async function sendCallTranscriptEmail(callId: string): Promise<SendTrans
 
   return res.json();
 }
+
+export async function deleteCall(callId: string): Promise<void> {
+  const res = await fetch(`/api/calls/${callId}`, { method: "DELETE" });
+  if (!res.ok && res.status !== 204) {
+    const error = await res.json().catch(() => ({ detail: "Failed to delete call" }));
+    throw new Error(error.detail || `Failed to delete call`);
+  }
+}

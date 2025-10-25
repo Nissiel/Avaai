@@ -83,19 +83,10 @@ export default function HomePage() {
                 variant="primary"
                 size="xl"
                 glow
-                onClick={() => (window.location.href = '/onboarding')}
-                icon={<Sparkles className="h-6 w-6" />}
-              >
-                Créer mon AVA
-              </FuturisticButton>
-
-              <FuturisticButton
-                variant="ghost"
-                size="xl"
                 onClick={() => (window.location.href = '/dashboard')}
                 icon={<ArrowRight className="h-6 w-6" />}
               >
-                Voir démo
+                Voir la démo
               </FuturisticButton>
             </div>
           </motion.div>

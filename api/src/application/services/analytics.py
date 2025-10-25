@@ -143,7 +143,7 @@ async def compute_overview_metrics(
     return {
         "totalCalls": total_calls,
         "activeNow": active_now,
-        "avgDuration": _format_duration(avg_duration),
+        "avgDurationSeconds": round(avg_duration, 1),
         "satisfaction": round(avg_satisfaction, 2),
         "totalCost": round(total_cost, 2),
         "period": {

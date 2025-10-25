@@ -10,3 +10,19 @@ export async function GET(
   const data = await response.json();
   return NextResponse.json(data, { status: response.status });
 }
+
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const response = await fetch(`${BACKEND_URL}/api/v1/calls/${params.id}`, {
+    method: "DELETE",
+  });
+
+  if (response.status === 204) {
+    return NextResponse.json({ success: true }, { status: 204 });
+  }
+
+  const data = await response.json().catch(() => ({}));
+  return NextResponse.json(data, { status: response.status });
+}

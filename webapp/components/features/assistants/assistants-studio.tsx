@@ -1,0 +1,61 @@
+"use client";
+
+import { useQuery } from "@tanstack/react-query";
+import { useTranslations } from "next-intl";
+import { Sparkles } from "lucide-react";
+
+import { GlassCard } from "@/components/ui/glass-card";
+import { Badge } from "@/components/ui/badge";
+import { StudioSettingsForm } from "@/components/features/settings/studio-settings-form";
+import type { StudioConfigInput } from "@/lib/validations/config";
+
+const STUDIO_CONFIG_QUERY_KEY = ["studio-config"] as const;
+
+async function fetchStudioConfig(): Promise<StudioConfigInput> {
+  const response = await fetch("/api/config", {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  if (!response.ok) {
+    const detail = await response.json().catch(() => ({}));
+    throw new Error(detail.error ?? "Failed to load studio configuration");
+  }
+
+  return response.json() as Promise<StudioConfigInput>;
+}
+
+export function AssistantsStudio() {
+  const t = useTranslations("assistantsPage");
+  const tHero = useTranslations("assistantsPage.hero");
+  const tDesigner = useTranslations("assistantsPage.designer");
+
+  const studioConfigQuery = useQuery<StudioConfigInput>({
+    queryKey: STUDIO_CONFIG_QUERY_KEY,
+    queryFn: fetchStudioConfig,
+    staleTime: 60_000,
+  });
+
+  return (
+    <section className="space-y-10">
+      <header className="flex flex-col gap-6 rounded-3xl border border-border/60 bg-gradient-to-br from-background via-background to-brand-500/5 p-8 shadow-elevated">
+        <div className="space-y-3 max-w-2xl">
+          <Badge variant="brand" className="w-fit gap-1">
+            <Sparkles className="h-3.5 w-3.5" />
+            {tHero("badge")}
+          </Badge>
+          <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">
+            Créez votre Assistant IA parfait
+          </h1>
+        </div>
+      </header>
+
+      <div className="space-y-6">
+        <StudioSettingsForm
+          linkedAssistantId={studioConfigQuery.data?.vapiAssistantId ?? null}
+          onLinkedAssistantChange={() => {}}
+        />
+      </div>
+    </section>
+  );
+}

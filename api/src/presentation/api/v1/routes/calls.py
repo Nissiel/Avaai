@@ -3,18 +3,22 @@
 from __future__ import annotations
 
 from typing import Optional
+from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.src.infrastructure.database.session import get_session
 from api.src.infrastructure.persistence.repositories.call_repository import (
+    delete_call_record,
     get_call_by_id,
     get_recent_calls,
+    scrub_transcript_if_expired,
 )
 from api.src.presentation.dependencies.auth import CurrentTenant, get_current_tenant
 
 router = APIRouter(prefix="/calls", tags=["calls"])
+TRANSCRIPT_RETENTION = timedelta(hours=24)
 
 
 @router.get("")
@@ -33,6 +37,18 @@ async def list_calls(
     """
 
     calls = await get_recent_calls(session, tenant_id=str(current.tenant.id), limit=limit)
+    now_utc = datetime.now(timezone.utc)
+    scrubbed = False
+    for call in calls:
+        scrubbed |= await scrub_transcript_if_expired(
+            session,
+            call,
+            now=now_utc,
+            retention=TRANSCRIPT_RETENTION,
+        )
+
+    if scrubbed:
+        await session.commit()
 
     if status:
         calls = [call for call in calls if call.status == status]
@@ -70,6 +86,15 @@ async def get_call_detail(
     if not call or str(call.tenant_id) != str(current.tenant.id):
         raise HTTPException(status_code=404, detail="Call not found")
 
+    scrubbed = await scrub_transcript_if_expired(
+        session,
+        call,
+        now=datetime.now(timezone.utc),
+        retention=TRANSCRIPT_RETENTION,
+    )
+    if scrubbed:
+        await session.commit()
+
     return {
         "id": call.id,
         "assistant_id": call.assistant_id,
@@ -104,6 +129,22 @@ async def get_call_recording(
         raise HTTPException(status_code=404, detail="Recording not available")
 
     return {"recording_url": recording_url}
+
+
+@router.delete("/{call_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_call(
+    call_id: str,
+    current: CurrentTenant = Depends(get_current_tenant),
+    session: AsyncSession = Depends(get_session),
+):
+    """
+    Permanently delete a call and its associated transcript/metadata.
+    """
+
+    deleted = await delete_call_record(session, call_id, str(current.tenant.id))
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Call not found")
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 __all__ = ["router"]

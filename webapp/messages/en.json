@@ -3,7 +3,7 @@
     "appName": "Ava.ai",
     "tagline": "Your AI Secretary, truly useful",
     "cta": {
-      "primary": "Create my Ava",
+      "primary": "Launch Ava",
       "secondary": "See demo",
       "start": "Get started"
     },
@@ -11,6 +11,7 @@
       "home": "Home",
       "ava": "Ava Studio",
       "calls": "Calls",
+      "contacts": "Contacts",
       "inbox": "Inbox",
       "schedules": "Schedules",
       "integrations": "Integrations",
@@ -95,6 +96,10 @@
     "product": "Product",
     "resources": "Resources",
     "support": "Support",
+    "cta": {
+      "primary": "Start onboarding",
+      "secondary": "Talk to an expert"
+    },
     "taglineFooter": "The AI receptionist that captures every opportunity 24/7.",
     "fallback": {
       "badge": "Ava Studio",
@@ -171,8 +176,8 @@
     "dashboard": "Dashboard",
     "assistants": "Assistants",
     "calls": "Calls",
-    "analytics": "Analytics",
-    "settings": "Settings"
+    "contacts": "Contacts",
+    "profile": "Profile"
   },
   "sidebarTip": {
     "title": "Pro tip",
@@ -185,7 +190,7 @@
   "dashboardPage": {
     "title": "Dashboard",
     "subtitle": "Welcome back! Here's what's happening with your Ava assistants.",
-    "cta": "New assistant",
+    "cta": "Launch Assistant Studio",
     "loading": "Loading dashboard...",
     "error": "Error loading dashboard",
     "stats": {
@@ -201,6 +206,17 @@
       "successRate": "Completed without escalation",
       "totalCost": "Current billing period"
     },
+    "quick": {
+      "title": "Quick actions",
+      "testCall": "Test call",
+      "newContact": "New contact",
+      "viewAnalytics": "View analytics",
+      "manageAssistants": "Manage assistants"
+    },
+    "activity": {
+      "title": "Activity overview",
+      "subtitle": "Monitor your calls and performance in real-time"
+    },
     "recent": {
       "title": "Recent calls",
       "loading": "Loading...",
@@ -211,34 +227,138 @@
       "send": "Email transcript",
       "free": "Free",
       "toastSuccess": "Transcript emailed successfully!",
-      "toastError": "Failed to send transcript"
+      "toastError": "Failed to send transcript",
+      "seeAll": "See all calls"
+    },
+    "assistants": {
+      "title": "Your assistants",
+      "subtitle": "Active",
+      "loading": "Loading...",
+      "empty": "No assistants yet",
+      "configure": "Configure",
+      "alerts": {
+        "notConfigured": "Vapi configuration missing. Add a valid VAPI API key to sync assistants.",
+        "fetchFailed": "We couldn't load your assistants right now.",
+        "parseFailed": "Unexpected response from the Vapi assistants service.",
+        "empty": "No assistants have been synchronised yet."
+      }
     }
   },
   "assistantsPage": {
-    "title": "Assistants",
-    "subtitle": "Manage your voice personas, adjust their personality, and connect them to numbers.",
-    "cta": "Create assistant",
-    "list": {
-      "title": "Your assistants",
-      "description": "They will appear here as soon as they sync from Vapi.",
-      "empty": "Connect your Vapi account to display existing assistants."
+    "hero": {
+      "badge": "Assistant designer",
+      "title": "Design your Ava receptionists",
+      "subtitle": "{count, plural, =0 {Start by creating your first voice assistant.} one {{countFormatted} assistant ready to greet your callers.} other {{countFormatted} assistants ready to greet your callers.}}",
+      "actions": {
+        "create": "New assistant",
+        "library": "Playbook library"
+      },
+      "metrics": {
+        "total": "{count, plural, =0 {No assistants yet} one {{countFormatted} assistant configured} other {{countFormatted} assistants configured}}"
+      }
+    },
+    "library": {
+      "title": "Assistants library",
+      "subtitle": "Switch between personas and focus one to edit in the designer.",
+      "count": "{count, plural, =0 {No assistants} one {{countFormatted} assistant} other {{countFormatted} assistants}}",
+      "select": "Edit in designer",
+      "active": "Active",
+      "empty": {
+        "title": "You haven’t created any assistants yet",
+        "subtitle": "Spin up as many personas as you need. Each assistant can have its own tone, script, and voice.",
+        "cta": "Create your first assistant"
+      },
+      "warnings": {
+        "notConfigured": "Connect your Vapi account to surface existing assistants.",
+        "fetchFailed": "We couldn’t reach the assistants service. Try again in a moment.",
+        "parseFailed": "The assistants service returned an unexpected format.",
+        "empty": "No assistants were returned by Vapi yet."
+      },
+      "meta": {
+        "unavailable": "Creation date unavailable"
+      }
+    },
+    "designer": {
+      "title": "Assistant designer",
+      "subtitle": "Tune persona, scripting, voice, routing, and integrations for the focused assistant.",
+      "helper": "Select an assistant on the left to link it, then save to push updates to Vapi and your callers instantly."
     }
   },
   "callsPage": {
     "title": "Calls",
     "subtitle": "{count} calls analysed • New calls stream in real time",
-    "searchPlaceholder": "Quick search (number, assistant, transcript...)",
-    "statusPlaceholder": "Status",
-    "status": {
-      "any": "All statuses",
-      "in-progress": "In progress",
-      "ended": "Completed",
-      "failed": "Failed"
-    },
+    "searchPlaceholder": "Search by phone, transcript, or ID...",
+    "statusPlaceholder": "Filter by status",
     "duration": "{minutes}m {seconds}s",
     "unknownNumber": "Unknown number",
     "noTranscript": "No transcript available",
-    "empty": "No calls match this filter."
+    "empty": "No calls match this filter.",
+    "status": {
+      "any": "All statuses",
+      "in-progress": "In progress",
+      "ended": "Ended",
+      "failed": "Failed"
+    }
+  },
+  "contactsPage": {
+    "title": "Contacts",
+    "subtitle": "{contacts} contacts • {calls} total calls",
+    "searchPlaceholder": "Search contacts by name or phone...",
+    "sort": {
+      "recent": "Latest call",
+      "frequent": "Most calls",
+      "oldest": "Oldest contact"
+    },
+    "card": {
+      "callCount": "{count, plural, one {# call} other {# calls}}",
+      "averageDuration": "Avg duration",
+      "totalDuration": "Total duration",
+      "lastContact": "Last contact",
+      "unknownDate": "Unknown date",
+      "unknownDuration": "—",
+      "unknownNumber": "Unknown number"
+    },
+    "detail": {
+      "back": "Back to contacts",
+      "badge": "Contact profile",
+      "unknownPhone": "Phone unavailable",
+      "alias": {
+        "add": "Add a name",
+        "edit": "Edit name",
+        "remove": "Remove name",
+        "save": "Save",
+        "cancel": "Cancel",
+        "placeholder": "Enter first and last name"
+      },
+      "metrics": {
+        "callCount": "Calls",
+        "totalDuration": "Total duration",
+        "averageDuration": "Average duration",
+        "lastCall": "Last call",
+        "firstCall": "First call",
+        "unknown": "—"
+      },
+      "timeline": {
+        "title": "Call history",
+        "subtitle": "{count, plural, one {# call logged} other {# calls logged}}",
+        "empty": "No calls recorded for this contact yet.",
+        "viewTranscript": "View transcript",
+        "hideTranscript": "Hide transcript",
+        "loadingTranscript": "Loading transcript...",
+        "noTranscript": "No transcript available for this call.",
+        "unknownDate": "Date unknown",
+        "unknownDuration": "—",
+        "unknownCost": "Cost unknown",
+        "unknownAssistant": "Assistant unknown",
+        "free": "Free"
+      },
+      "notFound": {
+        "title": "We can't find this contact yet",
+        "subtitle": "Record a call or refresh to synchronise the latest activity."
+      }
+    },
+    "emptyTitle": "No contacts yet",
+    "emptyDescription": "Your contacts will appear here once you start receiving calls."
   },
   "settingsPage": {
     "header": {
@@ -248,6 +368,11 @@
     "tabs": {
       "profile": "Profile",
       "studio": "Studio settings"
+    },
+    "movedNotice": {
+      "title": "Looking for studio settings?",
+      "subtitle": "Assistant creation and persona tuning now live on the Assistants page.",
+      "cta": "Open assistants studio"
     },
     "profile": {
       "title": "User profile",
@@ -345,7 +470,6 @@
   },
   "userMenu": {
     "signedInAs": "Signed in as",
-    "profile": "Profile",
-    "studio": "Studio settings"
+    "profile": "Profile"
   }
 }
