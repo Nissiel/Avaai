@@ -298,21 +298,24 @@ export function OnboardingWizard() {
           
           // Mark onboarding as completed in the database
           try {
+            console.log("🔄 Calling completeOnboarding...");
             const updatedUser = await completeOnboarding();
-            console.log("✅ Onboarding marked as completed");
+            console.log("✅ Onboarding marked as completed:", updatedUser);
             
             // Update local session to reflect onboarding completion
             if (session?.user) {
-              setSession({
+              const updatedSession = {
                 ...session,
                 user: {
                   ...session.user,
                   onboarding_completed: true,
                 },
-              });
+              };
+              setSession(updatedSession);
+              console.log("✅ Local session updated:", updatedSession);
             }
           } catch (onboardingError) {
-            console.error("Failed to mark onboarding as completed:", onboardingError);
+            console.error("❌ Failed to mark onboarding as completed:", onboardingError);
             // Non-blocking: Continue even if this fails
           }
           
