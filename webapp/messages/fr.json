@@ -434,7 +434,12 @@
         "unknownDuration": "—",
         "unknownCost": "Coût inconnu",
         "unknownAssistant": "Assistant inconnu",
-        "free": "Gratuit"
+        "free": "Gratuit",
+        "delete": "Supprimer l'appel",
+        "deleting": "Suppression…",
+        "deleteSuccess": "Appel supprimé",
+        "deleteError": "Impossible de supprimer l'appel",
+        "loadMore": "Afficher les appels plus anciens"
       },
       "notFound": {
         "title": "Ce contact n'est pas encore disponible",

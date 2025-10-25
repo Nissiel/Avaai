@@ -33,41 +33,41 @@ export function MarketingShell({ children }: { children: React.ReactNode }) {
   };
 
   const quickLinks: { label: string; href: string }[] = [
-  { label: translate(locale, "marketing.features", "Features"), href: routes.features },
-  { label: translate(locale, "marketing.pricing", "Pricing"), href: routes.pricing },
-  { label: translate(locale, "marketing.faq", "FAQ"), href: routes.faq },
-  { label: translate(locale, "common.cta.start", "Get started"), href: routes.onboarding },
+    { label: translate(locale, "marketing.features", "Features"), href: routes.features },
+    { label: translate(locale, "marketing.pricing", "Pricing"), href: routes.pricing },
+    { label: translate(locale, "marketing.faq", "FAQ"), href: routes.faq },
+    { label: translate(locale, "common.cta.start", "Get started"), href: routes.onboarding },
   ];
 
   const footerColumns: {
     title: string;
     links: { label: string; href: string; external?: boolean }[];
   }[] = [
-    {
-      title: translate(locale, "marketing.product", "Product"),
-      links: [
-  { label: translate(locale, "marketing.cta.primary", "Start onboarding"), href: routes.onboarding },
-        { label: "Dashboard", href: "/dashboard" },
-        { label: translate(locale, "marketing.features", "Features"), href: routes.features },
-      ],
-    },
-    {
-      title: translate(locale, "marketing.resources", "Resources"),
-      links: [
-        { label: translate(locale, "marketing.docs", "Docs"), href: routes.docs },
-        { label: "API Vapi", href: external.docs, external: true },
-        { label: translate(locale, "marketing.faq", "FAQ"), href: routes.faq },
-      ],
-    },
-    {
-      title: translate(locale, "marketing.support", "Support"),
-      links: [
-        { label: "support@ava.ai", href: "mailto:support@ava.ai" },
-        { label: "Community", href: external.community, external: true },
-        { label: "Status", href: external.status, external: true },
-      ],
-    },
-  ];
+      {
+        title: translate(locale, "marketing.product", "Product"),
+        links: [
+          { label: translate(locale, "marketing.cta.primary", "Start onboarding"), href: routes.onboarding },
+          { label: "Dashboard", href: "/dashboard" },
+          { label: translate(locale, "marketing.features", "Features"), href: routes.features },
+        ],
+      },
+      {
+        title: translate(locale, "marketing.resources", "Resources"),
+        links: [
+          { label: translate(locale, "marketing.docs", "Docs"), href: routes.docs },
+          { label: "API Vapi", href: external.docs, external: true },
+          { label: translate(locale, "marketing.faq", "FAQ"), href: routes.faq },
+        ],
+      },
+      {
+        title: translate(locale, "marketing.support", "Support"),
+        links: [
+          { label: "support@ava.ai", href: "mailto:support@ava.ai" },
+          { label: "Community", href: external.community, external: true },
+          { label: "Status", href: external.status, external: true },
+        ],
+      },
+    ];
 
   const hasRenderableChildren = hasMeaningfulChildren(children);
 

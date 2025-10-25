@@ -32,7 +32,7 @@ export const groupCallsByContact = (calls: CallSummary[]): Contact[] => {
 
     const lastCall = sorted[0];
     const firstCall = sorted[sorted.length - 1];
-    
+
     contacts.push({
       phone,
       callCount: callsList.length,

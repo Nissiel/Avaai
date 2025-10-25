@@ -49,7 +49,7 @@ export default function HomePage() {
       {/* Hero Section */}
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(120,119,198,0.3),transparent)]" />
-        
+
         <div className="container mx-auto px-4 py-24 md:py-32">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -74,7 +74,7 @@ export default function HomePage() {
             </h1>
 
             <p className="text-xl md:text-2xl text-muted-foreground mb-12 max-w-3xl mx-auto">
-              AVA répond à vos appels 24/7 avec une voix ultra-réaliste, 
+              AVA répond à vos appels 24/7 avec une voix ultra-réaliste,
               comprend vos clients, et automatise votre réception.
             </p>
 

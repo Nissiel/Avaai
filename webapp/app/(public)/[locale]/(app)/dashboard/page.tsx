@@ -53,7 +53,7 @@ export default function DashboardPage() {
   const [mounted, setMounted] = React.useState(false);
   const [selectedCall, setSelectedCall] = React.useState<any | null>(null);
   const aliases = useContactAliasStore((state) => state.aliases);
-  
+
   const analyticsQuery = useQuery<DashboardAnalytics>({
     queryKey: ['dashboard', 'analytics'],
     queryFn: getAnalyticsOverview,
@@ -175,8 +175,8 @@ export default function DashboardPage() {
           <p className="text-muted-foreground mt-2">{t('subtitle')}</p>
         </div>
         <Link href={`/${locale}/app/assistants`.replace(/\/{2,}/g, '/') as any}>
-          <FuturisticButton 
-            size="lg" 
+          <FuturisticButton
+            size="lg"
             variant="primary"
             glow
             className="relative overflow-hidden bg-gradient-to-r from-primary via-primary/90 to-primary/80 hover:from-primary/90 hover:via-primary hover:to-primary shadow-lg shadow-primary/50 transition-all duration-300 hover:shadow-xl hover:shadow-primary/60 hover:scale-105 px-8"
@@ -241,76 +241,76 @@ export default function DashboardPage() {
       {/* Recent Activity */}
       <GlassCard className="p-6">
         <h2 className="text-xl font-semibold mb-4">{t('recent.title')}</h2>
-          {loading ? (
-            <p className="text-muted-foreground">{t('recent.loading')}</p>
-          ) : calls.length === 0 ? (
-            <p className="text-muted-foreground">{t('recent.empty')}</p>
-          ) : (
-            <div className="space-y-4">
-              {calls.slice(0, 5).map((call: any) => {
-                const phoneNumber: string = call.customerNumber || '';
-                const alias = phoneNumber ? aliases[phoneNumber] : undefined;
-                const normalizedPhone = phoneNumber ? humanizeIdentifier(phoneNumber) : '';
-                const displayName = alias?.trim().length
-                  ? humanizeIdentifier(alias)
-                  : normalizedPhone || t('recent.unknownNumber');
-                const phoneLabel = alias?.trim().length ? phoneNumber : null;
-                const durationLabel =
-                  typeof call.durationSeconds === 'number'
-                    ? formatDuration(call.durationSeconds, locale)
-                    : null;
+        {loading ? (
+          <p className="text-muted-foreground">{t('recent.loading')}</p>
+        ) : calls.length === 0 ? (
+          <p className="text-muted-foreground">{t('recent.empty')}</p>
+        ) : (
+          <div className="space-y-4">
+            {calls.slice(0, 5).map((call: any) => {
+              const phoneNumber: string = call.customerNumber || '';
+              const alias = phoneNumber ? aliases[phoneNumber] : undefined;
+              const normalizedPhone = phoneNumber ? humanizeIdentifier(phoneNumber) : '';
+              const displayName = alias?.trim().length
+                ? humanizeIdentifier(alias)
+                : normalizedPhone || t('recent.unknownNumber');
+              const phoneLabel = alias?.trim().length ? phoneNumber : null;
+              const durationLabel =
+                typeof call.durationSeconds === 'number'
+                  ? formatDuration(call.durationSeconds, locale)
+                  : null;
 
-                let costLabel: string | null = null;
-                if (typeof call.cost === 'number') {
-                  costLabel = call.cost === 0 ? t('recent.free') : currencyFormatter.format(call.cost);
-                }
+              let costLabel: string | null = null;
+              if (typeof call.cost === 'number') {
+                costLabel = call.cost === 0 ? t('recent.free') : currencyFormatter.format(call.cost);
+              }
 
-                const metadata = [
-                  tStatus(call.status as string, { defaultMessage: call.status }),
-                  durationLabel,
-                  costLabel,
-                ]
-                  .filter(Boolean)
-                  .join(' • ');
+              const metadata = [
+                tStatus(call.status as string, { defaultMessage: call.status }),
+                durationLabel,
+                costLabel,
+              ]
+                .filter(Boolean)
+                .join(' • ');
 
-                return (
-                  <div key={call.id} className="flex items-center justify-between p-4 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
-                    <div className="flex-1 space-y-1">
-                      <p className="font-medium">{displayName}</p>
-                      {phoneLabel ? (
-                        <p className="text-xs font-mono uppercase tracking-wide text-muted-foreground/70">
-                          {phoneLabel}
-                        </p>
-                      ) : null}
-                      <p className="text-sm text-muted-foreground">{metadata}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <FuturisticButton
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => setSelectedCall(call)}
-                        className="gap-2"
-                      >
-                        <MessageSquare className="h-4 w-4" />
-                        {t('recent.view')}
-                      </FuturisticButton>
-                      <FuturisticButton
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => emailMutation.mutate(call.id)}
-                        disabled={emailMutation.isPending}
-                        className="gap-2"
-                      >
-                        <Mail className="h-4 w-4" />
-                        {t('recent.send')}
-                      </FuturisticButton>
-                    </div>
+              return (
+                <div key={call.id} className="flex items-center justify-between p-4 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
+                  <div className="flex-1 space-y-1">
+                    <p className="font-medium">{displayName}</p>
+                    {phoneLabel ? (
+                      <p className="text-xs font-mono uppercase tracking-wide text-muted-foreground/70">
+                        {phoneLabel}
+                      </p>
+                    ) : null}
+                    <p className="text-sm text-muted-foreground">{metadata}</p>
                   </div>
-                );
-              })}
-            </div>
-          )}
-        </GlassCard>
+                  <div className="flex items-center gap-2">
+                    <FuturisticButton
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setSelectedCall(call)}
+                      className="gap-2"
+                    >
+                      <MessageSquare className="h-4 w-4" />
+                      {t('recent.view')}
+                    </FuturisticButton>
+                    <FuturisticButton
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => emailMutation.mutate(call.id)}
+                      disabled={emailMutation.isPending}
+                      className="gap-2"
+                    >
+                      <Mail className="h-4 w-4" />
+                      {t('recent.send')}
+                    </FuturisticButton>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </GlassCard>
 
       {/* Transcript Viewer Modal */}
       {selectedCall && (

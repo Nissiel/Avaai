@@ -37,8 +37,10 @@ import { toast } from "@/components/ui/sonner";
 import { useAnalytics } from "@/lib/analytics";
 import { cn, formatCurrency } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui-store";
+import { useSessionStore } from "@/stores/session-store";
 import { getStudioConfig, updateStudioConfigClient } from "@/lib/api/config";
 import { createAssistant } from "@/lib/api/assistants";
+import { completeOnboarding } from "@/lib/api/user";
 import type { CreateAssistantPayload, StudioConfig, StudioConfigUpdate } from "@/lib/dto";
 
 const steps = [
@@ -201,6 +203,10 @@ export function OnboardingWizard() {
   const locale = useLocale();
   const { track } = useAnalytics();
   const setCommandPaletteOpen = useUIStore((state) => state.setCommandPaletteOpen);
+  const { session, setSession } = useSessionStore((state) => ({
+    session: state.session,
+    setSession: state.setSession,
+  }));
   const form = useForm<OnboardingValues>({
     resolver: zodResolver(onboardingSchema.partial()),
     defaultValues: {
@@ -289,6 +295,27 @@ export function OnboardingWizard() {
           const assistantPayload = buildAssistantPayload(values);
           await assistantMutation.mutateAsync(assistantPayload);
           setHasLaunched(true);
+          
+          // Mark onboarding as completed in the database
+          try {
+            const updatedUser = await completeOnboarding();
+            console.log("✅ Onboarding marked as completed");
+            
+            // Update local session to reflect onboarding completion
+            if (session?.user) {
+              setSession({
+                ...session,
+                user: {
+                  ...session.user,
+                  onboarding_completed: true,
+                },
+              });
+            }
+          } catch (onboardingError) {
+            console.error("Failed to mark onboarding as completed:", onboardingError);
+            // Non-blocking: Continue even if this fails
+          }
+          
           toast.success(t("success.launch", { defaultValue: "Ava est prête à prendre vos appels." }));
           track("onboarding_completed", { plan: values.plan, seats: values.seats });
         } catch (error) {

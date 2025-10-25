@@ -134,7 +134,7 @@ export default function ContactDetailPage({ params }: ContactDetailPageProps) {
     mutationFn: async (callId) => {
       await deleteCall(callId);
     },
-    onSuccess: (callId) => {
+    onSuccess: (_data, callId) => {
       removeCall(callId);
       queryClient.setQueryData(["calls", "all"], (oldData: { calls?: CallSummary[]; total?: number } | undefined) => {
         if (!oldData?.calls) return oldData;
@@ -281,14 +281,28 @@ export default function ContactDetailPage({ params }: ContactDetailPageProps) {
           </div>
         ) : (
           <div className="space-y-4">
-            {contactCalls.map((call) => (
+            {visibleCalls.map((call) => (
               <ContactCallTimelineItem
                 key={call.id}
                 call={call}
                 locale={locale}
                 dateLocale={dateLocale}
+                onDelete={() => deleteMutation.mutate(call.id)}
+                deleting={deleteMutation.isPending && deleteMutation.variables === call.id}
               />
             ))}
+            {visibleCount < contactCalls.length ? (
+              <div className="flex justify-center pt-2">
+                <FuturisticButton
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setVisibleCount((prev) => Math.min(prev + 3, contactCalls.length))}
+                  className="gap-2"
+                >
+                  {t("timeline.loadMore")}
+                </FuturisticButton>
+              </div>
+            ) : null}
           </div>
         )}
       </GlassCard>
@@ -316,9 +330,17 @@ interface ContactCallTimelineItemProps {
   call: CallSummary;
   locale: string;
   dateLocale: DateFnsLocale;
+  onDelete: () => void;
+  deleting: boolean;
 }
 
-function ContactCallTimelineItem({ call, locale, dateLocale }: ContactCallTimelineItemProps) {
+function ContactCallTimelineItem({
+  call,
+  locale,
+  dateLocale,
+  onDelete,
+  deleting,
+}: ContactCallTimelineItemProps) {
   const t = useTranslations("contactsPage.detail.timeline");
   const tStatus = useTranslations("callsPage.status");
   const [open, setOpen] = React.useState(false);
@@ -392,7 +414,7 @@ function ContactCallTimelineItem({ call, locale, dateLocale }: ContactCallTimeli
         </p>
       ) : null}
 
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-2">
         <FuturisticButton
           size="sm"
           variant="ghost"
@@ -401,6 +423,16 @@ function ContactCallTimelineItem({ call, locale, dateLocale }: ContactCallTimeli
         >
           <MessageSquare className="h-4 w-4" />
           {open ? t("hideTranscript") : t("viewTranscript")}
+        </FuturisticButton>
+        <FuturisticButton
+          size="sm"
+          variant="ghost"
+          onClick={onDelete}
+          disabled={deleting}
+          className="gap-2 text-destructive hover:text-destructive"
+        >
+          <Trash2 className="h-4 w-4" />
+          {deleting ? t("deleting") : t("delete")}
         </FuturisticButton>
       </div>
 

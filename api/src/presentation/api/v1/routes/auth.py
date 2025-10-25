@@ -124,6 +124,10 @@ class UserUpdateRequest(BaseModel):
     )
     locale: Optional[str] = Field(default=None, pattern=r'^[a-z]{2}$')
     image: Optional[str] = Field(default=None, max_length=512)
+    onboarding_completed: Optional[bool] = Field(
+        default=None,
+        description="Mark onboarding as completed",
+    )
 
 
 # ============================================================================

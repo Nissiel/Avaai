@@ -53,7 +53,7 @@ export function AssistantsStudio() {
       <div className="space-y-6">
         <StudioSettingsForm
           linkedAssistantId={studioConfigQuery.data?.vapiAssistantId ?? null}
-          onLinkedAssistantChange={() => {}}
+          onLinkedAssistantChange={() => { }}
         />
       </div>
     </section>

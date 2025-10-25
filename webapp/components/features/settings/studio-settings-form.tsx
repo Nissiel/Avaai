@@ -5,9 +5,9 @@ import { useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { 
-  Loader2, RefreshCcw, RotateCcw, Save, Sparkles, 
-  Bot, Mic, MessageSquare, Zap, Check, AlertCircle 
+import {
+  Loader2, RefreshCcw, RotateCcw, Save, Sparkles,
+  Bot, Mic, MessageSquare, Zap, Check, AlertCircle
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -161,7 +161,7 @@ export function StudioSettingsForm({
         if (vapiResponse.ok) {
           const vapiResult = await vapiResponse.json();
           console.log("✅ Vapi Sync Success:", vapiResult);
-          
+
           // Update assistant ID if returned
           if (vapiResult.assistantId && vapiResult.assistantId !== values.vapiAssistantId) {
             result.config = { ...result.config, vapiAssistantId: vapiResult.assistantId };
@@ -193,7 +193,7 @@ export function StudioSettingsForm({
   const isDisabled = configQuery.isPending || updateMutation.isPending;
   const isDirty = form.formState.isDirty;
   const vapiAssistantId = form.watch("vapiAssistantId");
-  
+
   // 🐛 DEBUG: Log form state
   useEffect(() => {
     console.log("🔍 Studio Form State:", {
@@ -261,9 +261,9 @@ export function StudioSettingsForm({
             console.log("📝 Form Submit Handler Called:", values);
             updateMutation.mutate(values);
           })}>
-            
+
             <Accordion type="multiple" defaultValue={[]} className="space-y-4">
-              
+
               {/* 📋 ORGANIZATION SECTION */}
               <AccordionItem value="org" className="border-none">
                 <AccordionTrigger className="text-base">

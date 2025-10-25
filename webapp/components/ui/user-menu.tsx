@@ -39,15 +39,29 @@ export function UserMenu() {
   const email = session?.user?.email ?? "";
 
   const handleSignOut = async () => {
-    clearPersistedSession();
-    setSession(null);
-    if (typeof window !== "undefined") {
-      window.localStorage.removeItem("access_token");
-      window.localStorage.removeItem("refresh_token");
-      window.localStorage.removeItem("remember_me");
+    try {
+      // Clear all session data FIRST
+      clearPersistedSession();
+      setSession(null);
+      
+      if (typeof window !== "undefined") {
+        window.localStorage.removeItem("access_token");
+        window.localStorage.removeItem("refresh_token");
+        window.localStorage.removeItem("remember_me");
+      }
+      
+      // Sign out from NextAuth (no redirect from NextAuth)
+      await signOut({ redirect: false });
+      
+      // THEN force redirect to login page (guaranteed navigation)
+      const loginUrl = `/${locale}/login`.replace(/\/{2,}/g, "/");
+      window.location.href = loginUrl;
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Even if signOut fails, force redirect to login
+      const loginUrl = `/${locale}/login`.replace(/\/{2,}/g, "/");
+      window.location.href = loginUrl;
     }
-    await signOut({ redirect: false });
-    router.push(`/${locale}/login`.replace(/\/{2,}/g, "/"));
   };
 
   return (

@@ -350,7 +350,12 @@
         "unknownDuration": "—",
         "unknownCost": "Cost unknown",
         "unknownAssistant": "Assistant unknown",
-        "free": "Free"
+        "free": "Free",
+        "delete": "Delete call",
+        "deleting": "Deleting…",
+        "deleteSuccess": "Call deleted",
+        "deleteError": "Unable to delete call",
+        "loadMore": "Load older calls"
       },
       "notFound": {
         "title": "We can't find this contact yet",

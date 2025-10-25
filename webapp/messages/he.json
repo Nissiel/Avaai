@@ -434,7 +434,12 @@
         "unknownDuration": "—",
         "unknownCost": "עלות לא ידועה",
         "unknownAssistant": "עוזרת לא ידועה",
-        "free": "ללא עלות"
+        "free": "ללא עלות",
+        "delete": "מחיקת שיחה",
+        "deleting": "מוחק…",
+        "deleteSuccess": "השיחה נמחקה",
+        "deleteError": "לא ניתן למחוק את השיחה",
+        "loadMore": "טען שיחות נוספות"
       },
       "notFound": {
         "title": "עדיין לא מצאנו את איש הקשר הזה",
