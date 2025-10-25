@@ -6,6 +6,8 @@ Handles email sending using Resend.com API.
 Beautiful HTML templates for call summaries.
 """
 
+from __future__ import annotations
+
 import resend
 from datetime import datetime
 from typing import Optional

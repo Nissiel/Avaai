@@ -291,6 +291,42 @@ class VapiClient:
 
     async def list_twilio_numbers(self) -> Sequence[dict]:
         return await self._request("GET", "/integrations/twilio/numbers")
+    
+    async def list_phone_numbers(self, *, limit: int = 50) -> Sequence[dict]:
+        """
+        Liste tous les numéros de téléphone Vapi.
+        
+        Returns:
+            Liste des phone numbers avec leurs assistantId
+        """
+        data = await self._request("GET", "/phone-number", params={"limit": limit})
+        return data if isinstance(data, list) else data.get("items", data)
+    
+    async def get_phone_numbers(self, *, limit: int = 50) -> Sequence[dict]:
+        """
+        Alias for list_phone_numbers - used by studio_config.
+        
+        Returns:
+            Liste des phone numbers avec leurs assistantId
+        """
+        return await self.list_phone_numbers(limit=limit)
+    
+    async def assign_phone_number(self, phone_id: str, assistant_id: str) -> dict:
+        """
+        Assigne un assistant à un numéro de téléphone.
+        
+        Args:
+            phone_id: ID du phone number
+            assistant_id: ID de l'assistant
+            
+        Returns:
+            Phone number object mis à jour
+        """
+        return await self._request(
+            "PATCH",
+            f"/phone-number/{phone_id}",
+            json={"assistantId": assistant_id}
+        )
 
 
 __all__ = ["VapiClient", "VapiApiError"]

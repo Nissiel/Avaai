@@ -54,7 +54,10 @@ class VapiClient:
         async with httpx.AsyncClient() as client:
             # Vapi API requires "provider" field
             # provider="vapi" creates a free US phone number
-            payload = {"provider": "vapi"}
+            payload = {
+                "provider": "vapi",
+                "assistantId": assistant_id,
+            }
             if area_code:
                 payload["areaCode"] = area_code
             
@@ -163,7 +166,15 @@ class VapiClient:
             if response.status_code != 200:
                 raise Exception(f"Vapi get_phone_numbers failed: {response.text}")
 
-            return response.json()
+            data = response.json()
+            if isinstance(data, dict):
+                items = data.get("items") or data.get("data") or []
+                return list(items) if isinstance(items, list) else []
+
+            if isinstance(data, list):
+                return data
+
+            return []
 
     async def delete_phone_number(self, phone_number_id: str) -> bool:
         """
@@ -186,6 +197,36 @@ class VapiClient:
                 raise Exception(f"Vapi delete_phone_number failed: {response.text}")
 
             return True
+
+    async def assign_phone_number(
+        self,
+        phone_number_id: str,
+        assistant_id: str,
+    ) -> Dict[str, Any]:
+        """
+        Assign an existing phone number to a specific assistant.
+
+        Args:
+            phone_number_id: Vapi phone number ID
+            assistant_id: Assistant UUID to link
+
+        Returns:
+            Updated phone number object.
+        """
+        async with httpx.AsyncClient() as client:
+            response = await client.patch(
+                f"{self.base_url}/phone-number/{phone_number_id}",
+                headers=self.headers,
+                json={"assistantId": assistant_id},
+                timeout=30.0,
+            )
+
+            if response.status_code not in (200, 201):
+                raise Exception(
+                    f"Vapi assign_phone_number failed: {response.text}",
+                )
+
+            return response.json()
 
     # ==================== ASSISTANT MANAGEMENT ====================
 

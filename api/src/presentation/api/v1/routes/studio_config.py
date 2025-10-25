@@ -16,6 +16,11 @@ router = APIRouter(prefix="/studio", tags=["Studio"])
 _config_state: StudioConfig = DEFAULT_STUDIO_CONFIG.model_copy()
 
 
+def get_current_config() -> StudioConfig:
+    """Get the current config state - use this instead of importing _config_state directly."""
+    return _config_state
+
+
 def _client() -> VapiClient:
     """Get Vapi client instance."""
     try:
@@ -113,6 +118,24 @@ async def sync_config_to_vapi() -> dict:
         assistant_id = assistant["id"]
         was_update = config.vapiAssistantId == assistant_id
         _config_state = _config_state.model_copy(update={"vapiAssistantId": assistant_id})
+
+        reassigned_numbers: list[str] = []
+        try:
+            phone_numbers = await client.get_phone_numbers()
+            for phone in phone_numbers:
+                phone_id = phone.get("id")
+                if not phone_id:
+                    continue
+                current_assistant = phone.get("assistantId")
+                if current_assistant == assistant_id:
+                    continue
+                updated_phone = await client.assign_phone_number(phone_id, assistant_id)
+                reassigned_numbers.append(
+                    updated_phone.get("number") or phone.get("number") or phone_id
+                )
+        except Exception as sync_error:  # noqa: BLE001 - want to log but not fail
+            # Log but do not block the sync result; numbers may still route to old assistant
+            print(f"⚠️ Failed to align phone numbers with assistant {assistant_id}: {sync_error}")
         
         return {
             "success": True,
@@ -128,7 +151,8 @@ async def sync_config_to_vapi() -> dict:
                 "voiceSpeed": config.voiceSpeed,
                 "askForName": config.askForName,
                 "systemPromptLength": len(enhanced_prompt),
-            }
+            },
+            "reassignedNumbers": reassigned_numbers,
         }
         
     except VapiApiError as exc:
