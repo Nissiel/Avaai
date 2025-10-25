@@ -71,7 +71,7 @@ export function ProfileSettingsForm() {
 
   // Watch for form changes
   const watchedValues = form.watch();
-  
+
   useEffect(() => {
     console.log("📝 Form values changed:", watchedValues);
   }, [watchedValues]);

@@ -69,7 +69,7 @@ class SignupRequest(BaseModel):
     name: str = Field(..., min_length=2, max_length=100)
     phone: Optional[str] = Field(None, pattern=r'^\+[1-9]\d{1,14}$', description="E.164 format")
     locale: str = Field("en", pattern=r'^[a-z]{2}$')
-    
+
     @validator('password')
     def validate_password(cls, v):
         """Ensure password has minimum strength"""
@@ -152,13 +152,13 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 async def seed_default_users(session: AsyncSession):
     """Seed default users for development (run once on startup)."""
     repository = UserRepository(session)
-    
+
     for fixture in DEFAULT_USER_FIXTURES:
         # Check if user already exists
         existing = await repository.get_by_email(fixture["email"])
         if existing:
             continue
-        
+
         # Create user with hashed password
         try:
             await repository.create(
@@ -182,12 +182,12 @@ async def seed_default_users(session: AsyncSession):
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     """Create JWT access token"""
     to_encode = data.copy()
-    
+
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
     else:
         expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    
+
     to_encode.update({"exp": expire, "type": "access"})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
@@ -233,14 +233,14 @@ async def get_current_user(
     """
     token = credentials.credentials
     payload = verify_token(token)
-    
+
     user_id = payload.get("sub")
     if not user_id:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid token payload"
         )
-    
+
     repository = UserRepository(session)
     user = await repository.get_by_id(user_id)
 
@@ -264,7 +264,7 @@ async def signup(
 ):
     """
     Create a new user account with database persistence.
-    
+
     Flow:
     1. Validate email/phone uniqueness (database check)
     2. Hash password (bcrypt)
@@ -273,7 +273,7 @@ async def signup(
     5. Return JWT tokens
     """
     repository = UserRepository(session)
-    
+
     # Check if email already exists
     existing_user = await repository.get_by_email(data.email)
     if existing_user:
@@ -281,10 +281,10 @@ async def signup(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email already registered"
         )
-    
+
     # Hash password
     hashed_pwd = hash_password(data.password)
-    
+
     # Create user in database
     try:
         user = await repository.create(
@@ -300,11 +300,11 @@ async def signup(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email or phone already registered"
         )
-    
+
     # TODO: Create organization for user in Phase 2
     # org = Org(name=f"{data.name}'s Organization", ...)
     # org_user = OrgUser(user_id=user.id, org_id=org.id, role="OWNER")
-    
+
     # Generate tokens
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
@@ -330,7 +330,7 @@ async def login(
 ):
     """
     Login with email OR phone + password using database.
-    
+
     Flow:
     1. Detect if identifier is email or phone
     2. Find user in database
@@ -338,30 +338,30 @@ async def login(
     4. Return JWT tokens
     """
     repository = UserRepository(session)
-    
+
     # Detect identifier type (email vs phone)
     identifier = data.identifier.strip()
     is_email = "@" in identifier
-    
+
     # Fetch user from database
     if is_email:
         user = await repository.get_by_email(identifier)
     else:
         user = await repository.get_by_phone(identifier)
-    
+
     if not user or not user.password:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid credentials"
         )
-    
+
     # Verify password
     if not verify_password(data.password, user.password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid credentials"
         )
-    
+
     # Generate tokens
     access_token_expires = timedelta(days=30) if data.remember else timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
 
@@ -388,19 +388,19 @@ async def refresh_access_token(
 ):
     """
     Refresh access token using refresh token
-    
+
     Send refresh token in JSON body:
     {"refresh_token": "your_refresh_token_here"}
     """
     payload = verify_token(data.refresh_token)
-    
+
     # Verify it's a refresh token
     if payload.get("type") != "refresh":
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid token type"
         )
-    
+
     user_id = payload.get("sub")
 
     repository = UserRepository(session)

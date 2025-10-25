@@ -27,15 +27,15 @@ export interface UserUpdatePayload {
  */
 export async function completeOnboarding(): Promise<UserProfile> {
   const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
-  
+
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
-  
+
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
   }
-  
+
   const response = await fetch("/api/auth/me", {
     method: "PATCH",
     headers,
@@ -55,15 +55,15 @@ export async function completeOnboarding(): Promise<UserProfile> {
  */
 export async function updateUserProfile(payload: UserUpdatePayload): Promise<UserProfile> {
   const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
-  
+
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
-  
+
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
   }
-  
+
   const response = await fetch("/api/auth/me", {
     method: "PATCH",
     headers,
@@ -83,15 +83,15 @@ export async function updateUserProfile(payload: UserUpdatePayload): Promise<Use
  */
 export async function getUserProfile(): Promise<UserProfile> {
   const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
-  
+
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
-  
+
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
   }
-  
+
   const response = await fetch("/api/auth/me", {
     method: "GET",
     headers,

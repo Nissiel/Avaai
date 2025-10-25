@@ -85,7 +85,7 @@ export function ContactCard({ contact, dateLocale }: ContactCardProps) {
               {getInitials(displayName)}
             </AvatarFallback>
           </Avatar>
-          
+
           {/* Status indicator - Subtle active dot */}
           {isHighEngagement && (
             <div className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-emerald-500 border-2 border-card" />
@@ -97,7 +97,7 @@ export function ContactCard({ contact, dateLocale }: ContactCardProps) {
           <h3 className="text-base font-semibold text-foreground truncate">
             {displayName}
           </h3>
-          
+
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Phone className="h-3.5 w-3.5 flex-shrink-0" />
             <span className="truncate">{subtitle}</span>
@@ -105,7 +105,7 @@ export function ContactCard({ contact, dateLocale }: ContactCardProps) {
         </div>
 
         {/* Call Count Badge - Larger & More Visible */}
-        <Badge 
+        <Badge
           variant="outline"
           className={cn(
             "text-base font-semibold px-3 py-1.5 border-border",

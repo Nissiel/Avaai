@@ -52,7 +52,7 @@ type LoginValues = z.infer<typeof loginSchema>;
 function detectIdentifierType(value: string): "email" | "phone" | "unknown" {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const phoneRegex = /^\+?[1-9]\d{1,14}$/; // E.164 format
-  
+
   if (emailRegex.test(value)) return "email";
   if (phoneRegex.test(value.replace(/[\s-]/g, ""))) return "phone";
   return "unknown";
@@ -110,7 +110,7 @@ export function LoginForm() {
       if (typeof window !== "undefined") {
         localStorage.setItem("access_token", data.access_token);
         localStorage.setItem("refresh_token", data.refresh_token);
-        
+
         if (values.remember) {
           localStorage.setItem("remember_me", "true");
         }
@@ -126,12 +126,12 @@ export function LoginForm() {
 
       // Redirection avec locale préservée
       // Check localStorage first (faster + offline support)
-      const localOnboardingCompleted = typeof window !== "undefined" 
+      const localOnboardingCompleted = typeof window !== "undefined"
         ? localStorage.getItem("onboarding_completed") === "true"
         : false;
-      
+
       const isOnboardingCompleted = localOnboardingCompleted || data.user?.onboarding_completed;
-      
+
       if (!isOnboardingCompleted) {
         router.push(`/${locale}/onboarding`);
       } else {
@@ -278,9 +278,9 @@ export function LoginForm() {
 
       {/* OAuth Providers */}
       <div className="grid grid-cols-2 gap-3">
-        <Button 
-          variant="outline" 
-          type="button" 
+        <Button
+          variant="outline"
+          type="button"
           disabled={isLoading}
           className="h-11 font-medium hover:bg-accent/80"
         >
@@ -304,18 +304,18 @@ export function LoginForm() {
           </svg>
           Google
         </Button>
-        <Button 
-          variant="outline" 
-          type="button" 
+        <Button
+          variant="outline"
+          type="button"
           disabled={isLoading}
           className="h-11 font-medium hover:bg-accent/80"
         >
           <svg className="mr-2 h-5 w-5" viewBox="0 0 23 23">
-            <path fill="#f3f3f3" d="M0 0h23v23H0z"/>
-            <path fill="#f35325" d="M1 1h10v10H1z"/>
-            <path fill="#81bc06" d="M12 1h10v10H12z"/>
-            <path fill="#05a6f0" d="M1 12h10v10H1z"/>
-            <path fill="#ffba08" d="M12 12h10v10H12z"/>
+            <path fill="#f3f3f3" d="M0 0h23v23H0z" />
+            <path fill="#f35325" d="M1 1h10v10H1z" />
+            <path fill="#81bc06" d="M12 1h10v10H12z" />
+            <path fill="#05a6f0" d="M1 12h10v10H1z" />
+            <path fill="#ffba08" d="M12 12h10v10H12z" />
           </svg>
           Outlook
         </Button>

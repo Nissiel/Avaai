@@ -295,19 +295,19 @@ export function OnboardingWizard() {
           const assistantPayload = buildAssistantPayload(values);
           await assistantMutation.mutateAsync(assistantPayload);
           setHasLaunched(true);
-          
+
           // Mark onboarding as completed in the database AND localStorage
           try {
             console.log("🔄 Calling completeOnboarding...");
             const updatedUser = await completeOnboarding();
             console.log("✅ Onboarding marked as completed in DB:", updatedUser);
-            
+
             // Persist onboarding completion in localStorage (backup)
             if (typeof window !== "undefined") {
               localStorage.setItem("onboarding_completed", "true");
               console.log("✅ Onboarding completion persisted in localStorage");
             }
-            
+
             // Update local session to reflect onboarding completion
             if (session?.user) {
               const updatedSession = {
@@ -328,7 +328,7 @@ export function OnboardingWizard() {
               console.log("⚠️ Fallback: Saved onboarding_completed in localStorage only");
             }
           }
-          
+
           toast.success(t("success.launch", { defaultValue: "Ava est prête à prendre vos appels." }));
           track("onboarding_completed", { plan: values.plan, seats: values.seats });
         } catch (error) {
@@ -877,7 +877,7 @@ function DoneStep({ summary }: { summary: OnboardingValues }) {
           <div>
             <p className="text-xs uppercase tracking-[0.12em] text-muted-foreground">Persona</p>
             <p className="font-semibold">
-            {summary.persona?.toUpperCase()}
+              {summary.persona?.toUpperCase()}
             </p>
           </div>
           <div>

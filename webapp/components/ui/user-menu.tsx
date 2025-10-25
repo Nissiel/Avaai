@@ -43,17 +43,17 @@ export function UserMenu() {
       // Clear all session data FIRST
       clearPersistedSession();
       setSession(null);
-      
+
       if (typeof window !== "undefined") {
         window.localStorage.removeItem("access_token");
         window.localStorage.removeItem("refresh_token");
         window.localStorage.removeItem("remember_me");
         window.localStorage.removeItem("onboarding_completed");
       }
-      
+
       // Sign out from NextAuth (no redirect from NextAuth)
       await signOut({ redirect: false });
-      
+
       // THEN force redirect to login page (guaranteed navigation)
       const loginUrl = `/${locale}/login`.replace(/\/{2,}/g, "/");
       window.location.href = loginUrl;
@@ -70,7 +70,7 @@ export function UserMenu() {
     if (typeof window !== "undefined") {
       localStorage.removeItem("onboarding_completed");
     }
-    
+
     // Navigate to onboarding
     router.push(`/${locale}/onboarding`);
   };

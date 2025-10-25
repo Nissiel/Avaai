@@ -29,13 +29,40 @@ const LANGUAGE_OPTIONS = ["fr", "en", "es"] as const;
 const PERSONA_OPTIONS = ["secretary", "concierge", "sdr", "cs"] as const;
 const TONE_OPTIONS = ["warm", "professional", "energetic"] as const;
 const AI_MODEL_OPTIONS = [
+  { value: "gpt-4o", label: "GPT-4o", description: "⚡ Best for French & phone calls - Fast + Smart" },
   { value: "gpt-4", label: "GPT-4", description: "Most capable, best quality" },
+  { value: "gpt-4-turbo", label: "GPT-4 Turbo", description: "Fast GPT-4 with lower latency" },
   { value: "gpt-3.5-turbo", label: "GPT-3.5 Turbo", description: "Faster, lower cost" },
 ] as const;
 const VOICE_PROVIDER_OPTIONS = [
   { value: "11labs", label: "ElevenLabs" },
   { value: "playht", label: "PlayHT" },
 ] as const;
+
+// Pricing per minute (approximate costs)
+const PRICING = {
+  models: {
+    "gpt-4o": 0.012, // ~$0.012/min for typical phone conversation
+    "gpt-4": 0.024, // ~$0.024/min
+    "gpt-4-turbo": 0.018, // ~$0.018/min
+    "gpt-3.5-turbo": 0.003, // ~$0.003/min
+  },
+  voices: {
+    // ElevenLabs turbo voices
+    "XB0fDUnXU5powFXDhCwa": 0.30, // Charlotte
+    "EXAVITQu4vr4xnSDxMaL": 0.30, // Bella
+    "21m00Tcm4TlvDq8ikWAM": 0.30, // Rachel
+    "pNInz6obpgDQGcFmaJgB": 0.30, // Adam
+    "TxGEqnHWrfWFTfGW9XjX": 0.30, // Josh
+    "MF3mGyEYCl7XYWbV9V6O": 0.30, // Elli
+    "onwK4e9ZLuTAKqWW03F9": 0.30, // Daniel (Hebrew)
+    "pqHfZKP75CvOlQylNhV4": 0.30, // Sarah (Hebrew)
+    // Premium voices
+    "VR6AewLTigWG4xSOukaG": 0.48, // Thomas
+    "ErXwobaYiN019PkySvjV": 0.48, // Antoine
+  },
+  platform: 0.05, // Vapi platform fee per minute
+} as const;
 
 type StudioConfigResponse = StudioConfigInput;
 
@@ -90,12 +117,12 @@ export function StudioSettingsForm({
       smtpPort: "587",
       smtpUsername: "",
       smtpPassword: "",
-      aiModel: "gpt-4",
+      aiModel: "gpt-4o", // ⚡ Best for French & phone calls
       aiTemperature: 0.5,
       aiMaxTokens: 150,
       voiceProvider: "11labs",
-      voiceId: "21m00Tcm4TlvDq8ikWAM",
-      voiceSpeed: 1.2,
+      voiceId: "XB0fDUnXU5powFXDhCwa", // Charlotte - French female voice
+      voiceSpeed: 1.0, // Normal speed for better comprehension
       systemPrompt: "You are AVA, a professional AI assistant.",
       firstMessage: "Hello! I'm AVA.",
       askForName: true,
@@ -128,6 +155,27 @@ export function StudioSettingsForm({
       });
     }
   }, [linkedAssistantId, configQuery.data?.vapiAssistantId, form]);
+
+  // 💰 Real-time cost calculator
+  const estimatedCost = useMemo(() => {
+    const aiModel = form.watch("aiModel");
+    const voiceId = form.watch("voiceId");
+
+    const modelCost = PRICING.models[aiModel as keyof typeof PRICING.models] || 0.012;
+    const voiceCost = PRICING.voices[voiceId as keyof typeof PRICING.voices] || 0.30;
+    const platformCost = PRICING.platform;
+
+    const total = modelCost + voiceCost + platformCost;
+
+    return {
+      total: total.toFixed(3),
+      breakdown: {
+        model: modelCost.toFixed(3),
+        voice: voiceCost.toFixed(3),
+        platform: platformCost.toFixed(3),
+      },
+    };
+  }, [form.watch("aiModel"), form.watch("voiceId")]);
 
   const updateMutation = useMutation<{ success?: boolean; config?: StudioConfigInput }, Error, StudioConfigInput>({
     mutationFn: async (values) => {
@@ -168,6 +216,28 @@ export function StudioSettingsForm({
         if (vapiResponse.ok) {
           const vapiResult = await vapiResponse.json();
           console.log("✅ Vapi Sync Success:", vapiResult);
+
+          // Show detailed toast with what was changed
+          const settings = vapiResult.settings || {};
+          if (vapiResult.action === "updated") {
+            toast.success("� Assistant Updated Successfully!", {
+              description: (
+                <div className="space-y-1 text-xs">
+                  <div>✅ Voice: {settings.voiceProvider} @ {settings.voiceSpeed}x</div>
+                  <div>✅ Model: {settings.model} (temp={settings.temperature})</div>
+                  <div>✅ Max Tokens: {settings.maxTokens}</div>
+                  <div className="pt-1 text-[10px] opacity-70">
+                    ID: {vapiResult.assistantId?.slice(0, 12)}...
+                  </div>
+                </div>
+              ),
+              duration: 5000,
+            });
+          } else if (vapiResult.action === "created") {
+            toast.success("🆕 New Assistant Created!", {
+              description: `Created new assistant: ${vapiResult.assistantId}`,
+            });
+          }
 
           // Update assistant ID if returned
           if (vapiResult.assistantId && vapiResult.assistantId !== values.vapiAssistantId) {
@@ -254,12 +324,17 @@ export function StudioSettingsForm({
               </div>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             {vapiAssistantId && (
-              <Badge variant="brand" className="flex items-center gap-1.5">
-                <Check className="h-3.5 w-3.5" />
-                Synced
-              </Badge>
+              <div className="flex flex-col gap-1">
+                <Badge variant="brand" className="flex items-center gap-1.5">
+                  <Check className="h-3.5 w-3.5" />
+                  Synced with Vapi
+                </Badge>
+                <span className="text-[10px] text-muted-foreground font-mono">
+                  ID: {vapiAssistantId.slice(0, 8)}...
+                </span>
+              </div>
             )}
             <Button
               type="button"
@@ -472,7 +547,7 @@ export function StudioSettingsForm({
                           </FormControl>
                           <FormDescription className="flex items-center gap-2 text-xs">
                             <Zap className="h-3 w-3 text-purple-500" />
-                            GPT-4 = Best quality | GPT-3.5 = Faster & cheaper
+                            <strong>Recommandé:</strong> GPT-4o pour le français (rapide + intelligent)
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -572,14 +647,102 @@ export function StudioSettingsForm({
                         name="voiceId"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-sm font-semibold">Voice ID</FormLabel>
+                            <FormLabel className="text-sm font-semibold">Assistant Voice</FormLabel>
                             <FormControl>
-                              <Input {...field} disabled={isDisabled} placeholder="21m00Tcm4TlvDq8ikWAM" className="h-11" />
+                              <Select value={field.value} onValueChange={field.onChange} disabled={isDisabled}>
+                                <SelectTrigger className="h-11">
+                                  <SelectValue placeholder="Select a voice" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">🇫🇷 Français</div>
+                                  <SelectItem value="XB0fDUnXU5powFXDhCwa">
+                                    <div className="flex items-center gap-2">
+                                      <Mic className="h-3 w-3 text-pink-500" />
+                                      <span>Charlotte - Femme, chaleureuse, claire</span>
+                                    </div>
+                                  </SelectItem>
+                                  <SelectItem value="EXAVITQu4vr4xnSDxMaL">
+                                    <div className="flex items-center gap-2">
+                                      <Mic className="h-3 w-3 text-purple-500" />
+                                      <span>Bella - Femme, douce, rassurante</span>
+                                    </div>
+                                  </SelectItem>
+                                  <SelectItem value="flq6f7yk4E4fJM5XTYuZ">
+                                    <div className="flex items-center gap-2">
+                                      <Mic className="h-3 w-3 text-blue-500" />
+                                      <span>Thomas - Homme, calme, professionnel</span>
+                                    </div>
+                                  </SelectItem>
+                                  <SelectItem value="ErXwobaYiN019PkySvjV">
+                                    <div className="flex items-center gap-2">
+                                      <Mic className="h-3 w-3 text-green-500" />
+                                      <span>Antoine - Homme, dynamique</span>
+                                    </div>
+                                  </SelectItem>
+
+                                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">🇮🇱 עברית (Hebrew)</div>
+                                  <SelectItem value="onwK4e9ZLuTAKqWW03F9">
+                                    <div className="flex items-center gap-2">
+                                      <Mic className="h-3 w-3 text-blue-400" />
+                                      <span>Daniel - גבר, ברור ומקצועי</span>
+                                    </div>
+                                  </SelectItem>
+                                  <SelectItem value="pqHfZKP75CvOlQylNhV4">
+                                    <div className="flex items-center gap-2">
+                                      <Mic className="h-3 w-3 text-pink-400" />
+                                      <span>Sarah - אישה, חמה ונעימה</span>
+                                    </div>
+                                  </SelectItem>
+
+                                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">🇬🇧 English</div>
+                                  <SelectItem value="21m00Tcm4TlvDq8ikWAM">
+                                    <div className="flex items-center gap-2">
+                                      <Mic className="h-3 w-3 text-gray-500" />
+                                      <span>Rachel - Female, clear American</span>
+                                    </div>
+                                  </SelectItem>
+                                  <SelectItem value="pNInz6obpgDQGcFmaJgB">
+                                    <div className="flex items-center gap-2">
+                                      <Mic className="h-3 w-3 text-gray-600" />
+                                      <span>Adam - Male, deep American</span>
+                                    </div>
+                                  </SelectItem>
+                                  <SelectItem value="TxGEqnHWrfWFTfGW9XjX">
+                                    <div className="flex items-center gap-2">
+                                      <Mic className="h-3 w-3 text-gray-500" />
+                                      <span>Josh - Male, young American</span>
+                                    </div>
+                                  </SelectItem>
+                                  <SelectItem value="MF3mGyEYCl7XYWbV9V6O">
+                                    <div className="flex items-center gap-2">
+                                      <Mic className="h-3 w-3 text-gray-500" />
+                                      <span>Elli - Female, soft British</span>
+                                    </div>
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
                             </FormControl>
                             <FormDescription className="flex items-center gap-2 text-xs">
                               <Mic className="h-3 w-3 text-emerald-500" />
-                              ElevenLabs voice ID (Rachel by default)
+                              Sélectionnez une voix de qualité pour votre assistant
                             </FormDescription>
+                            <div className="mt-2 rounded-lg bg-blue-50 dark:bg-blue-950 p-3 text-xs">
+                              <p className="font-semibold text-blue-900 dark:text-blue-100 mb-1">💡 Conseil :</p>
+                              <ul className="text-blue-800 dark:text-blue-200 space-y-1 ml-4">
+                                <li>• <strong>Charlotte/Sarah</strong> - Parfaites pour réception/secrétariat</li>
+                                <li>• <strong>Bella</strong> - Idéale pour support client chaleureux</li>
+                                <li>• <strong>Thomas/Daniel</strong> - Excellents pour services professionnels</li>
+                              </ul>
+                            </div>
+                            <div className="mt-2 rounded-lg bg-orange-50 dark:bg-orange-950 p-3 text-xs">
+                              <p className="font-semibold text-orange-900 dark:text-orange-100 mb-1">🔥 Problème d'accent ?</p>
+                              <ul className="text-orange-800 dark:text-orange-200 space-y-1 ml-4">
+                                <li>• Essaie <strong>Bella</strong> ou <strong>Thomas</strong> (voix premium)</li>
+                                <li>• Réduis la vitesse à <strong>0.9x</strong> ou <strong>1.0x</strong></li>
+                                <li>• Change le prompt système en français natif</li>
+                                <li>• Après chaque changement, clique "Save & Sync"</li>
+                              </ul>
+                            </div>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -792,6 +955,49 @@ export function StudioSettingsForm({
 
           </Accordion>
 
+          {/* 🔥 DIVINE DEBUG PANEL */}
+          {isDirty && (
+            <GlassCard className="border border-orange-500/50 bg-orange-50/50 dark:bg-orange-950/30" variant="none">
+              <div className="p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 text-orange-600" />
+                  <h3 className="text-sm font-semibold text-orange-900 dark:text-orange-100">
+                    🔥 Preview: Ces paramètres seront envoyés à Vapi
+                  </h3>
+                </div>
+                <div className="grid grid-cols-2 gap-3 text-xs">
+                  <div>
+                    <span className="font-semibold text-orange-800 dark:text-orange-200">Voice:</span>{" "}
+                    <span className="text-orange-700 dark:text-orange-300">
+                      {form.watch("voiceProvider")} / {form.watch("voiceId").slice(0, 8)}...
+                    </span>
+                  </div>
+                  <div>
+                    <span className="font-semibold text-orange-800 dark:text-orange-200">Speed:</span>{" "}
+                    <span className="text-orange-700 dark:text-orange-300">{form.watch("voiceSpeed")}x</span>
+                  </div>
+                  <div>
+                    <span className="font-semibold text-orange-800 dark:text-orange-200">Model:</span>{" "}
+                    <span className="text-orange-700 dark:text-orange-300">{form.watch("aiModel")}</span>
+                  </div>
+                  <div>
+                    <span className="font-semibold text-orange-800 dark:text-orange-200">Temperature:</span>{" "}
+                    <span className="text-orange-700 dark:text-orange-300">{form.watch("aiTemperature")}</span>
+                  </div>
+                  <div className="col-span-2">
+                    <span className="font-semibold text-orange-800 dark:text-orange-200">First Message:</span>{" "}
+                    <span className="text-orange-700 dark:text-orange-300 italic">
+                      "{form.watch("firstMessage").slice(0, 50)}..."
+                    </span>
+                  </div>
+                </div>
+                <div className="text-[10px] text-orange-600 dark:text-orange-400">
+                  ⚡ Clique sur "Save & Sync to Vapi" pour appliquer ces changements à l'assistant {vapiAssistantId?.slice(0, 8)}...
+                </div>
+              </div>
+            </GlassCard>
+          )}
+
           {/* Professional Save Button */}
           <div className="flex flex-col gap-3 border-t pt-5">
             {isDirty && (
@@ -800,7 +1006,18 @@ export function StudioSettingsForm({
                 <span>You have unsaved changes</span>
               </div>
             )}
-            <div className="flex justify-end">
+            <div className="flex items-center justify-between gap-4">
+              {/* Cost Calculator Display */}
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="px-3 py-1.5 text-sm font-medium">
+                  💰 ~${estimatedCost.total}/min
+                </Badge>
+                <div className="text-xs text-muted-foreground">
+                  (AI: ${estimatedCost.breakdown.model} + Voice: ${estimatedCost.breakdown.voice} + Platform: ${estimatedCost.breakdown.platform})
+                </div>
+              </div>
+
+              {/* Save Button */}
               <Button
                 type="submit"
                 size="lg"

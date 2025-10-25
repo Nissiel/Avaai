@@ -17,7 +17,7 @@ from api.src.core.settings import get_settings
 class EmailService:
     """
     Service for sending emails using Resend.
-    
+
     Features:
     - Beautiful HTML templates
     - Call summary notifications
@@ -30,7 +30,7 @@ class EmailService:
         settings = get_settings()
         if not settings.resend_api_key:
             raise ValueError("RESEND_API_KEY not configured in settings")
-        
+
         resend.api_key = settings.resend_api_key
 
     async def send_call_summary(
@@ -46,7 +46,7 @@ class EmailService:
     ) -> bool:
         """
         Send beautiful call summary email.
-        
+
         Args:
             to_email: Recipient email address
             caller_name: Name of the person who called
@@ -56,7 +56,7 @@ class EmailService:
             call_date: When the call happened
             call_id: Call ID for dashboard link
             business_name: Name of the business
-            
+
         Returns:
             True if email sent successfully
         """
@@ -65,13 +65,13 @@ class EmailService:
             minutes = duration // 60
             seconds = duration % 60
             duration_str = f"{minutes}m {seconds}s" if minutes > 0 else f"{seconds}s"
-            
+
             # Format date nicely
             date_str = call_date.strftime("%B %d, %Y at %H:%M")
-            
+
             # Get settings
             settings = get_settings()
-            
+
             # Build HTML email
             html_content = self._build_call_summary_html(
                 caller_name=caller_name,
@@ -83,7 +83,7 @@ class EmailService:
                 business_name=business_name,
                 settings=settings
             )
-            
+
             # Send email
             # Using Resend's verified sandbox domain for testing
             params = {
@@ -92,11 +92,11 @@ class EmailService:
                 "subject": f"📞 New call from {caller_name}",
                 "html": html_content,
             }
-            
+
             result = resend.Emails.send(params)
-            
+
             return bool(result.get("id"))
-            
+
         except Exception as e:
             print(f"❌ Failed to send email: {str(e)}")
             return False
@@ -110,33 +110,33 @@ class EmailService:
     ) -> dict:
         """
         Send a generic email (DIVINE method for dashboard).
-        
+
         Args:
             to: Recipient email(s)
             subject: Email subject
             html: HTML content
             from_email: Sender email (defaults to verified sandbox)
-            
+
         Returns:
             Resend API response with email ID
-            
+
         Raises:
             Exception: If email sending fails
         """
         try:
             # Normalize to list
             to_list = [to] if isinstance(to, str) else to
-            
+
             params = {
                 "from": from_email,
                 "to": to_list,
                 "subject": subject,
                 "html": html,
             }
-            
+
             result = resend.Emails.send(params)
             return result
-            
+
         except Exception as e:
             print(f"❌ Failed to send email: {str(e)}")
             raise
@@ -154,16 +154,16 @@ class EmailService:
     ) -> str:
         """
         Build beautiful HTML email template.
-        
+
         Returns:
             HTML string ready to send
         """
         # Format transcript with line breaks
         formatted_transcript = transcript.replace("\n", "<br>")
-        
+
         # Dashboard link
         dashboard_url = f"{settings.app_url}/dashboard/calls/{call_id}"
-        
+
         return f"""
 <!DOCTYPE html>
 <html lang="en">
@@ -271,7 +271,7 @@ class EmailService:
             <h1>📞 New Call Received</h1>
             <p>{call_date}</p>
         </div>
-        
+
         <!-- Content -->
         <div class="content">
             <!-- Caller Info -->
@@ -290,13 +290,13 @@ class EmailService:
                     <div class="info-value">{duration}</div>
                 </div>
             </div>
-            
+
             <!-- Transcript -->
             <div class="section">
                 <h2>Call Transcript</h2>
                 <div class="transcript">{formatted_transcript}</div>
             </div>
-            
+
             <!-- CTA -->
             <div style="text-align: center; margin-top: 32px;">
                 <a href="{dashboard_url}" class="cta-button">
@@ -304,7 +304,7 @@ class EmailService:
                 </a>
             </div>
         </div>
-        
+
         <!-- Footer -->
         <div class="footer">
             <p>

@@ -17,13 +17,13 @@ router = APIRouter()
 async def diagnostic_vapi_sync() -> Dict[str, Any]:
     """
     🔬 DIAGNOSTIC COMPLET DE LA SYNCHRONISATION VAPI
-    
+
     Compare la config locale avec l'assistant Vapi actuel
     Identifie les différences et problèmes de sync
     """
     try:
         config = get_current_config()  # ✨ Use getter function instead of direct import
-        
+
         # 1️⃣ Vérifier la config locale
         local_config = {
             "assistantId": config.vapiAssistantId,
@@ -40,19 +40,19 @@ async def diagnostic_vapi_sync() -> Dict[str, Any]:
             "askForEmail": config.askForEmail,
             "askForPhone": config.askForPhone,
         }
-        
+
         # 2️⃣ Récupérer l'assistant actuel de Vapi
         client = VapiClient()
         vapi_assistant = None
         vapi_error = None
-        
+
         if config.vapiAssistantId:
             try:
                 vapi_assistant = await client.get_assistant(config.vapiAssistantId)
             except Exception as e:
                 vapi_error = str(e)
                 logger.error(f"❌ Erreur récupération assistant Vapi: {e}")
-        
+
         # 3️⃣ Récupérer les numéros de téléphone
         phone_numbers = []
         phone_error = None
@@ -68,7 +68,7 @@ async def diagnostic_vapi_sync() -> Dict[str, Any]:
         except Exception as e:
             phone_error = str(e)
             logger.error(f"❌ Erreur récupération phone numbers: {e}")
-        
+
         # 4️⃣ Comparer les configurations
         differences = []
         if vapi_assistant:
@@ -92,7 +92,7 @@ async def diagnostic_vapi_sync() -> Dict[str, Any]:
                     "local": config.voiceSpeed,
                     "vapi": vapi_voice.get("speed")
                 })
-            
+
             # Comparer model
             vapi_model = vapi_assistant.get("model", {})
             if vapi_model.get("model") != config.aiModel:
@@ -113,7 +113,7 @@ async def diagnostic_vapi_sync() -> Dict[str, Any]:
                     "local": config.aiMaxTokens,
                     "vapi": vapi_model.get("maxTokens")
                 })
-            
+
             # Comparer system prompt
             vapi_messages = vapi_model.get("messages", [])
             vapi_system_prompt = None
@@ -121,14 +121,14 @@ async def diagnostic_vapi_sync() -> Dict[str, Any]:
                 if msg.get("role") == "system":
                     vapi_system_prompt = msg.get("content")
                     break
-            
+
             if vapi_system_prompt != config.systemPrompt:
                 differences.append({
                     "field": "systemPrompt",
                     "local": config.systemPrompt[:100] + "...",
                     "vapi": (vapi_system_prompt[:100] + "...") if vapi_system_prompt else None
                 })
-            
+
             # Comparer firstMessage
             if vapi_assistant.get("firstMessage") != config.firstMessage:
                 differences.append({
@@ -136,7 +136,7 @@ async def diagnostic_vapi_sync() -> Dict[str, Any]:
                     "local": config.firstMessage,
                     "vapi": vapi_assistant.get("firstMessage")
                 })
-        
+
         # 5️⃣ Résultat du diagnostic
         return {
             "status": "success",
@@ -161,7 +161,7 @@ async def diagnostic_vapi_sync() -> Dict[str, Any]:
             },
             "recommendations": _generate_recommendations(differences, phone_numbers, vapi_assistant, config)
         }
-        
+
     except Exception as e:
         logger.error(f"❌ Erreur diagnostic: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Diagnostic error: {str(e)}")
@@ -170,24 +170,24 @@ async def diagnostic_vapi_sync() -> Dict[str, Any]:
 def _generate_recommendations(differences, phone_numbers, vapi_assistant, config) -> list[str]:
     """Génère des recommandations basées sur le diagnostic"""
     recs = []
-    
+
     if not config.vapiAssistantId:
         recs.append("⚠️ Aucun assistantId configuré - effectuez une synchronisation")
-    
+
     if not vapi_assistant:
         recs.append("❌ Assistant introuvable sur Vapi - créez-en un nouveau via sync")
-    
+
     if differences:
         recs.append(f"⚠️ {len(differences)} différence(s) détectée(s) - re-synchronisez la config")
-    
+
     if phone_numbers:
         unmatched = [p for p in phone_numbers if not p.get("matchesConfig")]
         if unmatched:
             recs.append(f"⚠️ {len(unmatched)} numéro(s) non lié(s) à l'assistant configuré")
     else:
         recs.append("⚠️ Aucun numéro de téléphone trouvé")
-    
+
     if not differences and vapi_assistant and all(p.get("matchesConfig") for p in phone_numbers):
         recs.append("✅ Configuration parfaitement synchronisée !")
-    
+
     return recs

@@ -403,7 +403,7 @@ function ContactCallTimelineItem({
               </p>
             ) : null}
           </div>
-          
+
           {/* SECTION 2: Badges propres */}
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="outline" className="gap-1.5">

@@ -8,8 +8,8 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
  */
 export async function GET(request: NextRequest) {
   try {
-    const token = request.headers.get("authorization")?.replace("Bearer ", "") || 
-                  request.cookies.get("access_token")?.value;
+    const token = request.headers.get("authorization")?.replace("Bearer ", "") ||
+      request.cookies.get("access_token")?.value;
 
     if (!token) {
       return NextResponse.json(
@@ -44,8 +44,8 @@ export async function GET(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const token = request.headers.get("authorization")?.replace("Bearer ", "") || 
-                  request.cookies.get("access_token")?.value;
+    const token = request.headers.get("authorization")?.replace("Bearer ", "") ||
+      request.cookies.get("access_token")?.value;
 
     if (!token) {
       return NextResponse.json(

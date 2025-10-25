@@ -26,27 +26,27 @@ class StudioConfig(BaseModel):
     smtpPassword: str = Field(default="")
     
     # 🎯 NEW: AI Performance settings
-    aiModel: str = Field(default="gpt-4", description="AI model (gpt-4, gpt-3.5-turbo)")
-    aiTemperature: float = Field(default=0.5, ge=0.0, le=1.0, description="Response creativity (0=precise, 1=creative)")
-    aiMaxTokens: int = Field(default=150, ge=50, le=500, description="Max response length (lower=faster)")
+    aiModel: str = Field(default="gpt-4o", description="AI model (gpt-4o recommended for French)")
+    aiTemperature: float = Field(default=0.7, ge=0.0, le=1.0, description="Response creativity (0.7=balanced)")
+    aiMaxTokens: int = Field(default=200, ge=50, le=500, description="Max response length")
     
     # 🎤 NEW: Voice settings
     voiceProvider: str = Field(default="11labs", description="Voice provider")
-    voiceId: str = Field(default="21m00Tcm4TlvDq8ikWAM", description="Voice ID (Rachel by default)")
-    voiceSpeed: float = Field(default=1.2, ge=0.5, le=2.0, description="Voice speed (1.0=normal, 1.5=faster)")
+    voiceId: str = Field(default="XB0fDUnXU5powFXDhCwa", description="Voice ID (Charlotte - French by default)")
+    voiceSpeed: float = Field(default=1.0, ge=0.5, le=2.0, description="Voice speed (1.0=normal, slower for clarity)")
     
     # 📝 NEW: Conversation behavior
     systemPrompt: str = Field(
         default=(
-            "You are AVA, a professional AI assistant. "
-            "Be concise, clear, and helpful. "
-            "IMPORTANT: Ask for the caller's name within the first 2 exchanges. "
-            "Listen carefully and respond quickly."
+            "Tu es AVA, une assistante professionnelle française. "
+            "Sois concise, claire et utile. "
+            "IMPORTANT: Demande le nom de l'appelant dans les 2 premiers échanges. "
+            "Écoute attentivement et réponds rapidement sans répéter inutilement."
         ),
         description="Core AI instructions"
     )
     firstMessage: str = Field(
-        default="Hello! I'm AVA. May I have your name please?",
+        default="Bonjour ! Je suis AVA. Puis-je avoir votre nom s'il vous plaît ?",
         description="Initial greeting"
     )
     askForName: bool = Field(default=True, description="Ask for caller's name")
@@ -111,25 +111,26 @@ DEFAULT_STUDIO_CONFIG = StudioConfig(
     smtpPort="587",
     smtpUsername="",
     smtpPassword="",
-    # 🎯 NEW: Optimized AI settings for speed and comprehension
-    aiModel="gpt-4",  # Better comprehension than gpt-3.5-turbo
-    aiTemperature=0.5,  # Balanced: precise but natural
-    aiMaxTokens=150,  # Shorter responses = faster
+    # 🔥 DIVINE: Optimized for FRENCH phone calls
+    aiModel="gpt-4o",  # Best for French comprehension
+    aiTemperature=0.7,  # Balanced: natural but focused
+    aiMaxTokens=200,  # Reasonable response length
     voiceProvider="11labs",
-    voiceId="21m00Tcm4TlvDq8ikWAM",  # Rachel voice
-    voiceSpeed=1.2,  # Slightly faster for efficiency
+    voiceId="XB0fDUnXU5powFXDhCwa",  # Charlotte - French female voice
+    voiceSpeed=1.0,  # Normal speed for clarity
     systemPrompt=(
-        "You are AVA, a professional and efficient AI assistant. "
-        "Be concise and clear in your responses. "
-        "CRITICAL: Ask for the caller's name in your first or second response. "
-        "Example: 'Hello! I'm AVA. May I have your name please?' "
-        "Listen carefully, understand context quickly, and respond promptly."
+        "Tu es AVA, une assistante professionnelle française. "
+        "Sois concise et claire dans tes réponses. "
+        "CRITIQUE: Demande le nom de l'appelant dans ta première ou deuxième réponse. "
+        "Exemple: 'Bonjour ! Je suis AVA. Puis-je avoir votre nom s'il vous plaît ?' "
+        "Écoute attentivement, comprends le contexte rapidement, et réponds promptement. "
+        "NE RÉPÈTE JAMAIS la même chose deux fois. Passe directement à la suite."
     ),
-    firstMessage="Hello! I'm AVA, your AI assistant. May I have your name please?",
+    firstMessage="Bonjour ! Je suis AVA, votre assistante IA. Puis-je avoir votre nom s'il vous plaît ?",
     askForName=True,
     askForEmail=False,
     askForPhone=False,
-    vapiAssistantId=None,
+    vapiAssistantId="98d71a30-c55c-43dd-8d64-1af9cf8b57cb",  # 🔥 DIVINE: Use existing assistant
 )
 
 

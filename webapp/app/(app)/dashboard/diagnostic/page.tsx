@@ -67,14 +67,14 @@ export default function DiagnosticPage() {
   const runDiagnostic = async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const response = await fetch(`${BACKEND_BASE_URL}/api/v1/studio/diagnostic`);
-      
+
       if (!response.ok) {
         throw new Error(`Erreur ${response.status}: ${await response.text()}`);
       }
-      
+
       const data = await response.json();
       setDiagnostic(data);
     } catch (err) {
@@ -94,7 +94,7 @@ export default function DiagnosticPage() {
             Vérification complète de la synchronisation AVA
           </p>
         </div>
-        
+
         <Button onClick={runDiagnostic} disabled={loading}>
           {loading ? (
             <>
@@ -139,15 +139,14 @@ export default function DiagnosticPage() {
                 const isSuccess = rec.startsWith("✅");
                 const isWarning = rec.startsWith("⚠️");
                 const isError = rec.startsWith("❌");
-                
+
                 return (
-                  <div 
-                    key={i} 
-                    className={`flex items-start p-3 rounded-lg ${
-                      isSuccess ? "bg-green-50 dark:bg-green-950" :
-                      isError ? "bg-red-50 dark:bg-red-950" :
-                      "bg-yellow-50 dark:bg-yellow-950"
-                    }`}
+                  <div
+                    key={i}
+                    className={`flex items-start p-3 rounded-lg ${isSuccess ? "bg-green-50 dark:bg-green-950" :
+                        isError ? "bg-red-50 dark:bg-red-950" :
+                          "bg-yellow-50 dark:bg-yellow-950"
+                      }`}
                   >
                     {isSuccess && <CheckCircle2 className="mr-2 h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />}
                     {isError && <XCircle className="mr-2 h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />}
@@ -222,7 +221,7 @@ export default function DiagnosticPage() {
                   <p className="text-sm text-red-600">Erreur: {diagnostic.vapiAssistant.error}</p>
                 </div>
               )}
-              
+
               {diagnostic.vapiAssistant.found && (
                 <dl className="grid grid-cols-2 gap-4">
                   <div>
@@ -258,16 +257,15 @@ export default function DiagnosticPage() {
                   <p className="text-sm text-red-600">Erreur: {diagnostic.phoneNumbers.error}</p>
                 </div>
               )}
-              
+
               <div className="space-y-2">
                 {diagnostic.phoneNumbers.numbers.map((phone) => (
-                  <div 
-                    key={phone.id} 
-                    className={`flex items-center justify-between p-3 rounded-lg border ${
-                      phone.matchesConfig 
-                        ? "border-green-200 bg-green-50 dark:bg-green-950" 
+                  <div
+                    key={phone.id}
+                    className={`flex items-center justify-between p-3 rounded-lg border ${phone.matchesConfig
+                        ? "border-green-200 bg-green-50 dark:bg-green-950"
                         : "border-yellow-200 bg-yellow-50 dark:bg-yellow-950"
-                    }`}
+                      }`}
                   >
                     <div>
                       <p className="font-semibold">{phone.number}</p>

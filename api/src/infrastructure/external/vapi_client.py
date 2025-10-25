@@ -77,7 +77,7 @@ class VapiClient:
     ) -> dict:
         """
         Create a new AI assistant in Vapi.
-        
+
         Args:
             name: Assistant name (max 40 chars)
             voice_provider: Voice provider ("11labs", "azure", "deepgram", etc.)
@@ -91,7 +91,7 @@ class VapiClient:
             system_prompt: Custom system instructions for the AI
             metadata: Optional metadata
             functions: Optional custom functions for function calling
-        
+
         Returns:
             Assistant object with 'id' (UUID), 'name', 'voice', 'model', etc.
         """
@@ -100,11 +100,11 @@ class VapiClient:
             "provider": voice_provider,
             "voiceId": voice_id,
         }
-        
+
         # Add speed if supported by provider (11labs, azure, deepgram)
         if voice_provider in ("11labs", "azure", "deepgram") and voice_speed != 1.0:
             voice_config["speed"] = voice_speed
-        
+
         # Build model config
         model_config: dict = {
             "provider": model_provider,
@@ -112,7 +112,7 @@ class VapiClient:
             "temperature": temperature,
             "maxTokens": max_tokens,
         }
-        
+
         # Add system prompt if provided
         if system_prompt:
             model_config["messages"] = [
@@ -121,20 +121,20 @@ class VapiClient:
                     "content": system_prompt
                 }
             ]
-        
+
         payload = {
             "name": name,
             "voice": voice_config,
             "model": model_config,
             "firstMessage": first_message,
         }
-        
+
         if metadata:
             payload["metadata"] = metadata
-        
+
         if functions:
             payload["functions"] = functions
-        
+
         return await self._request("POST", "/assistant", json=payload)
 
     async def update_assistant(
@@ -155,57 +155,56 @@ class VapiClient:
         functions: list[dict] | None = None,
     ) -> dict:
         """
-        Update an existing AI assistant in Vapi.
-        
-        Only provided fields will be updated. Others remain unchanged.
-        
+        🔥 DIVINE UPDATE: Update an existing AI assistant in Vapi with COMPLETE configs.
+
+        CRITICAL: Always rebuild complete voice/model configs to avoid partial updates.
+        Vapi needs FULL configs, not partial ones.
+
         Returns:
             Updated assistant object
         """
         payload: dict = {}
-        
+
         if name is not None:
             payload["name"] = name
-        
-        # Voice config
-        if voice_provider or voice_id or voice_speed:
-            voice_config: dict = {}
-            if voice_provider:
-                voice_config["provider"] = voice_provider
-            if voice_id:
-                voice_config["voiceId"] = voice_id
+
+        # 🎯 DIVINE: Build COMPLETE voice config (required by Vapi)
+        if voice_provider and voice_id:
+            voice_config: dict = {
+                "provider": voice_provider,
+                "voiceId": voice_id,
+            }
+            # Add speed only for providers that support it
             if voice_speed is not None and voice_provider in ("11labs", "azure", "deepgram"):
                 voice_config["speed"] = voice_speed
-            if voice_config:
-                payload["voice"] = voice_config
-        
-        # Model config
-        if model_provider or model or temperature is not None or max_tokens or system_prompt:
-            model_config: dict = {}
-            if model_provider:
-                model_config["provider"] = model_provider
-            if model:
-                model_config["model"] = model
+            payload["voice"] = voice_config
+
+        # 🎯 DIVINE: Build COMPLETE model config (required by Vapi)
+        if model_provider and model:
+            model_config: dict = {
+                "provider": model_provider,
+                "model": model,
+            }
             if temperature is not None:
                 model_config["temperature"] = temperature
             if max_tokens:
                 model_config["maxTokens"] = max_tokens
             if system_prompt:
                 model_config["messages"] = [{"role": "system", "content": system_prompt}]
-            if model_config:
-                payload["model"] = model_config
-        
+            payload["model"] = model_config
+
         if first_message is not None:
             payload["firstMessage"] = first_message
-        
+
         if metadata is not None:
             payload["metadata"] = metadata
-        
+
         if functions is not None:
             payload["functions"] = functions
-        
+
+        print(f"🔥 DIVINE UPDATE: Updating assistant {assistant_id} with payload: {payload}")
         return await self._request("PATCH", f"/assistant/{assistant_id}", json=payload)
-    
+
     async def get_or_create_assistant(
         self,
         assistant_id: str | None,
@@ -224,21 +223,27 @@ class VapiClient:
         functions: list[dict] | None = None,
     ) -> dict:
         """
-        DIVINE METHOD: Get or create assistant intelligently.
-        
-        If assistant_id exists and assistant is found: UPDATE it
-        If assistant_id doesn't exist or assistant not found: CREATE new one
-        
+        🔥 DIVINE METHOD: Get or create assistant intelligently.
+
+        STRATEGY:
+        1. If assistant_id exists: TRY to update it
+        2. If update fails (404, etc.): CREATE new one
+        3. If no assistant_id: CREATE new one
+
+        This ensures we ALWAYS reuse the same assistant when possible.
+
         Returns:
             Assistant object (created or updated)
         """
         # Try to update existing assistant if ID provided
         if assistant_id:
             try:
+                print(f"🎯 DIVINE: Attempting to UPDATE existing assistant {assistant_id}...")
                 existing = await self.get_assistant(assistant_id)
                 if existing:
-                    # Update existing assistant
-                    return await self.update_assistant(
+                    print(f"✅ Found existing assistant: {existing.get('name')}")
+                    # Update existing assistant with ALL parameters
+                    updated = await self.update_assistant(
                         assistant_id,
                         name=name,
                         voice_provider=voice_provider,
@@ -253,12 +258,15 @@ class VapiClient:
                         metadata=metadata,
                         functions=functions,
                     )
-            except VapiApiError:
+                    print(f"✅ Successfully UPDATED assistant {assistant_id}")
+                    return updated
+            except VapiApiError as e:
                 # Assistant not found or error - will create new one
-                pass
-        
+                print(f"⚠️ Failed to update assistant {assistant_id}: {e}. Creating new one...")
+
         # Create new assistant
-        return await self.create_assistant(
+        print(f"🆕 Creating NEW assistant: {name}")
+        created = await self.create_assistant(
             name=name,
             voice_provider=voice_provider,
             voice_id=voice_id,
@@ -272,6 +280,8 @@ class VapiClient:
             metadata=metadata,
             functions=functions,
         )
+        print(f"✅ Successfully CREATED new assistant {created.get('id')}")
+        return created
 
     async def call_transcript(self, call_id: str) -> dict:
         return await self._request("GET", f"/call/{call_id}/transcript")
@@ -291,34 +301,34 @@ class VapiClient:
 
     async def list_twilio_numbers(self) -> Sequence[dict]:
         return await self._request("GET", "/integrations/twilio/numbers")
-    
+
     async def list_phone_numbers(self, *, limit: int = 50) -> Sequence[dict]:
         """
         Liste tous les numéros de téléphone Vapi.
-        
+
         Returns:
             Liste des phone numbers avec leurs assistantId
         """
         data = await self._request("GET", "/phone-number", params={"limit": limit})
         return data if isinstance(data, list) else data.get("items", data)
-    
+
     async def get_phone_numbers(self, *, limit: int = 50) -> Sequence[dict]:
         """
         Alias for list_phone_numbers - used by studio_config.
-        
+
         Returns:
             Liste des phone numbers avec leurs assistantId
         """
         return await self.list_phone_numbers(limit=limit)
-    
+
     async def assign_phone_number(self, phone_id: str, assistant_id: str) -> dict:
         """
         Assigne un assistant à un numéro de téléphone.
-        
+
         Args:
             phone_id: ID du phone number
             assistant_id: ID de l'assistant
-            
+
         Returns:
             Phone number object mis à jour
         """
