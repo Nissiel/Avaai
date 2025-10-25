@@ -17,7 +17,6 @@ import { FuturisticButton } from '@/components/ui/futuristic-button';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { CallTranscriptViewer } from '@/components/app/call-transcript-viewer';
 import { toast } from 'sonner';
-import { ScrollArea } from '@/components/ui/scroll-area';
 
 import { getAnalyticsOverview } from '@/lib/api/analytics';
 import { listAssistants, type AssistantsResult } from '@/lib/api/assistants';
@@ -247,7 +246,7 @@ export default function DashboardPage() {
         ) : calls.length === 0 ? (
           <p className="text-muted-foreground">{t('recent.empty')}</p>
         ) : (
-          <ScrollArea className="group/recent relative max-h-[420px] scroll-smooth pr-3">
+          <div className="group/recent relative max-h-[420px] overflow-y-auto pr-3">
             <div className="relative space-y-4 pb-3">
               <div className="pointer-events-none absolute inset-x-0 top-0 h-6 bg-gradient-to-b from-background to-transparent opacity-70 transition-opacity group-hover/recent:opacity-100" />
               <div className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-background to-transparent" />
@@ -330,7 +329,7 @@ export default function DashboardPage() {
                 })}
               </div>
             </div>
-          </ScrollArea>
+          </div>
         )}
       </GlassCard>
 

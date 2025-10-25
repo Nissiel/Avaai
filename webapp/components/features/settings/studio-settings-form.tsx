@@ -278,7 +278,7 @@ export function StudioSettingsForm({
           updateMutation.mutate(values);
         })}>
 
-          <Accordion type="multiple" defaultValue={["org"]} className="space-y-5">
+          <Accordion type="single" collapsible defaultValue="org" className="space-y-5">
 
             {/* 📋 ORGANIZATION SECTION - Design DIVIN */}
             <AccordionItem value="org" className="border-none">
