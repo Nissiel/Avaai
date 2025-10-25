@@ -247,86 +247,91 @@ export default function DashboardPage() {
         ) : calls.length === 0 ? (
           <p className="text-muted-foreground">{t('recent.empty')}</p>
         ) : (
-          <ScrollArea className="max-h-[420px] pr-3">
-            <div className="space-y-4">
-              {calls.map((call: any) => {
-              const phoneNumber: string = call.customerNumber || '';
-              const alias = phoneNumber ? aliases[phoneNumber] : undefined;
-              const normalizedPhone = phoneNumber ? humanizeIdentifier(phoneNumber) : '';
-              const displayName = alias?.trim().length
-                ? humanizeIdentifier(alias)
-                : normalizedPhone || t('recent.unknownNumber');
-              const phoneLabel = alias?.trim().length ? phoneNumber : null;
-              const durationLabel =
-                typeof call.durationSeconds === 'number'
-                  ? formatDuration(call.durationSeconds, locale)
-                  : null;
+          <ScrollArea className="group/recent relative max-h-[420px] scroll-smooth pr-3">
+            <div className="relative space-y-4 pb-3">
+              <div className="pointer-events-none absolute inset-x-0 top-0 h-6 bg-gradient-to-b from-background to-transparent opacity-70 transition-opacity group-hover/recent:opacity-100" />
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-background to-transparent" />
+              <div className="space-y-4">
+                {calls.map((call: any) => {
+                  const phoneNumber: string = call.customerNumber || '';
+                  const alias = phoneNumber ? aliases[phoneNumber] : undefined;
+                  const normalizedPhone = phoneNumber ? humanizeIdentifier(phoneNumber) : '';
+                  const displayName = alias?.trim().length
+                    ? humanizeIdentifier(alias)
+                    : normalizedPhone || t('recent.unknownNumber');
+                  const phoneLabel = alias?.trim().length ? phoneNumber : null;
+                  const durationLabel =
+                    typeof call.durationSeconds === 'number'
+                      ? formatDuration(call.durationSeconds, locale)
+                      : null;
 
-              let costLabel: string | null = null;
-              if (typeof call.cost === 'number') {
-                costLabel = call.cost === 0 ? t('recent.free') : currencyFormatter.format(call.cost);
-              }
+                  let costLabel: string | null = null;
+                  if (typeof call.cost === 'number') {
+                    costLabel =
+                      call.cost === 0 ? t('recent.free') : currencyFormatter.format(call.cost);
+                  }
 
-              const metadata = [
-                tStatus(call.status as string, { defaultMessage: call.status }),
-                durationLabel,
-                costLabel,
-              ]
-                .filter(Boolean)
-                .join(' • ');
-              const contactId =
-                phoneNumber && phoneNumber.trim().length > 0 ? phoneNumber.trim() : 'unknown';
-              const contactHref = {
-                pathname: '/[locale]/app/contacts/[contactId]',
-                params: { locale, contactId },
-              } as const;
+                  const metadata = [
+                    tStatus(call.status as string, { defaultMessage: call.status }),
+                    durationLabel,
+                    costLabel,
+                  ]
+                    .filter(Boolean)
+                    .join(' • ');
+                  const contactId =
+                    phoneNumber && phoneNumber.trim().length > 0 ? phoneNumber.trim() : 'unknown';
+                  const contactHref = {
+                    pathname: '/[locale]/app/contacts/[contactId]',
+                    params: { locale, contactId },
+                  } as const;
 
-              return (
-                <div
-                  key={call.id}
-                  className="flex items-center justify-between gap-4 rounded-2xl border border-border/40 bg-white/5 p-4 transition hover:border-brand-500/30 hover:bg-white/10"
-                >
-                  <Link
-                    href={contactHref}
-                    className="flex flex-1 flex-col gap-1 rounded-xl px-3 py-2 transition hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                    aria-label={t('recent.viewContact', { name: displayName })}
-                  >
-                    <span className="text-base font-semibold leading-tight text-foreground">
-                      {displayName}
-                    </span>
-                    {phoneLabel ? (
-                      <span className="text-xs font-mono uppercase tracking-wide text-muted-foreground/70">
-                        {phoneLabel}
-                      </span>
-                    ) : null}
-                    <span className="text-xs text-muted-foreground uppercase tracking-[0.18em]">
-                      {metadata}
-                    </span>
-                  </Link>
-                  <div className="flex items-center gap-2">
-                    <FuturisticButton
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => setSelectedCall(call)}
-                      className="gap-2"
+                  return (
+                    <div
+                      key={call.id}
+                      className="flex items-center justify-between gap-4 rounded-2xl border border-border/40 bg-white/5 p-4 transition hover:border-brand-500/30 hover:bg-white/10"
                     >
-                      <MessageSquare className="h-4 w-4" />
-                      {t('recent.view')}
-                    </FuturisticButton>
-                    <FuturisticButton
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => emailMutation.mutate(call.id)}
-                      disabled={emailMutation.isPending}
-                      className="gap-2"
-                    >
-                      <Mail className="h-4 w-4" />
-                      {t('recent.send')}
-                    </FuturisticButton>
-                  </div>
-                </div>
-              );
-            })}
+                      <Link
+                        href={contactHref}
+                        className="flex flex-1 flex-col gap-1 rounded-xl px-3 py-2 transition hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                        aria-label={t('recent.viewContact', { name: displayName })}
+                      >
+                        <span className="text-base font-semibold leading-tight text-foreground">
+                          {displayName}
+                        </span>
+                        {phoneLabel ? (
+                          <span className="text-xs font-mono uppercase tracking-wide text-muted-foreground/70">
+                            {phoneLabel}
+                          </span>
+                        ) : null}
+                        <span className="text-xs text-muted-foreground uppercase tracking-[0.18em]">
+                          {metadata}
+                        </span>
+                      </Link>
+                      <div className="flex items-center gap-2">
+                        <FuturisticButton
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setSelectedCall(call)}
+                          className="gap-2"
+                        >
+                          <MessageSquare className="h-4 w-4" />
+                          {t('recent.view')}
+                        </FuturisticButton>
+                        <FuturisticButton
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => emailMutation.mutate(call.id)}
+                          disabled={emailMutation.isPending}
+                          className="gap-2"
+                        >
+                          <Mail className="h-4 w-4" />
+                          {t('recent.send')}
+                        </FuturisticButton>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </ScrollArea>
         )}

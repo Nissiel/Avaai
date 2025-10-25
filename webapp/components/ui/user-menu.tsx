@@ -72,8 +72,7 @@ export function UserMenu() {
     }
     
     // Navigate to onboarding
-    const onboardingUrl = `/${locale}/onboarding`.replace(/\/{2,}/g, "/");
-    router.push(onboardingUrl);
+    router.push(`/${locale}/onboarding`);
   };
 
   return (
