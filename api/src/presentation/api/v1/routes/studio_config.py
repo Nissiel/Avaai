@@ -112,6 +112,9 @@ async def sync_config_to_vapi() -> dict:
             temperature=config.aiTemperature,
             max_tokens=config.aiMaxTokens,
             system_prompt=enhanced_prompt,  # ✨ NEW: System prompt with instructions
+            transcriber_provider=config.transcriberProvider,  # 🎧 NEW: Speech-to-Text
+            transcriber_model=config.transcriberModel,
+            transcriber_language=config.transcriberLanguage,
             metadata={
                 "organization": config.organizationName,
                 "persona": config.persona,

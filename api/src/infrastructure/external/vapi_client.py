@@ -74,6 +74,9 @@ class VapiClient:
         system_prompt: str | None = None,
         metadata: dict | None = None,
         functions: list[dict] | None = None,
+        transcriber_provider: str = "deepgram",
+        transcriber_model: str = "nova-2",
+        transcriber_language: str = "fr",
     ) -> dict:
         """
         Create a new AI assistant in Vapi.
@@ -91,6 +94,9 @@ class VapiClient:
             system_prompt: Custom system instructions for the AI
             metadata: Optional metadata
             functions: Optional custom functions for function calling
+            transcriber_provider: STT provider (default "deepgram")
+            transcriber_model: STT model (default "nova-2")
+            transcriber_language: Language code (default "fr")
 
         Returns:
             Assistant object with 'id' (UUID), 'name', 'voice', 'model', etc.
@@ -126,6 +132,11 @@ class VapiClient:
             "name": name,
             "voice": voice_config,
             "model": model_config,
+            "transcriber": {
+                "provider": transcriber_provider,
+                "model": transcriber_model,
+                "language": transcriber_language,
+            },
             "firstMessage": first_message,
         }
 
@@ -153,6 +164,9 @@ class VapiClient:
         system_prompt: str | None = None,
         metadata: dict | None = None,
         functions: list[dict] | None = None,
+        transcriber_provider: str | None = None,
+        transcriber_model: str | None = None,
+        transcriber_language: str | None = None,
     ) -> dict:
         """
         🔥 DIVINE UPDATE: Update an existing AI assistant in Vapi with COMPLETE configs.
@@ -193,6 +207,17 @@ class VapiClient:
                 model_config["messages"] = [{"role": "system", "content": system_prompt}]
             payload["model"] = model_config
 
+        # 🎧 DIVINE: Build COMPLETE transcriber config (Speech-to-Text)
+        if transcriber_provider:
+            transcriber_config: dict = {
+                "provider": transcriber_provider,
+            }
+            if transcriber_model:
+                transcriber_config["model"] = transcriber_model
+            if transcriber_language:
+                transcriber_config["language"] = transcriber_language
+            payload["transcriber"] = transcriber_config
+
         if first_message is not None:
             payload["firstMessage"] = first_message
 
@@ -221,6 +246,9 @@ class VapiClient:
         system_prompt: str | None = None,
         metadata: dict | None = None,
         functions: list[dict] | None = None,
+        transcriber_provider: str = "deepgram",
+        transcriber_model: str = "nova-2",
+        transcriber_language: str = "fr",
     ) -> dict:
         """
         🔥 DIVINE METHOD: Get or create assistant intelligently.
@@ -257,6 +285,9 @@ class VapiClient:
                         system_prompt=system_prompt,
                         metadata=metadata,
                         functions=functions,
+                        transcriber_provider=transcriber_provider,
+                        transcriber_model=transcriber_model,
+                        transcriber_language=transcriber_language,
                     )
                     print(f"✅ Successfully UPDATED assistant {assistant_id}")
                     return updated
@@ -279,6 +310,9 @@ class VapiClient:
             system_prompt=system_prompt,
             metadata=metadata,
             functions=functions,
+            transcriber_provider=transcriber_provider,
+            transcriber_model=transcriber_model,
+            transcriber_language=transcriber_language,
         )
         print(f"✅ Successfully CREATED new assistant {created.get('id')}")
         return created

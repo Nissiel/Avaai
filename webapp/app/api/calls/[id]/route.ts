@@ -2,21 +2,57 @@ import { NextRequest, NextResponse } from "next/server";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
+function getToken(request: NextRequest): string | undefined {
+  const header = request.headers.get("authorization");
+  if (header?.startsWith("Bearer ")) {
+    return header.slice(7);
+  }
+  return request.cookies.get("access_token")?.value ?? undefined;
+}
+
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const response = await fetch(`${BACKEND_URL}/api/v1/calls/${params.id}`, { cache: "no-store" });
+  const token = getToken(request);
+  const response = await fetch(`${BACKEND_URL}/api/v1/calls/${params.id}`, {
+    cache: "no-store",
+    headers: token
+      ? {
+          Authorization: `Bearer ${token}`,
+        }
+      : undefined,
+  });
   const data = await response.json();
   return NextResponse.json(data, { status: response.status });
 }
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const response = await fetch(`${BACKEND_URL}/api/v1/calls/${params.id}`, {
+  const token = getToken(request);
+  
+  // 🔥 DIVINE: Decode and log the call ID
+  const callId = decodeURIComponent(params.id);
+  console.log("🗑️  DELETE CALL REQUEST:", {
+    originalId: params.id,
+    decodedId: callId,
+    hasToken: !!token,
+  });
+  
+  const response = await fetch(`${BACKEND_URL}/api/v1/calls/${encodeURIComponent(callId)}`, {
     method: "DELETE",
+    headers: token
+      ? {
+          Authorization: `Bearer ${token}`,
+        }
+      : undefined,
+  });
+
+  console.log("🗑️  DELETE CALL RESPONSE:", {
+    status: response.status,
+    statusText: response.statusText,
   });
 
   if (response.status === 204) {
@@ -24,5 +60,6 @@ export async function DELETE(
   }
 
   const data = await response.json().catch(() => ({}));
+  console.log("🗑️  DELETE CALL ERROR:", data);
   return NextResponse.json(data, { status: response.status });
 }

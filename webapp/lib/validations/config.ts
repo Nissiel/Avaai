@@ -21,14 +21,19 @@ export const studioConfigSchema = z.object({
   smtpPassword: z.string().default(""),
   
   // 🤖 AI Performance
-  aiModel: z.string().default("gpt-4"),
-  aiTemperature: z.number().min(0).max(1).default(0.5),
-  aiMaxTokens: z.number().min(50).max(500).default(150),
+  aiModel: z.string().default("gpt-4o"),  // 🔥 DIVINE: Changed to gpt-4o
+  aiTemperature: z.number().min(0).max(1).default(0.7),  // 🔥 DIVINE: Changed to 0.7
+  aiMaxTokens: z.number().min(50).max(500).default(200),  // 🔥 DIVINE: Changed to 200
   
   // 🎤 Voice Settings
-  voiceProvider: z.string().default("11labs"),
-  voiceId: z.string().default("21m00Tcm4TlvDq8ikWAM"),
-  voiceSpeed: z.number().min(0.5).max(2.0).default(1.2),
+  voiceProvider: z.string().default("azure"),  // 🔥 ULTRA DIVINE: Azure Neural
+  voiceId: z.string().default("fr-FR-DeniseNeural"),  // 🔥 Most natural French
+  voiceSpeed: z.number().min(0.5).max(2.0).default(1.0),  // 🔥 Natural flow
+  
+  // 🎧 Transcriber Settings (Speech-to-Text)
+  transcriberProvider: z.string().default("deepgram"),
+  transcriberModel: z.string().default("nova-2"),
+  transcriberLanguage: z.string().default("fr"),
   
   // 💬 Conversation Behavior
   systemPrompt: z.string().min(10),
@@ -73,14 +78,19 @@ export function createStudioConfigSchema(
     smtpPassword: z.string().default(""),
     
     // 🤖 AI Performance
-    aiModel: z.string().default("gpt-4"),
-    aiTemperature: z.number().min(0).max(1).default(0.5),
-    aiMaxTokens: z.number().min(50).max(500).default(150),
+    aiModel: z.string().default("gpt-4o"),  // 🔥 DIVINE: Changed to gpt-4o
+    aiTemperature: z.number().min(0).max(1).default(0.7),  // 🔥 DIVINE: Changed to 0.7
+    aiMaxTokens: z.number().min(50).max(500).default(200),  // 🔥 DIVINE: Changed to 200
     
     // 🎤 Voice Settings
-    voiceProvider: z.string().default("11labs"),
-    voiceId: z.string().default("21m00Tcm4TlvDq8ikWAM"),
-    voiceSpeed: z.number().min(0.5).max(2.0).default(1.2),
+    voiceProvider: z.string().default("azure"),  // 🔥 ULTRA DIVINE: Azure Neural
+    voiceId: z.string().default("fr-FR-DeniseNeural"),  // 🔥 Most natural French
+    voiceSpeed: z.number().min(0.5).max(2.0).default(1.0),  // 🔥 Natural flow
+    
+    // 🎧 Transcriber Settings (Speech-to-Text)
+    transcriberProvider: z.string().default("deepgram"),
+    transcriberModel: z.string().default("nova-2"),
+    transcriberLanguage: z.string().default("fr"),
     
     // 💬 Conversation Behavior
     systemPrompt: z.string().min(10, required),

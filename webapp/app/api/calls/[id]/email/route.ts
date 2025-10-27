@@ -8,7 +8,15 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
-const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8000';
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
+
+function getToken(request: NextRequest): string | undefined {
+  const header = request.headers.get("authorization");
+  if (header?.startsWith("Bearer ")) {
+    return header.slice(7);
+  }
+  return request.cookies.get("access_token")?.value ?? undefined;
+}
 
 export async function POST(
   request: NextRequest,
@@ -18,10 +26,17 @@ export async function POST(
     const callId = params.id;
     const url = `${BACKEND_URL}/api/v1/analytics/calls/${callId}/email`;
 
+    const token = getToken(request);
+
     const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...(token
+          ? {
+              Authorization: `Bearer ${token}`,
+            }
+          : {}),
       },
     });
 

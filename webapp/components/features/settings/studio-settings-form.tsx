@@ -48,6 +48,9 @@ const PRICING = {
     "gpt-3.5-turbo": 0.003, // ~$0.003/min
   },
   voices: {
+    // 🔥 Azure Neural Voices (BEST quality, low cost)
+    "fr-FR-DeniseNeural": 0.016, // Azure TTS standard pricing
+    "fr-FR-HenriNeural": 0.016, // Azure TTS standard pricing
     // ElevenLabs turbo voices
     "XB0fDUnXU5powFXDhCwa": 0.30, // Charlotte
     "EXAVITQu4vr4xnSDxMaL": 0.30, // Bella
@@ -118,11 +121,14 @@ export function StudioSettingsForm({
       smtpUsername: "",
       smtpPassword: "",
       aiModel: "gpt-4o", // ⚡ Best for French & phone calls
-      aiTemperature: 0.5,
-      aiMaxTokens: 150,
-      voiceProvider: "11labs",
-      voiceId: "XB0fDUnXU5powFXDhCwa", // Charlotte - French female voice
-      voiceSpeed: 1.0, // Normal speed for better comprehension
+      aiTemperature: 0.7, // 🔥 DIVINE: Changed to 0.7
+      aiMaxTokens: 200, // 🔥 DIVINE: Changed to 200
+      voiceProvider: "azure", // 🎤 ULTRA DIVINE: Azure Neural = Most natural
+      voiceId: "fr-FR-DeniseNeural", // Denise Neural - Ultra natural French
+      voiceSpeed: 1.0, // Normal speed for natural flow
+      transcriberProvider: "deepgram", // 🎧 Speech-to-Text
+      transcriberModel: "nova-2", // Best accuracy
+      transcriberLanguage: "fr", // French
       systemPrompt: "You are AVA, a professional AI assistant.",
       firstMessage: "Hello! I'm AVA.",
       askForName: true,
@@ -654,7 +660,21 @@ export function StudioSettingsForm({
                                   <SelectValue placeholder="Select a voice" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">🇫🇷 Français</div>
+                                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">🔥 Azure Neural (Recommandé)</div>
+                                  <SelectItem value="fr-FR-DeniseNeural">
+                                    <div className="flex items-center gap-2">
+                                      <Sparkles className="h-3 w-3 text-amber-500" />
+                                      <span>Denise - Femme, ultra naturelle, chaleureuse</span>
+                                    </div>
+                                  </SelectItem>
+                                  <SelectItem value="fr-FR-HenriNeural">
+                                    <div className="flex items-center gap-2">
+                                      <Sparkles className="h-3 w-3 text-blue-600" />
+                                      <span>Henri - Homme, naturel, professionnel</span>
+                                    </div>
+                                  </SelectItem>
+                                  
+                                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">🇫🇷 ElevenLabs Français</div>
                                   <SelectItem value="XB0fDUnXU5powFXDhCwa">
                                     <div className="flex items-center gap-2">
                                       <Mic className="h-3 w-3 text-pink-500" />
@@ -726,23 +746,6 @@ export function StudioSettingsForm({
                               <Mic className="h-3 w-3 text-emerald-500" />
                               Sélectionnez une voix de qualité pour votre assistant
                             </FormDescription>
-                            <div className="mt-2 rounded-lg bg-blue-50 dark:bg-blue-950 p-3 text-xs">
-                              <p className="font-semibold text-blue-900 dark:text-blue-100 mb-1">💡 Conseil :</p>
-                              <ul className="text-blue-800 dark:text-blue-200 space-y-1 ml-4">
-                                <li>• <strong>Charlotte/Sarah</strong> - Parfaites pour réception/secrétariat</li>
-                                <li>• <strong>Bella</strong> - Idéale pour support client chaleureux</li>
-                                <li>• <strong>Thomas/Daniel</strong> - Excellents pour services professionnels</li>
-                              </ul>
-                            </div>
-                            <div className="mt-2 rounded-lg bg-orange-50 dark:bg-orange-950 p-3 text-xs">
-                              <p className="font-semibold text-orange-900 dark:text-orange-100 mb-1">🔥 Problème d'accent ?</p>
-                              <ul className="text-orange-800 dark:text-orange-200 space-y-1 ml-4">
-                                <li>• Essaie <strong>Bella</strong> ou <strong>Thomas</strong> (voix premium)</li>
-                                <li>• Réduis la vitesse à <strong>0.9x</strong> ou <strong>1.0x</strong></li>
-                                <li>• Change le prompt système en français natif</li>
-                                <li>• Après chaque changement, clique "Save & Sync"</li>
-                              </ul>
-                            </div>
                             <FormMessage />
                           </FormItem>
                         )}

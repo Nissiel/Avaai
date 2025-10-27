@@ -57,14 +57,14 @@ async def list_calls(
         "calls": [
             {
                 "id": call.id,
-                "assistant_id": call.assistant_id,
-                "customer_number": call.customer_number,
+                "assistantId": call.assistant_id,
+                "customerNumber": call.customer_number,
                 "status": call.status,
-                "started_at": call.started_at.isoformat() if call.started_at else None,
-                "ended_at": call.ended_at.isoformat() if call.ended_at else None,
-                "duration_seconds": call.duration_seconds,
+                "startedAt": call.started_at.isoformat() if call.started_at else None,
+                "endedAt": call.ended_at.isoformat() if call.ended_at else None,
+                "durationSeconds": call.duration_seconds,
                 "cost": call.cost,
-                "transcript_preview": call.transcript[:200] if call.transcript else None,
+                "transcriptPreview": call.transcript[:200] if call.transcript else None,
             }
             for call in calls
         ],
@@ -97,16 +97,16 @@ async def get_call_detail(
 
     return {
         "id": call.id,
-        "assistant_id": call.assistant_id,
-        "customer_number": call.customer_number,
+        "assistantId": call.assistant_id,
+        "customerNumber": call.customer_number,
         "status": call.status,
-        "started_at": call.started_at.isoformat() if call.started_at else None,
-        "ended_at": call.ended_at.isoformat() if call.ended_at else None,
-        "duration_seconds": call.duration_seconds,
+        "startedAt": call.started_at.isoformat() if call.started_at else None,
+        "endedAt": call.ended_at.isoformat() if call.ended_at else None,
+        "durationSeconds": call.duration_seconds,
         "cost": call.cost,
         "transcript": call.transcript,
         "metadata": call.meta,
-        "recording_url": call.meta.get("recordingUrl") if isinstance(call.meta, dict) else None,
+        "recordingUrl": call.meta.get("recordingUrl") if isinstance(call.meta, dict) else None,
     }
 
 

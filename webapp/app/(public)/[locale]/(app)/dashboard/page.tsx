@@ -11,7 +11,7 @@
 import * as React from 'react';
 import type { Route } from "next";
 import Link from 'next/link';
-import { Phone, Clock, Settings, Plus, MessageSquare, Mail, DollarSign } from 'lucide-react';
+import { Phone, Clock, Settings, Plus, MessageSquare, Mail, DollarSign, Calendar } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { GlassCard } from '@/components/ui/glass-card';
 import { FuturisticButton } from '@/components/ui/futuristic-button';
@@ -48,6 +48,22 @@ export default function DashboardPage() {
         style: 'currency',
         currency: CURRENCY_BY_LOCALE[locale] ?? 'USD',
         maximumFractionDigits: 2,
+      }),
+    [locale],
+  );
+  const dateFormatter = React.useMemo(
+    () =>
+      new Intl.DateTimeFormat(locale, {
+        month: 'short',
+        day: 'numeric',
+      }),
+    [locale],
+  );
+  const timeFormatter = React.useMemo(
+    () =>
+      new Intl.DateTimeFormat(locale, {
+        hour: '2-digit',
+        minute: '2-digit',
       }),
     [locale],
   );
@@ -260,24 +276,21 @@ export default function DashboardPage() {
                     ? humanizeIdentifier(alias)
                     : normalizedPhone || t('recent.unknownNumber');
                   const phoneLabel = alias?.trim().length ? phoneNumber : null;
+                  const startedAt = call.startedAt ? new Date(call.startedAt) : null;
+                  const callTimeLabel = startedAt
+                    ? `${dateFormatter.format(startedAt)} • ${timeFormatter.format(startedAt)}`
+                    : t('recent.unknownTime');
                   const durationLabel =
                     typeof call.durationSeconds === 'number'
                       ? formatDuration(call.durationSeconds, locale)
                       : null;
-
+                  const callDurationLabel = durationLabel ?? t('recent.unknownDuration');
+                  const statusLabel = tStatus(call.status as string, { defaultMessage: call.status });
                   let costLabel: string | null = null;
                   if (typeof call.cost === 'number') {
                     costLabel =
                       call.cost === 0 ? t('recent.free') : currencyFormatter.format(call.cost);
                   }
-
-                  const metadata = [
-                    tStatus(call.status as string, { defaultMessage: call.status }),
-                    durationLabel,
-                    costLabel,
-                  ]
-                    .filter(Boolean)
-                    .join(' • ');
                   const contactId =
                     phoneNumber && phoneNumber.trim().length > 0 ? phoneNumber.trim() : 'unknown';
                   const contactHref = (
@@ -302,9 +315,26 @@ export default function DashboardPage() {
                             {phoneLabel}
                           </span>
                         ) : null}
-                        <span className="text-xs text-muted-foreground uppercase tracking-[0.18em]">
-                          {metadata}
-                        </span>
+                        <div className="flex flex-wrap items-center gap-2 pt-1 text-xs text-muted-foreground">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-muted/30 px-2.5 py-1">
+                            <Phone className="h-3 w-3" />
+                            {statusLabel}
+                          </span>
+                          <span className="inline-flex items-center gap-1 rounded-full bg-muted/30 px-2.5 py-1">
+                            <Clock className="h-3 w-3" />
+                            {callDurationLabel}
+                          </span>
+                          <span className="inline-flex items-center gap-1 rounded-full bg-muted/30 px-2.5 py-1">
+                            <Calendar className="h-3 w-3" />
+                            {callTimeLabel}
+                          </span>
+                          {costLabel ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-muted/30 px-2.5 py-1">
+                              <DollarSign className="h-3 w-3" />
+                              {costLabel}
+                            </span>
+                          ) : null}
+                        </div>
                       </Link>
                       <div className="flex items-center gap-2">
                         <FuturisticButton

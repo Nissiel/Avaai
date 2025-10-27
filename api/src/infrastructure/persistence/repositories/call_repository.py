@@ -88,13 +88,40 @@ async def get_call_by_id(session: AsyncSession, call_id: str) -> CallRecord | No
 
 async def delete_call_record(session: AsyncSession, call_id: str, tenant_id: str) -> bool:
     """Delete a call record if it belongs to the tenant."""
-
+    
+    # 🔥 DIVINE: Add logging for debugging
+    print(f"🗑️  DELETE CALL ATTEMPT:")
+    print(f"   Call ID: {call_id} (type: {type(call_id).__name__}, len: {len(call_id)})")
+    print(f"   Tenant ID: {tenant_id}")
+    
+    # 🔥 DIVINE: Try to find by ID first
     call = await session.get(CallRecord, call_id)
-    if not call or str(call.tenant_id) != str(tenant_id):
+    
+    if not call:
+        # 🔥 DIVINE: If not found by direct get, try query (maybe ID has extra chars)
+        print(f"   ⚠️  Not found by session.get(), trying query...")
+        from sqlalchemy import select
+        stmt = select(CallRecord).where(CallRecord.id == call_id.strip())
+        result = await session.execute(stmt)
+        call = result.scalar_one_or_none()
+    
+    if not call:
+        print(f"   ❌ Call not found in database")
         return False
-
+    
+    print(f"   ✅ Found call: {call.id}")
+    print(f"   📋 Call tenant_id: {call.tenant_id} (type: {type(call.tenant_id).__name__})")
+    print(f"   🔍 Expected tenant_id: {tenant_id} (type: {type(tenant_id).__name__})")
+    
+    # 🔥 DIVINE: Compare tenant IDs as strings to avoid UUID vs str mismatch
+    if str(call.tenant_id) != str(tenant_id):
+        print(f"   ❌ Tenant ID mismatch!")
+        return False
+    
+    print(f"   🗑️  Deleting call...")
     await session.delete(call)
     await session.commit()
+    print(f"   ✅ Call deleted successfully")
     return True
 
 

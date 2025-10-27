@@ -4,21 +4,21 @@ import type { CallDetail, CallListResponse, CallSummary } from "@/lib/dto";
 
 const CallSummaryApiSchema = z.object({
   id: z.string(),
-  assistant_id: z.string(),
-  customer_number: z.string().nullish(),
+  assistantId: z.string(),
+  customerNumber: z.string().nullish(),
   status: z.string(),
-  started_at: z.string().nullish(),
-  ended_at: z.string().nullish(),
-  duration_seconds: z.number().nullish(),
+  startedAt: z.string().nullish(),
+  endedAt: z.string().nullish(),
+  durationSeconds: z.number().nullish(),
   cost: z.number().nullish(),
-  transcript_preview: z.string().nullish(),
+  transcriptPreview: z.string().nullish(),
   sentiment: z.number().nullish().optional(),
 });
 
 const CallDetailApiSchema = CallSummaryApiSchema.extend({
   transcript: z.string().nullish(),
   metadata: z.record(z.any()).nullish(),
-  recording_url: z.string().nullish(),
+  recordingUrl: z.string().nullish(),
 });
 
 type CallSummaryApi = z.infer<typeof CallSummaryApiSchema>;
@@ -27,14 +27,14 @@ type CallDetailApi = z.infer<typeof CallDetailApiSchema>;
 function mapCallSummary(payload: CallSummaryApi): CallSummary {
   return {
     id: payload.id,
-    assistantId: payload.assistant_id,
-    customerNumber: payload.customer_number ?? undefined,
+    assistantId: payload.assistantId,
+    customerNumber: payload.customerNumber ?? undefined,
     status: payload.status,
-    startedAt: payload.started_at ?? undefined,
-    endedAt: payload.ended_at ?? undefined,
-    durationSeconds: payload.duration_seconds ?? undefined,
+    startedAt: payload.startedAt ?? undefined,
+    endedAt: payload.endedAt ?? undefined,
+    durationSeconds: payload.durationSeconds ?? undefined,
     cost: payload.cost ?? undefined,
-    transcriptPreview: payload.transcript_preview ?? undefined,
+    transcriptPreview: payload.transcriptPreview ?? undefined,
     sentiment: payload.sentiment ?? undefined,
   };
 }
@@ -44,7 +44,7 @@ function mapCallDetail(payload: CallDetailApi): CallDetail {
     ...mapCallSummary(payload),
     transcript: payload.transcript ?? undefined,
     metadata: payload.metadata ?? undefined,
-    recordingUrl: payload.recording_url ?? undefined,
+    recordingUrl: payload.recordingUrl ?? undefined,
   };
 }
 
@@ -116,9 +116,24 @@ export async function sendCallTranscriptEmail(callId: string): Promise<SendTrans
 }
 
 export async function deleteCall(callId: string): Promise<void> {
-  const res = await fetch(`/api/calls/${callId}`, { method: "DELETE" });
+  // 🔥 DIVINE: Add credentials to ensure cookies are sent
+  console.log("🗑️ DELETE CALL REQUEST:", { callId });
+  const res = await fetch(`/api/calls/${callId}`, { 
+    method: "DELETE",
+    credentials: "include", // 🔥 DIVINE: Ensure cookies are sent
+  });
+  
+  console.log("🗑️ DELETE CALL RESPONSE:", {
+    status: res.status,
+    statusText: res.statusText,
+    ok: res.ok,
+  });
+  
   if (!res.ok && res.status !== 204) {
     const error = await res.json().catch(() => ({ detail: "Failed to delete call" }));
+    console.error("🗑️ DELETE CALL ERROR:", error);
     throw new Error(error.detail || `Failed to delete call`);
   }
+  
+  console.log("🗑️ DELETE CALL SUCCESS");
 }

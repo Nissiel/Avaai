@@ -292,6 +292,8 @@
     "statusPlaceholder": "Filter by status",
     "duration": "{minutes}m {seconds}s",
     "unknownNumber": "Unknown number",
+    "unknownDuration": "Duration unavailable",
+    "unknownTime": "Time unavailable",
     "noTranscript": "No transcript available",
     "empty": "No calls match this filter.",
     "status": {
