@@ -1,7 +1,9 @@
 from logging.config import fileConfig
 import asyncio
+import os
 
 from sqlalchemy import pool
+from sqlalchemy import engine_from_config
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
@@ -13,6 +15,10 @@ from api.src.infrastructure.persistence.models.user import User
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
+
+# Override sqlalchemy.url with environment variable if present
+if os.getenv("AVA_API_DATABASE_URL"):
+    config.set_main_option("sqlalchemy.url", os.getenv("AVA_API_DATABASE_URL"))
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
@@ -76,7 +82,23 @@ async def run_async_migrations():
 
 def run_migrations_online() -> None:
     """Run migrations in 'online' mode."""
-    asyncio.run(run_async_migrations())
+    # Check if we're using an async driver
+    from sqlalchemy import engine_from_config
+    url = config.get_main_option("sqlalchemy.url")
+    
+    if url and "+asyncpg" in url:
+        # Use async mode for asyncpg
+        asyncio.run(run_async_migrations())
+    else:
+        # Use sync mode for psycopg2
+        connectable = engine_from_config(
+            config.get_section(config.config_ini_section, {}),
+            prefix="sqlalchemy.",
+            poolclass=pool.NullPool,
+        )
+
+        with connectable.connect() as connection:
+            do_run_migrations(connection)
 
 
 if context.is_offline_mode():
