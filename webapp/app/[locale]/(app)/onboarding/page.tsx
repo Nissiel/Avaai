@@ -1,12 +1,10 @@
-import { redirect } from 'next/navigation';
+import { redirect } from "next/navigation";
 
 interface OnboardingPageProps {
-  params: {
-    locale: string;
-  };
+  params: Promise<{ locale: string }>;
 }
 
-export default function OnboardingPage({ params }: OnboardingPageProps) {
-  // Redirect to first step with locale
-  redirect(`/${params.locale}/onboarding/welcome`);
+export default async function OnboardingPage({ params }: OnboardingPageProps) {
+  const { locale } = await params;
+  redirect(`/${locale}/onboarding/welcome`);
 }

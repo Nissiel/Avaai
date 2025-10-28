@@ -141,9 +141,17 @@
         "title": "Profil",
         "description": "Infos organisation et préférences légales."
       },
+      "vapi": {
+        "title": "Vapi API",
+        "description": "Configuration plateforme d'assistant vocal."
+      },
       "ava": {
         "title": "Persona d'Ava",
         "description": "Ton, langues et garde-fous."
+      },
+      "twilio": {
+        "title": "Twilio",
+        "description": "Intégration fournisseur téléphonique."
       },
       "telephony": {
         "title": "Téléphonie",
@@ -152,6 +160,10 @@
       "integrations": {
         "title": "Intégrations",
         "description": "Calendriers, messagerie, CRM et automatisation."
+      },
+      "assistant": {
+        "title": "Assistant",
+        "description": "Créez votre premier assistant IA."
       },
       "plan": {
         "title": "Plan",
@@ -163,17 +175,126 @@
       }
     },
     "autosave": "Sauvegarde automatique toutes les 10 secondes. Utilisez ⌘K pour naviguer.",
+    "shortcuts_info": "Utilisez ⌘K pour naviguer rapidement vers n'importe quelle section.",
     "shortcuts": "Voir les raccourcis",
     "errors": {
-      "incomplete": "Veuillez remplir les champs requis."
+      "incomplete": "Veuillez remplir les champs requis.",
+      "launch": "Impossible de créer votre assistant. Veuillez réessayer.",
+      "save": "Impossible de sauvegarder pour le moment."
+    },
+    "success": {
+      "launch": "🎉 Bienvenue dans Ava Studio ! Votre assistant est prêt.",
+      "welcome": "🎉 Bienvenue dans Ava Studio ! Finalisez votre configuration pour activer votre assistant."
     },
     "actions": {
       "back": "Retour",
       "launch": "Lancer Ava",
-      "next": "Continuer"
+      "launching": "Création de votre assistant...",
+      "complete": "Finaliser la configuration",
+      "next": "Continuer",
+      "skip": "Passer pour l'instant"
     },
     "pageTitle": "Onboarding d'Ava",
-    "pageSubtitle": "Finalisez les étapes pour lancer Ava. Vous pourrez les revoir dans Ava Studio."
+    "pageSubtitle": "Finalisez les étapes pour lancer Ava. Vous pourrez les revoir dans Ava Studio.",
+    "vapi": {
+      "title": "Configuration Vapi",
+      "description": "Activez les assistants vocaux pour votre entreprise",
+      "continue": "Continuer",
+      "info": "Vapi est requis pour créer des assistants vocaux. Vous pouvez le configurer maintenant ou plus tard dans les Paramètres.",
+      "alreadyConfigured": {
+        "title": "Vapi déjà configuré !",
+        "description": "Votre intégration Vapi.ai est active et prête"
+      },
+      "step1": {
+        "title": "⚡ Configuration Rapide",
+        "description": "Collez votre clé et continuez (2 minutes)",
+        "input": {
+          "label": "Clé API Vapi",
+          "placeholder": "sk_...",
+          "hint": "Obtenez votre clé depuis vapi.ai dashboard → Settings → API Keys"
+        },
+        "save": "Sauvegarder et Continuer",
+        "saving": "Sauvegarde...",
+        "errors": {
+          "required": "Veuillez entrer votre clé API Vapi",
+          "save": "Échec de la sauvegarde de la clé Vapi"
+        },
+        "success": "✅ Vapi configuré avec succès !"
+      },
+      "step2": {
+        "title": "⚙️ Configuration Détaillée",
+        "description": "Guide complet avec captures d'écran et conseils",
+        "action": "Aller aux Paramètres"
+      },
+      "step3": {
+        "title": "⏭️ Passer pour l'instant",
+        "description": "Vous pourrez configurer Vapi plus tard dans les Paramètres",
+        "action": "Passer cette étape",
+        "skipped": "Configuration Vapi ignorée. Vous pourrez l'ajouter plus tard dans les Paramètres."
+      }
+    },
+    "twilio": {
+      "title": "Configuration Twilio",
+      "description": "Connectez des numéros de téléphone à vos assistants",
+      "continue": "Continuer",
+      "hint": "Optionnel : Twilio vous permet de connecter de vrais numéros de téléphone. Vous pouvez passer et l'ajouter plus tard.",
+      "alreadyConfigured": {
+        "title": "Twilio déjà configuré !",
+        "description": "Votre intégration Twilio est active"
+      },
+      "info": {
+        "title": "Pourquoi configurer Twilio ?",
+        "benefit1": "Connecter de vrais numéros de téléphone à vos assistants",
+        "benefit2": "Recevoir et émettre des appels automatiquement",
+        "benefit3": "Contrôle total de votre téléphonie"
+      },
+      "configure": {
+        "action": "Configurer Twilio"
+      },
+      "skip": {
+        "action": "Passer pour l'instant",
+        "message": "Configuration Twilio ignorée. Vous pourrez l'ajouter plus tard dans les Paramètres."
+      }
+    },
+    "assistant": {
+      "title": "Créez Votre Premier Assistant",
+      "description": "Donnons vie à votre assistant IA",
+      "back": "Retour",
+      "blocked": {
+        "title": "Configuration Vapi Requise",
+        "description": "Vous devez configurer Vapi avant de créer un assistant. Veuillez revenir en arrière et compléter l'étape Vapi.",
+        "action": "Retour à Vapi",
+        "vapiRequired": "Vapi doit être configuré pour créer un assistant"
+      },
+      "preview": {
+        "title": "✅ Vapi est configuré !",
+        "description": "Vous êtes prêt à créer votre premier assistant"
+      },
+      "form": {
+        "name": {
+          "label": "Nom de l'Assistant",
+          "placeholder": "ex: Support Client, Agent Commercial...",
+          "hint": "Vous pourrez personnaliser la voix et la personnalité plus tard",
+          "error": "Veuillez entrer un nom d'assistant (au moins 2 caractères)"
+        },
+        "voice": {
+          "label": "Voix",
+          "hint": "Vous pourrez changer la voix plus tard dans les paramètres de l'assistant"
+        },
+        "create": "✨ Créer Mon Assistant",
+        "creating": "Création...",
+        "error": "Échec de la création de l'assistant. Veuillez réessayer."
+      },
+      "defaults": {
+        "instructions": "Vous êtes un assistant IA serviable. Soyez professionnel, amical et concis.",
+        "firstMessage": "Bonjour ! Je suis {name}. Comment puis-je vous aider aujourd'hui ?",
+        "model": "Modèle",
+        "temperature": "Température"
+      },
+      "success": {
+        "created": "🎉 Assistant '{name}' créé avec succès !"
+      }
+    }
   },
   "dashboardPage": {
     "assistants": {
@@ -288,7 +409,8 @@
     "tabs": {
       "profile": "Profile",
       "studio": "Studio settings",
-      "vapi": "Intégration Vapi"
+      "vapi": "Intégration Vapi",
+      "twilio": "Intégration Twilio"
     },
     "profile": {
       "title": "User profile",
@@ -427,6 +549,62 @@
       "confirm": {
         "delete": "Êtes-vous sûr de vouloir supprimer votre clé API Vapi ? Cela désactivera toutes les fonctionnalités Vapi."
       }
+    },
+    "twilio": {
+      "title": "Configuration Twilio",
+      "description": "Configurez vos identifiants Twilio personnels pour connecter des numéros de téléphone",
+      "status": {
+        "configured": "✅ Configuré",
+        "notConfigured": "⚠️ Non configuré"
+      },
+      "currentConfig": {
+        "title": "Configuration actuelle",
+        "accountSid": "Account SID",
+        "phoneNumber": "Numéro de téléphone"
+      },
+      "guide": {
+        "title": "Comment obtenir vos identifiants Twilio ?",
+        "step1": "Créez un compte gratuit sur twilio.com",
+        "step2": "Allez dans Console → Compte → Clés API & Tokens",
+        "step3": "Copiez votre Account SID et Auth Token",
+        "openTwilio": "Ouvrir Console Twilio"
+      },
+      "form": {
+        "accountSid": "Account SID",
+        "authToken": "Auth Token",
+        "phoneNumber": "Numéro Twilio",
+        "optional": "Optionnel",
+        "save": "Enregistrer les identifiants",
+        "saving": "Enregistrement...",
+        "delete": "Supprimer les identifiants",
+        "deleting": "Suppression..."
+      },
+      "benefits": {
+        "scalable": {
+          "title": "Infiniment Scalable",
+          "description": "Votre propre compte Twilio, numéros illimités"
+        },
+        "secure": {
+          "title": "Sécurisé & Privé",
+          "description": "Vos identifiants, stockés en sécurité dans votre base de données"
+        },
+        "unlimited": {
+          "title": "Sans Limites",
+          "description": "Achetez et gérez autant de numéros que vous voulez"
+        }
+      },
+      "success": {
+        "credentialsSaved": "Identifiants Twilio enregistrés !",
+        "credentialsDeleted": "Identifiants Twilio supprimés"
+      },
+      "errors": {
+        "missingFields": "Veuillez remplir tous les champs requis",
+        "invalidAccountSid": "L'Account SID doit commencer par 'AC'",
+        "invalidPhoneFormat": "Le numéro doit être au format E.164 (ex: +33612345678)",
+        "saveFailed": "Échec de l'enregistrement des identifiants Twilio",
+        "deleteFailed": "Échec de la suppression des identifiants Twilio"
+      },
+      "confirmDelete": "Êtes-vous sûr de vouloir supprimer vos identifiants Twilio ? Cela désactivera les fonctionnalités de numéros de téléphone."
     }
   },
   "sidebarNav": {

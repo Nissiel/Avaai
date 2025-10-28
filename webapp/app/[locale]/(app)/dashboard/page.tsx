@@ -17,6 +17,7 @@ import { GlassCard } from '@/components/ui/glass-card';
 import { FuturisticButton } from '@/components/ui/futuristic-button';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { CallTranscriptViewer } from '@/components/app/call-transcript-viewer';
+import { SetupReminderBanner } from '@/components/app/setup-reminder-banner';
 import { toast } from 'sonner';
 
 import { getAnalyticsOverview } from '@/lib/api/analytics';
@@ -185,6 +186,9 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8">
+      {/* Setup Reminder Banner */}
+      <SetupReminderBanner />
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

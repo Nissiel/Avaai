@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Phone, 
@@ -14,7 +15,8 @@ import {
   Sparkles,
   Loader2,
   Copy,
-  Check
+  Check,
+  ArrowLeft
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -31,7 +33,12 @@ interface VapiSettings {
 
 export function VapiSettingsForm() {
   const t = useTranslations("settingsPage.vapi");
+  const locale = useLocale();
   const { session } = useSessionStore((state) => ({ session: state.session }));
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  
+  const returnTo = searchParams?.get("returnTo");
   
   const [apiKey, setApiKey] = useState("");
   const [settings, setSettings] = useState<VapiSettings | null>(null);
@@ -192,6 +199,44 @@ export function VapiSettingsForm() {
 
   return (
     <div className="space-y-6">
+      {/* Return to Onboarding Banner */}
+      {returnTo === "onboarding" && (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-4 rounded-xl bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 backdrop-blur-xl"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center">
+                <Sparkles className="w-5 h-5 text-purple-400" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-purple-400 text-sm">
+                  🔄 Configuration depuis l'onboarding
+                </h3>
+                <p className="text-xs text-gray-300">
+                  Une fois la clé sauvegardée, retournez à l'onboarding pour continuer
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                // Set flag to invalidate integrations cache
+                if (typeof window !== "undefined") {
+                  sessionStorage.setItem("returning_from_settings", "true");
+                }
+                router.push(`/${locale}/onboarding/welcome`);
+              }}
+              className="px-4 py-2 bg-purple-500 hover:bg-purple-600 rounded-lg transition-colors text-white text-sm font-medium flex items-center gap-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Retour onboarding
+            </button>
+          </div>
+        </motion.div>
+      )}
+
       {/* Hero Section */}
       <GlassCard className="relative overflow-hidden p-8">
         <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-brand-500/10 blur-3xl" />

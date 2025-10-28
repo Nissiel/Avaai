@@ -10,11 +10,12 @@ import Link from "next/link";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProfileSettingsForm } from "@/components/features/settings/profile-settings-form";
 import { VapiSettingsForm } from "@/components/features/settings/vapi-settings-form";
+import { TwilioSettingsForm } from "@/components/features/settings/twilio-settings-form";
 import { GlassCard } from "@/components/ui/glass-card";
 import { Button } from "@/components/ui/button";
 import { useSessionStore } from "@/stores/session-store";
 
-const TAB_KEYS = ["profile", "vapi"] as const;
+const TAB_KEYS = ["profile", "vapi", "twilio"] as const;
 type TabKey = (typeof TAB_KEYS)[number];
 
 function isTabKey(value: string | null): value is TabKey {
@@ -61,6 +62,7 @@ export function SettingsView() {
         <TabsList>
           <TabsTrigger value="profile">{tTabs("profile")}</TabsTrigger>
           <TabsTrigger value="vapi">{tTabs("vapi")}</TabsTrigger>
+          <TabsTrigger value="twilio">{tTabs("twilio")}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile" className="space-y-6">
@@ -78,6 +80,10 @@ export function SettingsView() {
 
         <TabsContent value="vapi" className="space-y-6">
           <VapiSettingsForm />
+        </TabsContent>
+
+        <TabsContent value="twilio" className="space-y-6">
+          <TwilioSettingsForm />
         </TabsContent>
       </Tabs>
     </section>

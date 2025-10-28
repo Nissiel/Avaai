@@ -12,17 +12,14 @@ interface Step {
 interface OnboardingStepperProps {
   steps: Step[];
   current: number;
+  onStepClick?: (index: number) => void;
 }
 
-export function OnboardingStepper({ steps, current }: OnboardingStepperProps) {
-  const router = useRouter();
-  const params = useParams();
-  const locale = params.locale as string;
-
-  const handleStepClick = (stepId: string) => {
-    // Navigate to the clicked step
-    // @ts-ignore - Dynamic route navigation
-    router.push(`/${locale}/onboarding/${stepId}`);
+export function OnboardingStepper({ steps, current, onStepClick }: OnboardingStepperProps) {
+  const handleStepClick = (index: number) => {
+    if (onStepClick) {
+      onStepClick(index);
+    }
   };
 
   return (
@@ -30,12 +27,12 @@ export function OnboardingStepper({ steps, current }: OnboardingStepperProps) {
       {steps.map((step, index) => {
         const isActive = index === current;
         const isCompleted = index < current;
-        const isClickable = true; // Allow navigation to any step for flexibility
+        const isClickable = !!onStepClick; // Clickable if handler provided
         
         return (
           <li
             key={step.id}
-            onClick={() => handleStepClick(step.id)}
+            onClick={() => isClickable && handleStepClick(index)}
             className={cn(
               "flex items-start gap-3 rounded-2xl border px-4 py-3 transition-all duration-200",
               isActive ? "border-brand-500 bg-brand-500/10" : "border-border/70 bg-background",

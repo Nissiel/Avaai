@@ -141,9 +141,17 @@
         "title": "פרופיל",
         "description": "פרטי ארגון והעדפות משפטיות."
       },
+      "vapi": {
+        "title": "Vapi API",
+        "description": "הגדרת פלטפורמת עוזר קולי."
+      },
       "ava": {
         "title": "הפרסונה של אווה",
         "description": "טון, שפות ומגבלות."
+      },
+      "twilio": {
+        "title": "Twilio",
+        "description": "אינטגרציית ספק טלפוניה."
       },
       "telephony": {
         "title": "טלפוניה",
@@ -152,6 +160,10 @@
       "integrations": {
         "title": "אינטגרציות",
         "description": "יומנים, דואל, CRM ואוטומציה."
+      },
+      "assistant": {
+        "title": "עוזר",
+        "description": "צרו את עוזר ה-AI הראשון שלכם."
       },
       "plan": {
         "title": "תכנית",
@@ -163,17 +175,126 @@
       }
     },
     "autosave": "שמירה אוטומטית כל 10 שניות. השתמשו ב-⌘K לניווט מהיר.",
+    "shortcuts_info": "השתמשו ב-⌘K לניווט מהיר לכל סעיף.",
     "shortcuts": "הצג קיצורי דרך",
     "errors": {
-      "incomplete": "אנא השלימו את השדות הנדרשים."
+      "incomplete": "אנא השלימו את השדות הנדרשים.",
+      "launch": "לא ניתן ליצור את העוזר. אנא נסו שוב.",
+      "save": "לא ניתן לשמור כרגע."
+    },
+    "success": {
+      "launch": "🎉 ברוכים הבאים ל-Ava Studio! העוזר שלכם מוכן.",
+      "welcome": "🎉 ברוכים הבאים ל-Ava Studio! השלימו את ההגדרה כדי להפעיל את העוזר."
     },
     "actions": {
       "back": "חזרה",
       "launch": "השיקו את אווה",
-      "next": "המשך"
+      "launching": "יוצר את העוזר שלכם...",
+      "complete": "השלמת ההגדרה",
+      "next": "המשך",
+      "skip": "דלג לעת עתה"
     },
     "pageTitle": "אונבורדינג אווה",
-    "pageSubtitle": "השלימו את השלבים כדי להפעיל את אווה. תמיד אפשר לחזור אליהם מ-Ava Studio."
+    "pageSubtitle": "השלימו את השלבים כדי להפעיל את אווה. תמיד אפשר לחזור אליהם מ-Ava Studio.",
+    "vapi": {
+      "title": "הגדרת Vapi",
+      "description": "הפעילו עוזרים קוליים לעסק שלכם",
+      "continue": "המשך",
+      "info": "Vapi נדרש ליצירת עוזרים קוליים. ניתן להגדיר אותו עכשיו או מאוחר יותר בהגדרות.",
+      "alreadyConfigured": {
+        "title": "Vapi כבר מוגדר!",
+        "description": "האינטגרציה של Vapi.ai פעילה ומוכנה"
+      },
+      "step1": {
+        "title": "⚡ הגדרה מהירה",
+        "description": "הדביקו את המפתח והמשיכו (2 דקות)",
+        "input": {
+          "label": "מפתח API של Vapi",
+          "placeholder": "sk_...",
+          "hint": "קבלו את המפתח מ-vapi.ai dashboard → Settings → API Keys"
+        },
+        "save": "שמירה והמשך",
+        "saving": "שומר...",
+        "errors": {
+          "required": "נא להזין את מפתח API של Vapi",
+          "save": "שמירת מפתח Vapi נכשלה"
+        },
+        "success": "✅ Vapi הוגדר בהצלחה!"
+      },
+      "step2": {
+        "title": "⚙️ הגדרה מפורטת",
+        "description": "מדריך מלא עם צילומי מסך וטיפים",
+        "action": "עבור להגדרות"
+      },
+      "step3": {
+        "title": "⏭️ דלג לעכשיו",
+        "description": "ניתן להגדיר Vapi מאוחר יותר בהגדרות",
+        "action": "דלג על שלב זה",
+        "skipped": "הגדרת Vapi דולגה. ניתן להוסיף אותה מאוחר יותר בהגדרות."
+      }
+    },
+    "twilio": {
+      "title": "הגדרת Twilio",
+      "description": "חברו מספרי טלפון לעוזרים שלכם",
+      "continue": "המשך",
+      "hint": "אופציונלי: Twilio מאפשר לחבר מספרי טלפון אמיתיים. ניתן לדלג ולהוסיף מאוחר יותר.",
+      "alreadyConfigured": {
+        "title": "Twilio כבר מוגדר!",
+        "description": "האינטגרציה של Twilio פעילה"
+      },
+      "info": {
+        "title": "למה להגדיר Twilio?",
+        "benefit1": "חיבור מספרי טלפון אמיתיים לעוזרים שלכם",
+        "benefit2": "קבלה ושיחות אוטומטיות",
+        "benefit3": "שליטה מלאה בטלפוניה שלכם"
+      },
+      "configure": {
+        "action": "הגדרת Twilio"
+      },
+      "skip": {
+        "action": "דלג לעכשיו",
+        "message": "הגדרת Twilio דולגה. ניתן להוסיף אותה מאוחר יותר בהגדרות."
+      }
+    },
+    "assistant": {
+      "title": "צרו את העוזר הראשון שלכם",
+      "description": "בואו נחיה את עוזר ה-AI שלכם",
+      "back": "חזרה",
+      "blocked": {
+        "title": "נדרשת הגדרת Vapi",
+        "description": "עליכם להגדיר Vapi לפני יצירת עוזר. אנא חזרו אחורה והשלימו את שלב Vapi.",
+        "action": "חזרה ל-Vapi",
+        "vapiRequired": "Vapi חייב להיות מוגדר כדי ליצור עוזר"
+      },
+      "preview": {
+        "title": "✅ Vapi מוגדר!",
+        "description": "אתם מוכנים ליצור את העוזר הראשון שלכם"
+      },
+      "form": {
+        "name": {
+          "label": "שם העוזר",
+          "placeholder": "לדוגמה: תמיכה, מכירות...",
+          "hint": "אפשר להתאים אישית את הקול והאישיות מאוחר יותר",
+          "error": "נא להזין שם עוזר (לפחות 2 תווים)"
+        },
+        "voice": {
+          "label": "קול",
+          "hint": "ניתן לשנות את הקול מאוחר יותר בהגדרות העוזר"
+        },
+        "create": "✨ צור את העוזר שלי",
+        "creating": "יוצר...",
+        "error": "יצירת העוזר נכשלה. אנא נסו שוב."
+      },
+      "defaults": {
+        "instructions": "אתה עוזר AI מועיל. היה מקצועי, ידידותי וקצר.",
+        "firstMessage": "שלום! אני {name}. איך אוכל לעזור לך היום?",
+        "model": "מודל",
+        "temperature": "טמפרטורה"
+      },
+      "success": {
+        "created": "🎉 העוזר '{name}' נוצר בהצלחה!"
+      }
+    }
   },
   "dashboardPage": {
     "assistants": {
@@ -288,7 +409,8 @@
     "tabs": {
       "profile": "Profile",
       "studio": "Studio settings",
-      "vapi": "אינטגרציית Vapi"
+      "vapi": "אינטגרציית Vapi",
+      "twilio": "אינטגרציית Twilio"
     },
     "profile": {
       "title": "User profile",
@@ -427,6 +549,62 @@
       "confirm": {
         "delete": "האם אתם בטוחים שברצונכם למחוק את מפתח ה-API של Vapi? פעולה זו תשבית את כל תכונות Vapi."
       }
+    },
+    "twilio": {
+      "title": "הגדרת Twilio",
+      "description": "הגדרת אישורי Twilio האישיים שלך לחיבור מספרי טלפון",
+      "status": {
+        "configured": "✅ מוגדר",
+        "notConfigured": "⚠️ לא מוגדר"
+      },
+      "currentConfig": {
+        "title": "הגדרות נוכחיות",
+        "accountSid": "Account SID",
+        "phoneNumber": "מספר טלפון"
+      },
+      "guide": {
+        "title": "כיצד לקבל את אישורי Twilio שלך?",
+        "step1": "צרו חשבון חינם ב-twilio.com",
+        "step2": "עברו ל-Console → Account → API Keys & Tokens",
+        "step3": "העתיקו את ה-Account SID וה-Auth Token שלכם",
+        "openTwilio": "פתיחת קונסולת Twilio"
+      },
+      "form": {
+        "accountSid": "Account SID",
+        "authToken": "Auth Token",
+        "phoneNumber": "מספר Twilio",
+        "optional": "אופציונלי",
+        "save": "שמירת אישורים",
+        "saving": "שומר...",
+        "delete": "מחיקת אישורים",
+        "deleting": "מוחק..."
+      },
+      "benefits": {
+        "scalable": {
+          "title": "בלתי מוגבל",
+          "description": "חשבון Twilio משלך, מספרי טלפון בלתי מוגבלים"
+        },
+        "secure": {
+          "title": "מאובטח ופרטי",
+          "description": "האישורים שלך, מאוחסנים בבטחה במסד הנתונים שלך"
+        },
+        "unlimited": {
+          "title": "ללא הגבלות",
+          "description": "קנו ונהלו כמה שתרצו מספרים"
+        }
+      },
+      "success": {
+        "credentialsSaved": "אישורי Twilio נשמרו!",
+        "credentialsDeleted": "אישורי Twilio נמחקו"
+      },
+      "errors": {
+        "missingFields": "אנא מלאו את כל השדות הנדרשים",
+        "invalidAccountSid": "Account SID חייב להתחיל ב-'AC'",
+        "invalidPhoneFormat": "מספר הטלפון חייב להיות בפורמט E.164 (לדוגמה: +972501234567)",
+        "saveFailed": "שמירת אישורי Twilio נכשלה",
+        "deleteFailed": "מחיקת אישורי Twilio נכשלה"
+      },
+      "confirmDelete": "האם אתם בטוחים שברצונכם למחוק את אישורי Twilio שלכם? פעולה זו תשבית את תכונות מספרי הטלפון."
     }
   },
   "sidebarNav": {

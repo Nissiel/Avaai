@@ -4,8 +4,10 @@ import { useEffect, useMemo, useState } from "react";
 import { useForm, type UseFormReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocale, useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
 import { z } from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { CheckCircle2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,14 +44,19 @@ import { getStudioConfig, updateStudioConfigClient } from "@/lib/api/config";
 import { createAssistant } from "@/lib/api/assistants";
 import { completeOnboarding } from "@/lib/api/user";
 import type { CreateAssistantPayload, StudioConfig, StudioConfigUpdate } from "@/lib/dto";
+import { VapiStep } from "./wizard-steps/vapi-step";
+import { TwilioStep } from "./wizard-steps/twilio-step";
+import { AssistantStep } from "./wizard-steps/assistant-step";
 
 const steps = [
   { id: "profile", title: "Profile" },
+  { id: "vapi", title: "Vapi API" },
   { id: "ava", title: "Personalize Ava" },
+  { id: "twilio", title: "Twilio" },
   { id: "telephony", title: "Telephony" },
   { id: "integrations", title: "Integrations" },
+  { id: "assistant", title: "Assistant" },
   { id: "plan", title: "Plan" },
-  { id: "done", title: "Done" },
 ];
 
 type StepId = typeof steps[number]["id"];
@@ -185,12 +192,21 @@ function isStepValid(step: StepId, values: OnboardingValues) {
   switch (step) {
     case "profile":
       return onboardingProfileSchema.safeParse(values).success;
+    case "vapi":
+      // Vapi step handles its own validation
+      return true;
     case "ava":
       return onboardingAvaSchema.safeParse(values).success;
+    case "twilio":
+      // Twilio step handles its own validation
+      return true;
     case "telephony":
       return onboardingTelephonySchema.safeParse(values).success;
     case "integrations":
       return onboardingIntegrationsSchema.safeParse(values).success;
+    case "assistant":
+      // Assistant step handles its own validation
+      return true;
     case "plan":
       return onboardingPlanSchema.safeParse(values).success;
     default:
@@ -201,6 +217,7 @@ function isStepValid(step: StepId, values: OnboardingValues) {
 export function OnboardingWizard() {
   const t = useTranslations("onboarding");
   const locale = useLocale();
+  const router = useRouter();
   const { track } = useAnalytics();
   const setCommandPaletteOpen = useUIStore((state) => state.setCommandPaletteOpen);
   const { session, setSession } = useSessionStore((state) => ({
@@ -257,8 +274,34 @@ export function OnboardingWizard() {
   const isLaunching = assistantMutation.isPending;
   const [hasLaunched, setHasLaunched] = useState<boolean>(false);
 
-  const [stepIndex, setStepIndex] = useState(0);
+  // Persist current step in sessionStorage for "redirect & resume" pattern
+  const [stepIndex, setStepIndex] = useState(() => {
+    if (typeof window === "undefined") return 0;
+    const savedStep = sessionStorage.getItem("onboarding_current_step");
+    return savedStep ? parseInt(savedStep, 10) : 0;
+  });
+  
   const step = steps[stepIndex];
+
+  // Save step index whenever it changes
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("onboarding_current_step", stepIndex.toString());
+    }
+  }, [stepIndex]);
+
+  // Invalidate integrations cache when returning from Settings
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      // Check if we're returning from settings (localStorage flag can be set by Settings pages)
+      const returningFromSettings = sessionStorage.getItem("returning_from_settings");
+      if (returningFromSettings) {
+        // Invalidate the integrations-status query to refetch
+        queryClient.invalidateQueries({ queryKey: ["integrations-status"] });
+        sessionStorage.removeItem("returning_from_settings");
+      }
+    }
+  }, [queryClient]);
 
   useEffect(() => {
     if (!remoteConfig) return;
@@ -279,63 +322,80 @@ export function OnboardingWizard() {
     const current = steps[stepIndex].id as StepId;
     const values = form.getValues();
 
-    if (!isStepValid(current, values)) {
-      toast.error(t("errors.incomplete", { defaultValue: "Please complete required fields." }));
-      return;
+    // Validation is now optional - allow skipping steps with incomplete data
+    // Only validate if the user has filled in data for the current step
+    const shouldValidate = current === "profile" || current === "plan"; // Only strict validation for critical steps
+    
+    if (shouldValidate && !isStepValid(current, values)) {
+      toast.warning(t("errors.incomplete", { defaultValue: "Some fields are incomplete, but you can skip and complete later." }));
+      // Don't return - allow continuing
     }
 
     try {
+      // Save whatever data the user has provided
       const updatePayload = buildConfigUpdate(current, values);
       if (Object.keys(updatePayload).length > 0) {
         await updateConfigMutation.mutateAsync(updatePayload);
       }
 
       if (current === "plan" && !hasLaunched) {
+        setHasLaunched(true);
+
+        // 🎯 DIVINE: ALWAYS mark onboarding as completed first (don't block on assistant creation)
+        try {
+          console.log("🔄 Calling completeOnboarding...");
+          const updatedUser = await completeOnboarding();
+          console.log("✅ Onboarding marked as completed in DB:", updatedUser);
+
+          // Persist onboarding completion in localStorage (backup)
+          if (typeof window !== "undefined") {
+            localStorage.setItem("onboarding_completed", "true");
+            console.log("✅ Onboarding completion persisted in localStorage");
+          }
+
+          // Update local session to reflect onboarding completion
+          if (session?.user) {
+            const updatedSession = {
+              ...session,
+              user: {
+                ...session.user,
+                onboarding_completed: true,
+              },
+            };
+            setSession(updatedSession);
+            console.log("✅ Local session updated:", updatedSession);
+          }
+        } catch (onboardingError) {
+          console.error("❌ Failed to mark onboarding as completed:", onboardingError);
+          // Fallback: At least save in localStorage
+          if (typeof window !== "undefined") {
+            localStorage.setItem("onboarding_completed", "true");
+            console.log("⚠️ Fallback: Saved onboarding_completed in localStorage only");
+          }
+        }
+
+        // 🎯 DIVINE: Try to create assistant, but DON'T block if it fails
+        // User can finish setup later from dashboard
         try {
           const assistantPayload = buildAssistantPayload(values);
           await assistantMutation.mutateAsync(assistantPayload);
-          setHasLaunched(true);
-
-          // Mark onboarding as completed in the database AND localStorage
-          try {
-            console.log("🔄 Calling completeOnboarding...");
-            const updatedUser = await completeOnboarding();
-            console.log("✅ Onboarding marked as completed in DB:", updatedUser);
-
-            // Persist onboarding completion in localStorage (backup)
-            if (typeof window !== "undefined") {
-              localStorage.setItem("onboarding_completed", "true");
-              console.log("✅ Onboarding completion persisted in localStorage");
-            }
-
-            // Update local session to reflect onboarding completion
-            if (session?.user) {
-              const updatedSession = {
-                ...session,
-                user: {
-                  ...session.user,
-                  onboarding_completed: true,
-                },
-              };
-              setSession(updatedSession);
-              console.log("✅ Local session updated:", updatedSession);
-            }
-          } catch (onboardingError) {
-            console.error("❌ Failed to mark onboarding as completed:", onboardingError);
-            // Fallback: At least save in localStorage
-            if (typeof window !== "undefined") {
-              localStorage.setItem("onboarding_completed", "true");
-              console.log("⚠️ Fallback: Saved onboarding_completed in localStorage only");
-            }
-          }
-
-          toast.success(t("success.launch", { defaultValue: "Ava est prête à prendre vos appels." }));
-          track("onboarding_completed", { plan: values.plan, seats: values.seats });
-        } catch (error) {
-          console.error("Failed to launch assistant:", error);
-          toast.error(t("errors.launch", { defaultValue: "Impossible de lancer Ava. Réessayez." }));
-          return;
+          console.log("✅ Assistant created successfully");
+          toast.success(t("success.launch", { defaultValue: "🎉 Welcome to Ava Studio! Your assistant is ready." }));
+        } catch (assistantError) {
+          console.warn("⚠️ Could not create assistant (user can finish setup later):", assistantError);
+          // Don't show error toast - just show welcome message
+          toast.success(t("success.welcome", { defaultValue: "🎉 Welcome to Ava Studio! Complete your setup to activate your assistant." }));
         }
+
+        track("onboarding_completed", { plan: values.plan, seats: values.seats });
+        
+        // 🎯 DIVINE: ALWAYS redirect to dashboard (don't block on errors)
+        setTimeout(() => {
+          console.log("🚀 Redirecting to dashboard...");
+          router.push(`/${locale}/dashboard`);
+        }, 1500); // Give time to see the success toast
+        
+        return; // Don't navigate to next step
       }
 
       setStepIndex((prev) => Math.min(prev + 1, steps.length - 1));
@@ -346,6 +406,13 @@ export function OnboardingWizard() {
   };
 
   const goBack = () => setStepIndex((prev) => Math.max(prev - 1, 0));
+
+  // Allow direct navigation to any step (make all steps clickable)
+  const goToStep = (index: number) => {
+    if (index >= 0 && index < steps.length) {
+      setStepIndex(index);
+    }
+  };
 
   const summary = useMemo(() => form.getValues(), [stepIndex]);
 
@@ -365,9 +432,10 @@ export function OnboardingWizard() {
             description: t(`steps.${item.id}.description`, { defaultValue: "" }) || undefined,
           }))}
           current={stepIndex}
+          onStepClick={goToStep}
         />
         <div className="rounded-2xl border border-border/70 bg-muted/30 p-4 text-xs text-muted-foreground">
-          {t("autosave", { defaultValue: "Auto-saving every 10 seconds. Use ⌘K to jump to sections." })}
+          {t("shortcuts_info", { defaultValue: "Use ⌘K to quickly jump to any section." })}
           <button
             type="button"
             className="ml-2 font-semibold text-brand-600 underline-offset-4 hover:underline"
@@ -392,33 +460,50 @@ export function OnboardingWizard() {
           <form className="space-y-6">
             {step.id === "profile" ? (
               <ProfileStep form={form} />
+            ) : step.id === "vapi" ? (
+              <VapiStep form={form} onNext={goNext} />
             ) : step.id === "ava" ? (
               <AvaStep form={form} />
+            ) : step.id === "twilio" ? (
+              <TwilioStep form={form} onNext={goNext} />
             ) : step.id === "telephony" ? (
               <TelephonyStep form={form} />
             ) : step.id === "integrations" ? (
               <IntegrationsStep form={form} />
+            ) : step.id === "assistant" ? (
+              <AssistantStep form={form} onNext={goNext} onBack={goBack} />
             ) : step.id === "plan" ? (
               <PlanStep form={form} />
-            ) : (
-              <DoneStep summary={summary} />
-            )}
+            ) : null}
           </form>
         </Form>
-        <div className="flex flex-wrap items-center gap-3">
-          <Button variant="outline" onClick={goBack} disabled={stepIndex === 0}>
-            {t("actions.back", { defaultValue: "Back" })}
-          </Button>
-          {step.id !== "done" ? (
-            <Button onClick={goNext} disabled={isConfigLoading || isLaunching}>
-              {isLaunching
-                ? t("actions.launching", { defaultValue: "Lancement..." })
-                : stepIndex === steps.length - 2
-                  ? t("actions.launch", { defaultValue: "Launch Ava" })
-                  : t("actions.next", { defaultValue: "Continue" })}
+        {/* Hide navigation buttons for steps that manage their own navigation */}
+        {step.id !== "vapi" && step.id !== "twilio" && step.id !== "assistant" && (
+          <div className="flex flex-wrap items-center gap-3">
+            <Button variant="outline" onClick={goBack} disabled={stepIndex === 0}>
+              {t("actions.back", { defaultValue: "Back" })}
             </Button>
-          ) : null}
-        </div>
+            {step.id !== "done" && (
+              <>
+                <Button onClick={goNext} disabled={isConfigLoading || isLaunching}>
+                  {isLaunching
+                    ? t("actions.launching", { defaultValue: "Creating your assistant..." })
+                    : stepIndex === steps.length - 1
+                      ? t("actions.complete", { defaultValue: "Complete Setup" })
+                      : t("actions.next", { defaultValue: "Continue" })}
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  onClick={goNext}
+                  disabled={isConfigLoading || isLaunching}
+                  className="text-muted-foreground"
+                >
+                  {t("actions.skip", { defaultValue: "Skip for now" })}
+                </Button>
+              </>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -648,53 +733,28 @@ function AvaStep({ form }: { form: UseFormReturn<OnboardingValues> }) {
 }
 
 function TelephonyStep({ form }: { form: UseFormReturn<OnboardingValues> }) {
+  // Auto-select "attach" strategy as default
+  const currentStrategy = form.watch("strategy");
+  if (!currentStrategy) {
+    form.setValue("strategy", "attach");
+  }
+
   return (
     <div className="space-y-4">
       <FormField
         control={form.control}
-        name="strategy"
+        name="number"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Choose phone strategy</FormLabel>
-            <RadioGroup value={field.value} onValueChange={field.onChange} className="grid gap-3 sm:grid-cols-2">
-              <FormItem className="flex items-start gap-3 rounded-2xl border border-border/70 bg-background px-4 py-3">
-                <FormControl>
-                  <RadioGroupItem value="attach" />
-                </FormControl>
-                <div>
-                  <FormLabel className="!m-0 text-sm font-semibold">Attach existing number</FormLabel>
-                  <FormDescription>Bring your Twilio or SIP number.</FormDescription>
-                </div>
-              </FormItem>
-              <FormItem className="flex items-start gap-3 rounded-2xl border border-border/70 bg-background px-4 py-3">
-                <FormControl>
-                  <RadioGroupItem value="purchase" />
-                </FormControl>
-                <div>
-                  <FormLabel className="!m-0 text-sm font-semibold">Purchase with Ava</FormLabel>
-                  <FormDescription>We provision a dedicated Twilio number.</FormDescription>
-                </div>
-              </FormItem>
-            </RadioGroup>
+            <FormLabel>Phone number</FormLabel>
+            <FormControl>
+              <Input placeholder="+1 415 555 0199" {...field} />
+            </FormControl>
+            <FormDescription>Enter your Twilio or SIP number to attach to Ava.</FormDescription>
             <FormMessage />
           </FormItem>
         )}
       />
-      {form.watch("strategy") === "attach" ? (
-        <FormField
-          control={form.control}
-          name="number"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Existing number</FormLabel>
-              <FormControl>
-                <Input placeholder="+1 415 555 0199" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      ) : null}
       <FormField
         control={form.control}
         name="businessHours"
@@ -809,94 +869,51 @@ function IntegrationsStep({ form }: { form: UseFormReturn<OnboardingValues> }) {
 }
 
 function PlanStep({ form }: { form: UseFormReturn<OnboardingValues> }) {
-  const plans = [
-    { id: "free", price: 0, seats: 2, description: "For testing and solo makers" },
-    { id: "pro", price: 199, seats: 10, description: "Growing teams with routing" },
-    { id: "business", price: 499, seats: 25, description: "Compliance & analytics" },
-  ];
-  return (
-    <div className="space-y-4">
-      <FormField
-        control={form.control}
-        name="plan"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Select plan</FormLabel>
-            <div className="grid gap-4 lg:grid-cols-3">
-              {plans.map((plan) => (
-                <button
-                  type="button"
-                  key={plan.id}
-                  onClick={() => field.onChange(plan.id)}
-                  className={cn(
-                    "flex flex-col gap-2 rounded-3xl border p-4 text-left transition",
-                    field.value === plan.id
-                      ? "border-brand-500 bg-brand-500/10"
-                      : "border-border/70 bg-background",
-                  )}
-                >
-                  <span className="text-sm font-semibold uppercase tracking-[0.12em]">{plan.id.toUpperCase()}</span>
-                  <span className="text-2xl font-semibold">
-                    {plan.price === 0 ? "Free" : formatCurrency(plan.price, "en", "USD") + "/mo"}
-                  </span>
-                  <span className="text-xs text-muted-foreground">{plan.description}</span>
-                </button>
-              ))}
-            </div>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-      <FormField
-        control={form.control}
-        name="seats"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Seats</FormLabel>
-            <FormControl>
-              <Input type="number" min={1} max={50} {...field} onChange={(event) => field.onChange(Number(event.target.value))} />
-            </FormControl>
-            <FormDescription>We will auto-create invites for your teammates.</FormDescription>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-    </div>
-  );
-}
+  // Set default plan to free if not set
+  const currentPlan = form.watch("plan");
+  if (!currentPlan) {
+    form.setValue("plan", "free");
+  }
 
-function DoneStep({ summary }: { summary: OnboardingValues }) {
   return (
-    <div className="space-y-4">
-      <h2 className="text-xl font-semibold tracking-[-0.03em]">You're all set!</h2>
-      <p className="text-sm text-muted-foreground">
-        Invite your teammates, trigger a test call, and configure analytics in Ava Studio.
-      </p>
-      <div className="rounded-3xl border border-border/70 bg-background p-4 text-sm">
-        <div className="grid gap-3 sm:grid-cols-2">
+    <div className="space-y-6">
+      {/* Free Plan Card */}
+      <div className="rounded-3xl border-2 border-brand-500 bg-gradient-to-br from-brand-500/10 to-background p-6">
+        <div className="flex items-center justify-between mb-4">
           <div>
-            <p className="text-xs uppercase tracking-[0.12em] text-muted-foreground">Persona</p>
-            <p className="font-semibold">
-              {summary.persona?.toUpperCase()}
-            </p>
+            <span className="text-sm font-semibold uppercase tracking-[0.12em] text-brand-600">FREE</span>
+            <h3 className="text-3xl font-bold mt-2">$0<span className="text-lg text-muted-foreground">/month</span></h3>
           </div>
-          <div>
-            <p className="text-xs uppercase tracking-[0.12em] text-muted-foreground">Languages</p>
-            <p className="font-semibold">{summary.languages?.join(", ").toUpperCase()}</p>
+          <CheckCircle2 className="w-8 h-8 text-brand-500" />
+        </div>
+        <p className="text-muted-foreground mb-6">Perfect for testing and solo makers</p>
+        
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 text-sm">
+            <CheckCircle2 className="w-4 h-4 text-brand-500" />
+            <span>Up to 2 team members</span>
           </div>
-          <div>
-            <p className="text-xs uppercase tracking-[0.12em] text-muted-foreground">Telephony</p>
-            <p className="font-semibold">{summary.strategy === "attach" ? "Attaching existing number" : "Purchasing via Ava"}</p>
+          <div className="flex items-center gap-2 text-sm">
+            <CheckCircle2 className="w-4 h-4 text-brand-500" />
+            <span>Basic voice assistant features</span>
           </div>
-          <div>
-            <p className="text-xs uppercase tracking-[0.12em] text-muted-foreground">Plan</p>
-            <p className="font-semibold">{summary.plan?.toUpperCase()} · {summary.seats} seats</p>
+          <div className="flex items-center gap-2 text-sm">
+            <CheckCircle2 className="w-4 h-4 text-brand-500" />
+            <span>Community support</span>
+          </div>
+          <div className="flex items-center gap-2 text-sm">
+            <CheckCircle2 className="w-4 h-4 text-brand-500" />
+            <span>Upgrade anytime from Settings</span>
           </div>
         </div>
       </div>
-      <Button size="lg" className="w-full" type="button">
-        Launch Ava Studio
-      </Button>
+
+      {/* Info message */}
+      <div className="rounded-xl border border-border/70 bg-muted/40 p-4">
+        <p className="text-sm text-muted-foreground">
+          🚀 You can upgrade to <strong>Pro</strong> or <strong>Business</strong> plans later from Settings → Billing
+        </p>
+      </div>
     </div>
   );
 }

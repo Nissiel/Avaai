@@ -83,6 +83,23 @@ class User(Base):
         comment="User's personal Vapi.ai API key for their assistants",
     )
 
+    # Twilio Integration (User's own credentials)
+    twilio_account_sid: Mapped[Optional[str]] = mapped_column(
+        String(255),
+        nullable=True,
+        comment="User's Twilio Account SID",
+    )
+    twilio_auth_token: Mapped[Optional[str]] = mapped_column(
+        String(255),
+        nullable=True,
+        comment="User's Twilio Auth Token",
+    )
+    twilio_phone_number: Mapped[Optional[str]] = mapped_column(
+        String(50),
+        nullable=True,
+        comment="User's Twilio phone number",
+    )
+
     # Onboarding tracking
     onboarding_completed: Mapped[bool] = mapped_column(
         Boolean,
@@ -93,6 +110,24 @@ class User(Base):
         Integer,
         default=0,
         nullable=False,
+    )
+    onboarding_vapi_skipped: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        nullable=False,
+        comment="User skipped Vapi configuration during onboarding",
+    )
+    onboarding_twilio_skipped: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        nullable=False,
+        comment="User skipped Twilio configuration during onboarding",
+    )
+    onboarding_assistant_created: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        nullable=False,
+        comment="User created first assistant during onboarding",
     )
 
     # Timestamps
