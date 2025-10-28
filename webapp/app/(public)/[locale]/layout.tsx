@@ -6,6 +6,10 @@ import { ReactNode } from "react";
 import { unstable_setRequestLocale } from "next-intl/server";
 import { NextIntlClientProvider } from "next-intl";
 
+// Force dynamic rendering (next-intl with headers/cookies requires it)
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
 }

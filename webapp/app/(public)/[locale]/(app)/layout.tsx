@@ -3,6 +3,10 @@ import type { ReactNode } from "react";
 import { Sidebar } from "@/components/layouts/sidebar";
 import { TopBar } from "@/components/layouts/top-bar";
 
+// Force dynamic rendering for all app pages (next-intl requires it)
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 interface AppLayoutProps {
   children: ReactNode;
   params: { locale: string };
