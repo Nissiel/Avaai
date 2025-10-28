@@ -68,7 +68,7 @@ export function Hero({ locale: localeParam }: HeroProps) {
           transition={{ delay: 0.3, duration: 0.6 }}
           className="mb-12"
         >
-          <Link href={loginHref}>
+          <Link href={signupHref}>
             <motion.div
               whileHover={{ scale: 1.05, y: -2 }}
               whileTap={{ scale: 0.98 }}

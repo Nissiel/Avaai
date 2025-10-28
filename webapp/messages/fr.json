@@ -35,7 +35,8 @@
     "command": "Recherchez une action, un contact ou une ressource...",
     "empty": "Aucun résultat. Essayez un autre mot-clé.",
     "goTo": "Accéder à",
-    "quickActions": "Actions rapides"
+    "quickActions": "Actions rapides",
+    "login": "Se connecter"
   },
   "actions": {
     "newTestCall": "Lancer un appel test",

@@ -9,7 +9,6 @@ interface CtaProps {
 
 export function FinalCta({ locale: localeParam }: CtaProps) {
   const locale: Locale = isLocale(localeParam) ? localeParam : fallbackLocale;
-  const onboardingHref = `/${locale}/onboarding` as const;
   const expertHref = `/${locale}/talk-to-expert` as const;
   return (
     <section className="bg-gradient-to-br from-brand-500/20 via-brand-500/10 to-background py-20">
@@ -25,11 +24,6 @@ export function FinalCta({ locale: localeParam }: CtaProps) {
           )}
         </p>
         <div className="flex flex-wrap items-center justify-center gap-4">
-          <Button asChild size="lg">
-            <Link href={onboardingHref as any}>
-              {translate(locale, "marketing.cta.primary", "Start onboarding")}
-            </Link>
-          </Button>
           <Button asChild variant="ghost" size="lg">
             <Link href={expertHref as any}>
               {translate(locale, "marketing.cta.secondary", "Talk to an expert")}

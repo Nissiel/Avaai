@@ -35,7 +35,8 @@
     "command": "Search actions, contacts, or docs...",
     "empty": "No results. Try another keyword.",
     "goTo": "Go to",
-    "quickActions": "Quick actions"
+    "quickActions": "Quick actions",
+    "login": "Login"
   },
   "actions": {
     "newTestCall": "Launch test call",

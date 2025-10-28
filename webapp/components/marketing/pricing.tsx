@@ -57,7 +57,7 @@ export function Pricing({ locale: localeParam }: PricingProps) {
                 ))}
               </ul>
               <Button asChild size="lg" className="mt-auto">
-                <Link href={`/${locale}/onboarding?plan=${plan.id}`}>
+                <Link href={`/${locale}/signup`}>
                   {plan.id === "free"
                     ? translate(locale, "marketing.pricing.cta.getStarted", "Start for free")
                     : translate(locale, "marketing.pricing.cta.bookDemo", "Book a demo")}

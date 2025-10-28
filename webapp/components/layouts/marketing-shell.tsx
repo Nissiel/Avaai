@@ -4,7 +4,6 @@ import * as React from "react";
 import Link from "next/link";
 import { useLocale } from "next-intl";
 
-import { ThemeToggle } from "@/components/navigation/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { fallbackLocale, isLocale, type Locale } from "@/lib/i18n/locales";
 import { translate } from "@/lib/translation";
@@ -26,7 +25,6 @@ export function MarketingShell({ children }: { children: React.ReactNode }) {
     terms: `/${locale}/terms`,
     security: `/${locale}/security`,
     auth: `/${locale}/auth`,
-    onboarding: `/${locale}/onboarding`,
     features: `/${locale}#features`,
     pricing: `/${locale}#pricing`,
     faq: `/${locale}#faq`,
@@ -36,7 +34,6 @@ export function MarketingShell({ children }: { children: React.ReactNode }) {
     { label: translate(locale, "marketing.features", "Features"), href: routes.features },
     { label: translate(locale, "marketing.pricing", "Pricing"), href: routes.pricing },
     { label: translate(locale, "marketing.faq", "FAQ"), href: routes.faq },
-    { label: translate(locale, "common.cta.start", "Get started"), href: routes.onboarding },
   ];
 
   const footerColumns: {
@@ -46,9 +43,8 @@ export function MarketingShell({ children }: { children: React.ReactNode }) {
       {
         title: translate(locale, "marketing.product", "Product"),
         links: [
-          { label: translate(locale, "marketing.cta.primary", "Start onboarding"), href: routes.onboarding },
-          { label: "Dashboard", href: "/dashboard" },
           { label: translate(locale, "marketing.features", "Features"), href: routes.features },
+          { label: translate(locale, "marketing.pricing", "Pricing"), href: routes.pricing },
         ],
       },
       {
@@ -106,12 +102,7 @@ export function MarketingShell({ children }: { children: React.ReactNode }) {
             </Link>
           </nav>
 
-          {/* CTA Buttons - Removed for now */}
-          <div className="flex items-center gap-3">
-            <div className="ml-2">
-              <ThemeToggle />
-            </div>
-          </div>
+          {/* Actions removed - clean header */}
         </div>
       </header>
 
@@ -262,9 +253,6 @@ function DefaultMarketingFallback({ translate, routes }: DefaultMarketingFallbac
         </div>
 
         <div className="flex flex-wrap justify-center gap-4">
-          <Button asChild size="lg">
-            <Link href={routes.onboarding as any}>{translate("marketing.fallback.primary", "Commencer maintenant")}</Link>
-          </Button>
           <Button asChild size="lg" variant="outline">
             <Link href={routes.docs as any}>{translate("marketing.fallback.secondary", "Découvrir la demo")}</Link>
           </Button>
