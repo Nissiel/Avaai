@@ -73,14 +73,84 @@ export function MarketingShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <div className="px-4 pt-8">
-        <div className="mx-auto flex w-full max-w-screen-xl items-center justify-end">
-          <ThemeToggle />
-        </div>
-      </div>
+      {/* HEADER FIXE MODERNE */}
+      <header className="fixed top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl">
+        <div className="mx-auto flex h-16 w-full max-w-screen-xl items-center justify-between px-6">
+          {/* Logo */}
+          <Link href={routes.home as any} className="flex items-center gap-3 transition-opacity hover:opacity-80">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-secondary">
+              <span className="text-lg font-bold text-white">A</span>
+            </div>
+            <span className="text-xl font-bold tracking-tight">Ava</span>
+          </Link>
 
-      <main className="flex flex-1 flex-col">
-        {hasRenderableChildren ? (
+          {/* Navigation centrale */}
+          <nav className="hidden items-center gap-8 md:flex">
+            <Link 
+              href={routes.features as any} 
+              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+            >
+              {translate(locale, "marketing.features", "Features")}
+            </Link>
+            <Link 
+              href={routes.pricing as any} 
+              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+            >
+              {translate(locale, "marketing.pricing", "Pricing")}
+            </Link>
+            <Link 
+              href={routes.faq as any} 
+              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+            >
+              FAQ
+            </Link>
+          </nav>
+
+          {/* CTA Buttons */}
+          <div className="flex items-center gap-3">
+            <Link href={`/${locale}/login` as any}>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                className="hidden text-sm font-medium sm:inline-flex"
+              >
+                {translate(locale, "auth.login.title", "Se connecter")}
+              </Button>
+            </Link>
+            <Link href={`/${locale}/signup` as any}>
+              <Button 
+                size="sm"
+                className="gap-2 font-semibold shadow-lg shadow-primary/25 transition-all hover:scale-105 hover:shadow-xl hover:shadow-primary/40"
+              >
+                <span>{translate(locale, "auth.signup.cta", "Commencer")}</span>
+                <svg 
+                  width="16" 
+                  height="16" 
+                  viewBox="0 0 16 16" 
+                  fill="none" 
+                  className="transition-transform group-hover:translate-x-1"
+                >
+                  <path 
+                    d="M6 12L10 8L6 4" 
+                    stroke="currentColor" 
+                    strokeWidth="2" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </Button>
+            </Link>
+            <div className="ml-2">
+              <ThemeToggle />
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Spacer pour compenser le header fixe */}
+      <div className="h-16" />
+
+      <main className="flex flex-1 flex-col">{hasRenderableChildren ? (
           children
         ) : (
           <DefaultMarketingFallback
