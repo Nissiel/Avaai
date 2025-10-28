@@ -12,7 +12,6 @@ from api.src.presentation.api.v1.routes import (
     phone_numbers,
     runtime,
     studio_config,
-    studio_diagnostic,
     tenant_profile,
     twilio,
     twilio_settings,
@@ -26,7 +25,6 @@ api_v1_router = APIRouter()
 api_v1_router.include_router(auth.router)
 api_v1_router.include_router(runtime.router)
 api_v1_router.include_router(studio_config.router)
-api_v1_router.include_router(studio_diagnostic.router)
 api_v1_router.include_router(assistants.router)
 api_v1_router.include_router(calls.router)
 api_v1_router.include_router(analytics.router)
