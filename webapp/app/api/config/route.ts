@@ -3,9 +3,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { fetchStudioConfig, updateStudioConfig } from "@/services/config-service";
 import { studioConfigUpdateSchema } from "@/lib/validations/config";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const config = await fetchStudioConfig();
+    // Extract token from Authorization header
+    const authHeader = request.headers.get("authorization");
+    const token = authHeader?.replace("Bearer ", "");
+    
+    const config = await fetchStudioConfig(token);
     return NextResponse.json(config);
   } catch (error) {
     console.error("Failed to read studio configuration:", error);
@@ -18,6 +22,10 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    // Extract token from Authorization header
+    const authHeader = request.headers.get("authorization");
+    const token = authHeader?.replace("Bearer ", "");
+    
     const payload = await request.json();
     const parsed = studioConfigUpdateSchema.safeParse(payload);
 
@@ -28,7 +36,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const updated = await updateStudioConfig(parsed.data);
+    const updated = await updateStudioConfig(parsed.data, token);
     return NextResponse.json({ success: true, config: updated });
   } catch (error) {
     console.error("Failed to persist studio configuration:", error);

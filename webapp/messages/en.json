@@ -149,6 +149,9 @@
   "onboarding": {
     "title": "Let's configure your Ava",
     "subtitle": "Guided onboarding with auto-save. You can invite the team once done.",
+    "loading": {
+      "config": "Loading configuration..."
+    },
     "steps": {
       "profile": {
         "title": "Profile",

@@ -47,14 +47,20 @@ export type StudioConfigUpdate = Partial<StudioConfig>;
 
 const CONFIG_ENDPOINT = `${backendConfig.baseUrl}/api/v1/studio/config`;
 
-export async function fetchStudioConfig(): Promise<StudioConfig> {
+export async function fetchStudioConfig(token?: string): Promise<StudioConfig> {
   console.log("🔥 Fetching studio config from:", CONFIG_ENDPOINT);
+  
+  const headers: HeadersInit = {
+    "Content-Type": "application/json",
+  };
+  
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
   
   const response = await fetch(CONFIG_ENDPOINT, {
     method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers,
     cache: "no-store",
   });
 
@@ -71,12 +77,18 @@ export async function fetchStudioConfig(): Promise<StudioConfig> {
   return data;
 }
 
-export async function updateStudioConfig(payload: StudioConfigUpdate) {
+export async function updateStudioConfig(payload: StudioConfigUpdate, token?: string) {
+  const headers: HeadersInit = {
+    "Content-Type": "application/json",
+  };
+  
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+  
   const response = await fetch(CONFIG_ENDPOINT, {
     method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers,
     body: JSON.stringify(payload),
     cache: "no-store",
   });

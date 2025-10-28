@@ -1,9 +1,23 @@
 import type { StudioConfig, StudioConfigUpdate } from "@/lib/dto";
+import { useSessionStore } from "@/lib/stores/session-store";
+
+function getAuthHeaders(): HeadersInit {
+  const session = useSessionStore.getState().session;
+  const headers: HeadersInit = {
+    "Content-Type": "application/json",
+  };
+  
+  if (session?.accessToken) {
+    headers["Authorization"] = `Bearer ${session.accessToken}`;
+  }
+  
+  return headers;
+}
 
 export async function getStudioConfig(): Promise<StudioConfig> {
   const response = await fetch("/api/config", {
     method: "GET",
-    headers: { "Content-Type": "application/json" },
+    headers: getAuthHeaders(),
     cache: "no-store",
   });
 
@@ -17,7 +31,7 @@ export async function getStudioConfig(): Promise<StudioConfig> {
 export async function updateStudioConfigClient(payload: StudioConfigUpdate): Promise<StudioConfig> {
   const response = await fetch("/api/config", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: getAuthHeaders(),
     body: JSON.stringify(payload),
   });
 
