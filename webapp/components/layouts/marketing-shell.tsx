@@ -106,40 +106,8 @@ export function MarketingShell({ children }: { children: React.ReactNode }) {
             </Link>
           </nav>
 
-          {/* CTA Buttons */}
+          {/* CTA Buttons - Removed for now */}
           <div className="flex items-center gap-3">
-            <Link href={`/${locale}/login` as any}>
-              <Button 
-                variant="ghost" 
-                size="sm"
-                className="hidden text-sm font-medium sm:inline-flex"
-              >
-                {translate(locale, "auth.login.title", "Se connecter")}
-              </Button>
-            </Link>
-            <Link href={`/${locale}/signup` as any}>
-              <Button 
-                size="sm"
-                className="gap-2 font-semibold shadow-lg shadow-primary/25 transition-all hover:scale-105 hover:shadow-xl hover:shadow-primary/40"
-              >
-                <span>{translate(locale, "auth.signup.cta", "Commencer")}</span>
-                <svg 
-                  width="16" 
-                  height="16" 
-                  viewBox="0 0 16 16" 
-                  fill="none" 
-                  className="transition-transform group-hover:translate-x-1"
-                >
-                  <path 
-                    d="M6 12L10 8L6 4" 
-                    stroke="currentColor" 
-                    strokeWidth="2" 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </Button>
-            </Link>
             <div className="ml-2">
               <ThemeToggle />
             </div>

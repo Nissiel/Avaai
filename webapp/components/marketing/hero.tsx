@@ -61,36 +61,14 @@ export function Hero({ locale: localeParam }: HeroProps) {
           )}
         </motion.p>
 
-        {/* CTA Buttons - ULTRA VISIBLE */}
+        {/* Spacer pour équilibre visuel */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.6 }}
-          className="mb-16 flex flex-col gap-4 sm:flex-row"
+          className="mb-16"
         >
-          <Button 
-            asChild 
-            size="lg" 
-            className="group h-14 gap-3 rounded-2xl px-8 text-lg font-semibold shadow-xl shadow-primary/25 transition-all hover:scale-105 hover:shadow-2xl hover:shadow-primary/40"
-          >
-            <Link href={signupHref as any}>
-              <Zap className="h-5 w-5" />
-              {translate(locale, "auth.signup.cta", "Commencer gratuitement")}
-              <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
-            </Link>
-          </Button>
-          
-          <Button 
-            asChild 
-            variant="outline" 
-            size="lg"
-            className="h-14 gap-3 rounded-2xl border-2 px-8 text-lg font-semibold backdrop-blur-sm transition-all hover:scale-105 hover:border-primary/50 hover:bg-primary/5"
-          >
-            <Link href={loginHref as any}>
-              {translate(locale, "auth.login.cta", "Se connecter")}
-              <ArrowRight className="h-5 w-5" />
-            </Link>
-          </Button>
+          {/* CTA buttons removed - coming soon */}
         </motion.div>
 
         {/* Social proof */}
