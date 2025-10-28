@@ -1,8 +1,21 @@
 # 🚀 AVA.AI - GUIDE DE DÉPLOIEMENT PRODUCTION
 
-## 📋 PRÉ-REQUIS
+### 2.1 Créer le Web Service
 
-- [ ] Compte [Netlify](https://netlify.com) ✅ (Frontend - TU AS DÉJÀ !)
+1. Aller sur https://dashboard.render.com
+2. **New** → **Web Service**
+3. **Connect Repository** → Sélectionner `Nissiel/Avaai`
+4. Configuration:
+   - **Name**: `ava-api-production`
+   - **Region**: Frankfurt (EU Central)
+   - **Branch**: `cleanup-divine`
+   - **Root Directory**: `api`
+   - **Runtime**: `Python 3`
+   - **Build Command**: `pip install -r ../requirements.txt`
+   - **Start Command**: `bash -c "cd .. && alembic upgrade head && cd api && uvicorn src.presentation.api.main:app --host 0.0.0.0 --port $PORT"`
+   - **Instance Type**: `Starter ($7/month)` ou `Free`
+
+> **Note** : Les migrations sont maintenant faites au **START**, pas au BUILD, car Render isole le réseau pendant le build. [ ] Compte [Netlify](https://netlify.com) ✅ (Frontend - TU AS DÉJÀ !)
 - [ ] Compte [Render](https://render.com) ou [Railway](https://railway.app) (Backend)
 - [ ] Compte [Supabase](https://supabase.com) (Database PostgreSQL)
 - [ ] Clés API : OpenAI, Vapi.ai, Twilio, Resend
