@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useLocale } from "next-intl";
 
 import { Button } from "@/components/ui/button";
+import { LanguageSwitcher } from "@/components/navigation/language-switcher";
 import { fallbackLocale, isLocale, type Locale } from "@/lib/i18n/locales";
 import { translate } from "@/lib/translation";
 
@@ -102,7 +103,10 @@ export function MarketingShell({ children }: { children: React.ReactNode }) {
             </Link>
           </nav>
 
-          {/* Actions removed - clean header */}
+          {/* Language Switcher */}
+          <div className="flex items-center">
+            <LanguageSwitcher />
+          </div>
         </div>
       </header>
 
