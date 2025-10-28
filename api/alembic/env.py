@@ -86,19 +86,21 @@ def run_migrations_online() -> None:
     from sqlalchemy import engine_from_config
     url = config.get_main_option("sqlalchemy.url")
     
+    # ALWAYS use sync mode for migrations (psycopg2)
+    # Remove +asyncpg from URL if present to force psycopg2
     if url and "+asyncpg" in url:
-        # Use async mode for asyncpg
-        asyncio.run(run_async_migrations())
-    else:
-        # Use sync mode for psycopg2
-        connectable = engine_from_config(
-            config.get_section(config.config_ini_section, {}),
-            prefix="sqlalchemy.",
-            poolclass=pool.NullPool,
-        )
+        url_sync = url.replace("+asyncpg", "")
+        config.set_main_option("sqlalchemy.url", url_sync)
+    
+    # Use sync mode for all migrations
+    connectable = engine_from_config(
+        config.get_section(config.config_ini_section, {}),
+        prefix="sqlalchemy.",
+        poolclass=pool.NullPool,
+    )
 
-        with connectable.connect() as connection:
-            do_run_migrations(connection)
+    with connectable.connect() as connection:
+        do_run_migrations(connection)
 
 
 if context.is_offline_mode():
