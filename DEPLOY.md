@@ -26,36 +26,42 @@ bash -c "export MIGRATION_URL=\$(echo \$AVA_API_DATABASE_URL | sed 's/+asyncpg//
 
 ---
 
-## 🗄️ ÉTAPE 1: BASE DE DONNÉES (Supabase)
+## ✅ ÉTAPE 1: BASE DE DONNÉES (Supabase)
 
-### 1.1 Créer le projet
+### 1.1 Créer le projet Supabase
 
 1. Aller sur https://supabase.com/dashboard
-2. **New Project** → Nom: `ava-production`, Region: EU (Paris/Frankfurt)
-3. Mot de passe **FORT** → Sauvegarder dans un gestionnaire de mots de passe
-4. Attendre 2 minutes (création du projet)
+2. Créer un **nouveau projet** :
+   - **Name** : `ava-prod`
+   - **Database Password** : `[NOTER_LE_MOT_DE_PASSE]`
+   - **Region** : Europe (eu-central-1 - Frankfurt)
+   - **Pricing** : Free tier (jusqu'à 500 MB)
 
-### 1.2 Récupérer la Connection String
+3. **Récupérer la connection string** :
+   - Project Settings → Database
+   - **Connection String** → **URI**
+   - Format : `postgresql://postgres:[PASSWORD]@db.xxxxx.supabase.co:5432/postgres`
 
-1. **Settings** → **Database** → **Connection string** → **URI**
-2. Format: `postgresql://postgres:[PASSWORD]@[HOST]:5432/postgres`
-3. **Important** : Convertir en async pour FastAPI:
+4. **Modifier pour asyncpg** :
    ```
-   postgresql+asyncpg://postgres:[PASSWORD]@[HOST]:5432/postgres
+   postgresql+asyncpg://postgres:[PASSWORD]@db.xxxxx.supabase.co:5432/postgres
    ```
-4. Sauvegarder cette URL → sera utilisée comme `AVA_API_DATABASE_URL`
 
-### 1.3 Migrations automatiques ✨
+### 1.2 Tables Alembic
 
 **Les tables seront créées AUTOMATIQUEMENT au déploiement sur Render !**
 
-Pas besoin de faire `alembic upgrade head` localement. Le script `api/deploy_migrate.sh` s'en charge au build.
+Pas besoin de faire `alembic upgrade head` localement. Les migrations s'exécutent automatiquement au START du service Render.
 
-**Pourquoi ?**
-- ✅ Reproductible : Même process à chaque déploiement
-- ✅ Automatisé : Pas d'erreur humaine
-- ✅ Sécurisé : Pas besoin d'exposer la DB localement
-- ✅ Pro : C'est la best practice DevOps
+**Pourquoi au START et pas au BUILD ?**
+- ✅ Render isole le réseau pendant BUILD (sécurité)
+- ✅ La base de données n'est accessible que pendant START
+- ✅ L'architecture est configurée pour gérer cela automatiquement :
+  - `env.py` lit `AVA_API_DATABASE_URL` automatiquement
+  - `env.py` strip `+asyncpg` et utilise `psycopg2` (sync) pour migrations
+  - L'app runtime utilise `asyncpg` (async) pour la performance
+
+**C'est la best practice DevOps moderne !**
 
 ---
 
@@ -71,15 +77,20 @@ Pas besoin de faire `alembic upgrade head` localement. Le script `api/deploy_mig
    - **Region**: Frankfurt (EU Central)
    - **Branch**: `cleanup-divine`
    - **Root Directory**: `api`
-   - **Runtime**: `Python 3.11`
-   - **Build Command**: `pip install -r ../requirements.txt && chmod +x deploy_migrate.sh && ./deploy_migrate.sh`
-   - **Start Command**: `uvicorn src.presentation.api.main:app --host 0.0.0.0 --port $PORT`
+   - **Runtime**: `Python 3.13`
+   - **Build Command**: `pip install -r ../requirements.txt`
+   - **Start Command**: `bash -c "cd .. && alembic upgrade head && cd api && uvicorn src.presentation.api.main:app --host 0.0.0.0 --port $PORT"`
    - **Instance Type**: `Starter ($7/month)` ou `Free`
 
-> **Note** : Le build command fait 3 choses :
-> 1. Installe les dépendances
-> 2. Rend le script de migration exécutable
-> 3. Exécute les migrations Alembic automatiquement
+> **Note** : Le start command fait 3 choses :
+> 1. Va au root du projet (`cd ..`)
+> 2. Exécute les migrations Alembic (`alembic upgrade head`)
+> 3. Démarre l'API FastAPI (`uvicorn`)
+> 
+> **Pourquoi au START et pas au BUILD ?**
+> - Render isole le réseau pendant la phase BUILD (sécurité)
+> - La DB n'est accessible que pendant la phase START
+> - `env.py` gère automatiquement la conversion asyncpg→psycopg2 pour les migrations
 
 ### 2.2 Variables d'environnement
 
