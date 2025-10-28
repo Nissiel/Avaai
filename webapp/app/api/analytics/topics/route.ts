@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 
 import { fetchAnalyticsTopics } from "@/services/analytics-service";
 
+// Force dynamic rendering - this route fetches real-time data
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     const topics = await fetchAnalyticsTopics();
