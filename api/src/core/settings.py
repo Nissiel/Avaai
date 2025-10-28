@@ -14,7 +14,7 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     api_prefix: str = "/api/v1"
     environment: str = "development"
-    allowed_origins: str = ""  # Comma-separated string, will be parsed
+    allowed_origins: List[str] = []  # List of allowed origins
     database_url: str  # No default - must be set in .env (PostgreSQL required)
     log_level: str = "INFO"
     vapi_base_url: str = "https://api.vapi.ai"
@@ -26,13 +26,17 @@ class Settings(BaseSettings):
     resend_domain: str = "avaai.app"
     app_url: str = "http://localhost:3000"
 
-    @field_validator("allowed_origins", mode="after")
+    @field_validator("allowed_origins", mode="before")
     @classmethod
-    def parse_origins(cls, v: str) -> List[str]:
+    def parse_origins(cls, v) -> List[str]:
         """Parse comma-separated origins from .env"""
-        if not v:
-            return []
-        return [origin.strip() for origin in v.split(",") if origin.strip()]
+        if isinstance(v, list):
+            return v
+        if isinstance(v, str):
+            if not v:
+                return []
+            return [origin.strip() for origin in v.split(",") if origin.strip()]
+        return []
 
     class Config:
         # Load .env.test in test environment, otherwise .env
