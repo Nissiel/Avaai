@@ -48,6 +48,8 @@ export type StudioConfigUpdate = Partial<StudioConfig>;
 const CONFIG_ENDPOINT = `${backendConfig.baseUrl}/api/v1/studio/config`;
 
 export async function fetchStudioConfig(): Promise<StudioConfig> {
+  console.log("🔥 Fetching studio config from:", CONFIG_ENDPOINT);
+  
   const response = await fetch(CONFIG_ENDPOINT, {
     method: "GET",
     headers: {
@@ -56,11 +58,17 @@ export async function fetchStudioConfig(): Promise<StudioConfig> {
     cache: "no-store",
   });
 
+  console.log("🔥 Studio config response:", response.status, response.statusText);
+
   if (!response.ok) {
+    const errorText = await response.text().catch(() => "No error details");
+    console.error("❌ Studio config fetch failed:", errorText);
     throw new Error(`Failed to load studio config (status: ${response.status})`);
   }
 
-  return response.json();
+  const data = await response.json();
+  console.log("✅ Studio config loaded:", data);
+  return data;
 }
 
 export async function updateStudioConfig(payload: StudioConfigUpdate) {

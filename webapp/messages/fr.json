@@ -287,7 +287,8 @@
     },
     "tabs": {
       "profile": "Profile",
-      "studio": "Studio settings"
+      "studio": "Studio settings",
+      "vapi": "Intégration Vapi"
     },
     "profile": {
       "title": "User profile",
@@ -376,6 +377,55 @@
           "professional": "Professional",
           "energetic": "Energetic"
         }
+      }
+    },
+    "vapi": {
+      "title": "Configuration Vapi.ai",
+      "subtitle": "Configurez votre clé API Vapi.ai personnelle pour activer les assistantes vocales IA",
+      "status": {
+        "configured": "✅ Configuré",
+        "notConfigured": "⚠️ Non configuré",
+        "notConfiguredDesc": "Ajoutez votre clé API pour débloquer les fonctionnalités Vapi",
+        "keyPreview": "Clé"
+      },
+      "form": {
+        "label": "Clé API Vapi",
+        "description": "Votre clé API Vapi.ai personnelle (commence par sk_)",
+        "save": "Sauvegarder",
+        "saving": "Enregistrement...",
+        "delete": "Supprimer"
+      },
+      "guide": {
+        "title": "Comment obtenir votre clé API ?",
+        "step1": "Allez sur vapi.ai et créez un compte gratuit",
+        "step2": "Accédez à Paramètres → Clés API",
+        "step3": "Cliquez sur 'Créer une nouvelle clé API'",
+        "step4": "Copiez et collez la clé ci-dessus",
+        "goToVapi": "Ouvrir le Dashboard Vapi"
+      },
+      "benefits": {
+        "scalable": "Infiniment Scalable",
+        "secure": "Sécurisé & Privé",
+        "unlimited": "Sans Limites"
+      },
+      "success": {
+        "saved": "Clé API sauvegardée !",
+        "savedDesc": "Votre intégration Vapi.ai est maintenant active",
+        "deleted": "Clé API supprimée",
+        "deletedDesc": "Les fonctionnalités Vapi ont été désactivées",
+        "copied": "Lien copié dans le presse-papier !"
+      },
+      "errors": {
+        "emptyKey": "Veuillez entrer une clé API",
+        "invalidFormat": "Format de clé API invalide",
+        "invalidFormatDesc": "Les clés Vapi commencent par 'sk_'",
+        "noAuth": "Authentification requise",
+        "saveFailed": "Échec de la sauvegarde de la clé API",
+        "saveFailedDesc": "Veuillez réessayer",
+        "deleteFailed": "Échec de la suppression de la clé API"
+      },
+      "confirm": {
+        "delete": "Êtes-vous sûr de vouloir supprimer votre clé API Vapi ? Cela désactivera toutes les fonctionnalités Vapi."
       }
     }
   },
@@ -478,6 +528,51 @@
   "analyticsPage": {
     "title": "Detailed analytics",
     "subtitle": "Track call volume, sentiment, and key topics in real time to optimise Ava."
+  },
+  "vapi": {
+    "banner": {
+      "title": "⚠️ Configuration Vapi manquante",
+      "description": "Configurez votre clé API Vapi.ai pour créer des assistants vocaux et gérer vos appels téléphoniques.",
+      "quickSetup": "Configuration rapide (2 min)",
+      "goToSettings": "Ouvrir les paramètres"
+    },
+    "modal": {
+      "title": "Configuration Vapi.ai",
+      "subtitle": "Choisissez votre méthode de configuration",
+      "quickSetup": {
+        "title": "Configuration Rapide",
+        "description": "Configurez votre clé Vapi ici en 2 minutes",
+        "time": "~2 minutes",
+        "guide": "Suivez ces 3 étapes simples",
+        "step1": "1. Créez un compte gratuit sur Vapi.ai",
+        "step2": "2. Allez dans Settings → API Keys",
+        "step3": "3. Créez une nouvelle clé et copiez-la"
+      },
+      "settings": {
+        "title": "Paramètres Complets",
+        "description": "Accédez à la page Settings avec le guide détaillé",
+        "more": "Plus d'options"
+      },
+      "form": {
+        "label": "Clé API Vapi"
+      },
+      "openVapi": "Ouvrir Dashboard Vapi",
+      "back": "Retour",
+      "activate": "Activer Vapi",
+      "saving": "Enregistrement...",
+      "skip": "Passer pour l'instant",
+      "success": {
+        "title": "✨ Configuration réussie !",
+        "description": "Votre intégration Vapi.ai est maintenant active"
+      },
+      "errors": {
+        "emptyKey": "Veuillez entrer une clé API",
+        "invalidFormat": "Format de clé invalide",
+        "invalidFormatDesc": "Les clés Vapi commencent par 'sk_'",
+        "noAuth": "Authentification requise",
+        "saveFailed": "Échec de la sauvegarde"
+      }
+    }
   },
   "userMenu": {
     "signedInAs": "Connecté en tant que",

@@ -22,6 +22,7 @@ from jose import JWTError, jwt
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ...infrastructure.persistence.models.tenant import Tenant
+from ...infrastructure.persistence.models.user import User
 from ...infrastructure.database.session import get_session
 
 # Development mode: Optional auth for local testing
@@ -122,3 +123,55 @@ async def _get_dev_tenant(session: AsyncSession) -> CurrentTenant:
         roles={Role.OWNER, Role.ADMIN},
         user_id=uuid.UUID("00000000-0000-0000-0000-000000000001"),
     )
+
+
+async def get_current_user(
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Security(bearer_scheme)] = None,
+    session: Annotated[AsyncSession, Depends(get_session)] = None,
+) -> User:
+    """
+    Resolve the authenticated user from JWT token.
+    
+    Returns the full User object with vapi_api_key for multi-tenant Vapi operations.
+    In DEV mode, returns default dev user if no credentials provided.
+    """
+    from sqlalchemy import select
+    
+    # DEV MODE: Get or create default user
+    if DEV_MODE and credentials is None:
+        result = await session.execute(select(User).limit(1))
+        user = result.scalar_one_or_none()
+        
+        if not user:
+            # Create default dev user
+            from uuid import uuid4
+            user = User(
+                id=str(uuid4()),
+                email="dev@avaai.com",
+                name="Dev User",
+                locale="en",
+            )
+            session.add(user)
+            await session.commit()
+            await session.refresh(user)
+        
+        return user
+    
+    # PRODUCTION: Require auth
+    if credentials is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required")
+    
+    payload = await _parse_token(credentials.credentials)
+    user_id_raw = payload.get("sub")
+    
+    if not user_id_raw:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token payload")
+    
+    # Query user by ID
+    result = await session.execute(select(User).where(User.id == str(user_id_raw)))
+    user = result.scalar_one_or_none()
+    
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    
+    return user

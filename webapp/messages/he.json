@@ -287,7 +287,8 @@
     },
     "tabs": {
       "profile": "Profile",
-      "studio": "Studio settings"
+      "studio": "Studio settings",
+      "vapi": "אינטגרציית Vapi"
     },
     "profile": {
       "title": "User profile",
@@ -376,6 +377,55 @@
           "professional": "Professional",
           "energetic": "Energetic"
         }
+      }
+    },
+    "vapi": {
+      "title": "הגדרות Vapi.ai",
+      "subtitle": "הגדירו את מפתח ה-API האישי שלכם כדי להפעיל עוזרות קוליות AI",
+      "status": {
+        "configured": "✅ מוגדר",
+        "notConfigured": "⚠️ לא מוגדר",
+        "notConfiguredDesc": "הוסיפו את מפתח ה-API כדי לפתוח תכונות Vapi",
+        "keyPreview": "מפתח"
+      },
+      "form": {
+        "label": "מפתח API של Vapi",
+        "description": "מפתח ה-API האישי שלכם ב-Vapi.ai (מתחיל ב-sk_)",
+        "save": "שמירה",
+        "saving": "שומר...",
+        "delete": "מחיקה"
+      },
+      "guide": {
+        "title": "איך להשיג את מפתח ה-API?",
+        "step1": "כנסו ל-vapi.ai וצרו חשבון חינם",
+        "step2": "עברו להגדרות → מפתחות API",
+        "step3": "לחצו על 'צור מפתח API חדש'",
+        "step4": "העתיקו והדביקו את המפתח למעלה",
+        "goToVapi": "פתיחת לוח הבקרה של Vapi"
+      },
+      "benefits": {
+        "scalable": "סקלביליות אינסופית",
+        "secure": "מאובטח ופרטי",
+        "unlimited": "ללא הגבלות"
+      },
+      "success": {
+        "saved": "מפתח ה-API נשמר!",
+        "savedDesc": "האינטגרציה עם Vapi.ai פעילה כעת",
+        "deleted": "מפתח ה-API נמחק",
+        "deletedDesc": "תכונות Vapi הושבתו",
+        "copied": "הקישור הועתק ללוח!"
+      },
+      "errors": {
+        "emptyKey": "אנא הזינו מפתח API",
+        "invalidFormat": "פורמט מפתח API לא תקין",
+        "invalidFormatDesc": "מפתחות Vapi מתחילים ב-'sk_'",
+        "noAuth": "נדרש אימות",
+        "saveFailed": "שמירת מפתח ה-API נכשלה",
+        "saveFailedDesc": "אנא נסו שוב",
+        "deleteFailed": "מחיקת מפתח ה-API נכשלה"
+      },
+      "confirm": {
+        "delete": "האם אתם בטוחים שברצונכם למחוק את מפתח ה-API של Vapi? פעולה זו תשבית את כל תכונות Vapi."
       }
     }
   },
@@ -478,6 +528,51 @@
   "analyticsPage": {
     "title": "Detailed analytics",
     "subtitle": "Track call volume, sentiment, and key topics in real time to optimise Ava."
+  },
+  "vapi": {
+    "banner": {
+      "title": "⚠️ הגדרות Vapi חסרות",
+      "description": "הגדירו את מפתח ה-API של Vapi.ai כדי ליצור עוזרים קוליים ולנהל שיחות טלפון.",
+      "quickSetup": "הגדרה מהירה (2 דקות)",
+      "goToSettings": "פתיחת הגדרות"
+    },
+    "modal": {
+      "title": "הגדרות Vapi.ai",
+      "subtitle": "בחרו שיטת הגדרה",
+      "quickSetup": {
+        "title": "הגדרה מהירה",
+        "description": "הגדירו את המפתח שלכם כאן ב-2 דקות",
+        "time": "~2 דקות",
+        "guide": "עקבו אחרי 3 השלבים הפשוטים",
+        "step1": "1. צרו חשבון חינם ב-Vapi.ai",
+        "step2": "2. עברו ל-Settings → API Keys",
+        "step3": "3. צרו מפתח חדש והעתיקו אותו"
+      },
+      "settings": {
+        "title": "הגדרות מלאות",
+        "description": "גישה לעמוד Settings עם מדריך מפורט",
+        "more": "אפשרויות נוספות"
+      },
+      "form": {
+        "label": "מפתח API של Vapi"
+      },
+      "openVapi": "פתיחת Vapi Dashboard",
+      "back": "חזרה",
+      "activate": "הפעלת Vapi",
+      "saving": "שומר...",
+      "skip": "דלג לעכשיו",
+      "success": {
+        "title": "✨ ההגדרה הצליחה!",
+        "description": "האינטגרציה עם Vapi.ai פעילה כעת"
+      },
+      "errors": {
+        "emptyKey": "אנא הזינו מפתח API",
+        "invalidFormat": "פורמט מפתח לא תקין",
+        "invalidFormatDesc": "מפתחות Vapi מתחילים ב-'sk_'",
+        "noAuth": "נדרש אימות",
+        "saveFailed": "השמירה נכשלה"
+      }
+    }
   },
   "userMenu": {
     "signedInAs": "מחובר כעת",

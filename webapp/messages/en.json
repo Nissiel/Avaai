@@ -378,7 +378,8 @@
     },
     "tabs": {
       "profile": "Profile",
-      "studio": "Studio settings"
+      "studio": "Studio settings",
+      "vapi": "Vapi Integration"
     },
     "movedNotice": {
       "title": "Looking for studio settings?",
@@ -473,11 +474,105 @@
           "energetic": "Energetic"
         }
       }
+    },
+    "vapi": {
+      "title": "Vapi.ai Configuration",
+      "subtitle": "Configure your personal Vapi.ai API key to enable AI voice assistants",
+      "status": {
+        "configured": "✅ Configured",
+        "notConfigured": "⚠️ Not Configured",
+        "notConfiguredDesc": "Add your API key to unlock Vapi features",
+        "keyPreview": "Key"
+      },
+      "form": {
+        "label": "Vapi API Key",
+        "description": "Your personal Vapi.ai API key (starts with sk_)",
+        "save": "Save Key",
+        "saving": "Saving...",
+        "delete": "Delete"
+      },
+      "guide": {
+        "title": "How to get your API key?",
+        "step1": "Go to vapi.ai and create a free account",
+        "step2": "Navigate to Settings → API Keys",
+        "step3": "Click 'Create New API Key'",
+        "step4": "Copy and paste the key above",
+        "goToVapi": "Open Vapi Dashboard"
+      },
+      "benefits": {
+        "scalable": "Infinitely Scalable",
+        "secure": "Secure & Private",
+        "unlimited": "No Limits"
+      },
+      "success": {
+        "saved": "API Key Saved!",
+        "savedDesc": "Your Vapi.ai integration is now active",
+        "deleted": "API Key Deleted",
+        "deletedDesc": "Vapi features have been disabled",
+        "copied": "Link copied to clipboard!"
+      },
+      "errors": {
+        "emptyKey": "Please enter an API key",
+        "invalidFormat": "Invalid API key format",
+        "invalidFormatDesc": "Vapi keys start with 'sk_'",
+        "noAuth": "Authentication required",
+        "saveFailed": "Failed to save API key",
+        "saveFailedDesc": "Please try again",
+        "deleteFailed": "Failed to delete API key"
+      },
+      "confirm": {
+        "delete": "Are you sure you want to delete your Vapi API key? This will disable all Vapi features."
+      }
     }
   },
   "analyticsPage": {
     "title": "Detailed analytics",
     "subtitle": "Track call volume, sentiment, and key topics in real time to optimise Ava."
+  },
+  "vapi": {
+    "banner": {
+      "title": "⚠️ Vapi Configuration Missing",
+      "description": "Configure your Vapi.ai API key to create voice assistants and manage phone calls.",
+      "quickSetup": "Quick Setup (2 min)",
+      "goToSettings": "Open Settings"
+    },
+    "modal": {
+      "title": "Vapi.ai Configuration",
+      "subtitle": "Choose your configuration method",
+      "quickSetup": {
+        "title": "Quick Setup",
+        "description": "Configure your Vapi key here in 2 minutes",
+        "time": "~2 minutes",
+        "guide": "Follow these 3 simple steps",
+        "step1": "1. Create a free account on Vapi.ai",
+        "step2": "2. Go to Settings → API Keys",
+        "step3": "3. Create a new key and copy it"
+      },
+      "settings": {
+        "title": "Full Settings",
+        "description": "Access the Settings page with detailed guide",
+        "more": "More options"
+      },
+      "form": {
+        "label": "Vapi API Key"
+      },
+      "openVapi": "Open Vapi Dashboard",
+      "back": "Back",
+      "activate": "Activate Vapi",
+      "saving": "Saving...",
+      "skip": "Skip for now",
+      "success": {
+        "title": "✨ Configuration successful!",
+        "description": "Your Vapi.ai integration is now active"
+      },
+      "errors": {
+        "emptyKey": "Please enter an API key",
+        "invalidFormat": "Invalid API key format",
+        "invalidFormatDesc": "Vapi keys start with 'sk_'",
+        "noAuth": "Authentication required",
+        "saveFailed": "Failed to save"
+      }
+    }
   },
   "userMenu": {
     "signedInAs": "Signed in as",

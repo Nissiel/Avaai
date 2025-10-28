@@ -76,6 +76,13 @@ class User(Base):
         nullable=False,
     )
 
+    # Vapi.ai Integration (User's own API key)
+    vapi_api_key: Mapped[Optional[str]] = mapped_column(
+        String(255),
+        nullable=True,
+        comment="User's personal Vapi.ai API key for their assistants",
+    )
+
     # Onboarding tracking
     onboarding_completed: Mapped[bool] = mapped_column(
         Boolean,

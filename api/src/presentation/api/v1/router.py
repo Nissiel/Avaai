@@ -15,6 +15,7 @@ from api.src.presentation.api.v1.routes import (
     studio_diagnostic,
     tenant_profile,
     twilio,
+    vapi_settings,
     voices,
     webhooks,
 )
@@ -31,6 +32,7 @@ api_v1_router.include_router(voices.router)
 api_v1_router.include_router(twilio.router)
 api_v1_router.include_router(phone_numbers.router)
 api_v1_router.include_router(tenant_profile.router)
+api_v1_router.include_router(vapi_settings.router)
 api_v1_router.include_router(webhooks.router)
 
 __all__ = ["api_v1_router"]

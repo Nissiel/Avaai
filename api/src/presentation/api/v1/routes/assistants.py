@@ -6,7 +6,8 @@ from pydantic import BaseModel, Field
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from api.src.infrastructure.external.vapi_client import VapiApiError, VapiClient
-from api.src.presentation.dependencies.auth import CurrentTenant, get_current_tenant
+from api.src.presentation.dependencies.auth import CurrentTenant, get_current_tenant, get_current_user
+from api.src.infrastructure.persistence.models.user import User
 from api.src.core.settings import get_settings
 
 router = APIRouter(prefix="/assistants", tags=["Assistants"])
@@ -28,19 +29,24 @@ class CreateAssistantRequest(BaseModel):
     metadata: dict | None = Field(default=None, description="Optional metadata")
 
 
-def _client() -> VapiClient:
+def _client(user: User) -> VapiClient:
+    """Create VapiClient with user's API key."""
     try:
-        return VapiClient()
+        return VapiClient(user_api_key=user.vapi_api_key)
     except ValueError as exc:
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc)
+        ) from exc
 
 
 @router.get("")
 async def list_assistants(
+    user: User = Depends(get_current_user),
     _: CurrentTenant = Depends(get_current_tenant),
     limit: int = Query(default=50, ge=1, le=200),
 ) -> dict[str, object]:
-    client = _client()
+    client = _client(user)
     try:
         assistants = await client.list_assistants(limit=limit)
     except VapiApiError as exc:
@@ -51,9 +57,10 @@ async def list_assistants(
 @router.get("/{assistant_id}")
 async def get_assistant(
     assistant_id: str,
+    user: User = Depends(get_current_user),
     _: CurrentTenant = Depends(get_current_tenant),
 ) -> dict[str, object]:
-    client = _client()
+    client = _client(user)
     try:
         assistant = await client.get_assistant(assistant_id)
     except VapiApiError as exc:
@@ -64,6 +71,7 @@ async def get_assistant(
 @router.post("/create")
 async def create_assistant(
     request: CreateAssistantRequest,
+    user: User = Depends(get_current_user),
     # Note: No auth required during onboarding - user not logged in yet
     # TODO: Add tenant_id to request body once user is authenticated
 ) -> dict[str, object]:
@@ -76,7 +84,7 @@ async def create_assistant(
     During onboarding: No auth required (user creates assistant before signup)
     After onboarding: Should validate tenant ownership
     """
-    client = _client()
+    client = _client(user)
     settings = get_settings()
     
     # DIVINE: Safe metadata handling - use empty dict if None

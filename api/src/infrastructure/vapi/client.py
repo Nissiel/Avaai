@@ -16,12 +16,33 @@ class VapiClient:
     - Call handling and webhooks
     
     Docs: https://docs.vapi.ai/api-reference
+    
+    🌟 MULTI-TENANT ARCHITECTURE:
+    Each user has their OWN Vapi API key stored in database.
+    This allows infinite scalability - no shared key limits.
     """
 
-    def __init__(self):
-        """Initialize Vapi client with API key from settings."""
+    def __init__(self, user_api_key: Optional[str] = None):
+        """
+        Initialize Vapi client with user's API key or fallback to global key.
+        
+        Args:
+            user_api_key: User's personal Vapi API key (preferred)
+        
+        Raises:
+            ValueError: If no API key is available
+        """
         settings = get_settings()
-        self.api_key = settings.vapi_api_key
+        
+        # Prefer user's key, fallback to global key
+        self.api_key = user_api_key or settings.vapi_api_key
+        
+        if not self.api_key:
+            raise ValueError(
+                "Vapi API key required. User must configure their Vapi.ai API key "
+                "in settings. Get one at: https://vapi.ai"
+            )
+        
         self.base_url = settings.vapi_base_url
         self.headers = {
             "Authorization": f"Bearer {self.api_key}",
