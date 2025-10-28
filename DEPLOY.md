@@ -12,7 +12,10 @@
    - **Root Directory**: `api`
    - **Runtime**: `Python 3`
    - **Build Command**: `pip install -r ../requirements.txt`
-   - **Start Command**: `bash -c "cd .. && alembic upgrade head && cd api && uvicorn src.presentation.api.main:app --host 0.0.0.0 --port $PORT"`
+   - **Start Command**: `### ✏️ **Start Command**  
+```bash
+bash -c "export MIGRATION_URL=\$(echo \$AVA_API_DATABASE_URL | sed 's/+asyncpg//g') && cd .. && AVA_API_DATABASE_URL=\$MIGRATION_URL alembic upgrade head && cd api && uvicorn src.presentation.api.main:app --host 0.0.0.0 --port \$PORT"
+````
    - **Instance Type**: `Starter ($7/month)` ou `Free`
 
 > **Note** : Les migrations sont maintenant faites au **START**, pas au BUILD, car Render isole le réseau pendant le build. [ ] Compte [Netlify](https://netlify.com) ✅ (Frontend - TU AS DÉJÀ !)
