@@ -17,7 +17,9 @@ def configure_middleware(app: FastAPI) -> None:
         "http://localhost:3001",
         "http://127.0.0.1:3000",
         "https://avaai.vercel.app",
+        "https://avaai-olive.vercel.app",
         "https://avaai-git-main-nissiel-thomas-projects.vercel.app",
+        "https://avaai-fhtq6pdx3-nissiel-thomas-projects.vercel.app",
         "https://avaai-webapp.vercel.app",
         "https://app.avaai.com",
     ]
