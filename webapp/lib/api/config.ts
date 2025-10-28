@@ -1,7 +1,6 @@
 import type { StudioConfig, StudioConfigUpdate } from "@/lib/dto";
 import { useSessionStore } from "@/lib/stores/session-store";
-
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+import { getBackendBaseUrl } from "@/lib/auth/session-client";
 
 export async function getStudioConfig(): Promise<StudioConfig> {
   const session = useSessionStore.getState().session;
@@ -15,7 +14,7 @@ export async function getStudioConfig(): Promise<StudioConfig> {
     headers["Authorization"] = `Bearer ${token}`;
   }
   
-  const response = await fetch(`${BACKEND_URL}/api/v1/studio/config`, {
+  const response = await fetch(`${getBackendBaseUrl()}/api/v1/studio/config`, {
     method: "GET",
     headers,
     cache: "no-store",
@@ -40,7 +39,7 @@ export async function updateStudioConfigClient(payload: StudioConfigUpdate): Pro
     headers["Authorization"] = `Bearer ${token}`;
   }
   
-  const response = await fetch(`${BACKEND_URL}/api/v1/studio/config`, {
+  const response = await fetch(`${getBackendBaseUrl()}/api/v1/studio/config`, {
     method: "PATCH",
     headers,
     body: JSON.stringify(payload),
