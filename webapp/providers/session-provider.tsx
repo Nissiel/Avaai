@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect } from "react";
-import { SessionProvider as NextAuthSessionProvider } from "next-auth/react";
-import type { Session } from "next-auth";
 
 import {
   type AvaSession,
@@ -13,7 +11,7 @@ import {
 import { useSessionStore } from "@/stores/session-store";
 
 type SessionProviderProps = React.PropsWithChildren<{
-  session?: Session | null;
+  session?: AvaSession | null;
 }>;
 
 export function SessionProvider({ children, session }: SessionProviderProps) {
@@ -104,5 +102,5 @@ export function SessionProvider({ children, session }: SessionProviderProps) {
     };
   }, [session, setSession]);
 
-  return <NextAuthSessionProvider session={sessionValue ?? undefined}>{children}</NextAuthSessionProvider>;
+  return <>{children}</>;
 }

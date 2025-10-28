@@ -3,7 +3,6 @@
 import { Menu, Search } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { useLocale } from "next-intl";
-import { useSession } from "next-auth/react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +16,7 @@ import { UserNav } from "@/components/navigation/user-nav";
 import { OrgSwitcher, type OrgOption } from "@/components/navigation/org-switcher";
 import { CommandPalette } from "@/components/app/command-palette";
 import { useUIStore } from "@/stores/ui-store";
+import { useSessionStore } from "@/stores/session-store";
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -40,7 +40,7 @@ export function AppShell({
   const localeHook = useLocale();
   const locale: Locale = isLocale(localeHook) ? localeHook : fallbackLocale;
   const [isNavOpen, setIsNavOpen] = useState(false);
-  const { data: session } = useSession();
+  const session = useSessionStore((state) => state.session);
   const { commandPaletteOpen, setCommandPaletteOpen } = useUIStore();
 
   const activeOrg = useMemo(

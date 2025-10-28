@@ -1,7 +1,6 @@
 "use client";
 
 import { LogOut, RefreshCw } from "lucide-react";
-import { signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useLocale } from "next-intl";
 import { useTranslations } from "next-intl";
@@ -40,7 +39,7 @@ export function UserMenu() {
 
   const handleSignOut = async () => {
     try {
-      // Clear all session data FIRST
+      // Clear all session data
       clearPersistedSession();
       setSession(null);
 
@@ -51,15 +50,12 @@ export function UserMenu() {
         window.localStorage.removeItem("onboarding_completed");
       }
 
-      // Sign out from NextAuth (no redirect from NextAuth)
-      await signOut({ redirect: false });
-
-      // THEN force redirect to login page (guaranteed navigation)
+      // Force redirect to login page
       const loginUrl = `/${locale}/login`.replace(/\/{2,}/g, "/");
       window.location.href = loginUrl;
     } catch (error) {
       console.error("Logout error:", error);
-      // Even if signOut fails, force redirect to login
+      // Even if logout fails, force redirect to login
       const loginUrl = `/${locale}/login`.replace(/\/{2,}/g, "/");
       window.location.href = loginUrl;
     }
