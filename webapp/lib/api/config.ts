@@ -1,23 +1,23 @@
 import type { StudioConfig, StudioConfigUpdate } from "@/lib/dto";
 import { useSessionStore } from "@/lib/stores/session-store";
 
-function getAuthHeaders(): HeadersInit {
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
+export async function getStudioConfig(): Promise<StudioConfig> {
   const session = useSessionStore.getState().session;
+  const token = session?.accessToken;
+  
   const headers: HeadersInit = {
     "Content-Type": "application/json",
   };
   
-  if (session?.accessToken) {
-    headers["Authorization"] = `Bearer ${session.accessToken}`;
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
   }
   
-  return headers;
-}
-
-export async function getStudioConfig(): Promise<StudioConfig> {
-  const response = await fetch("/api/config", {
+  const response = await fetch(`${BACKEND_URL}/api/v1/studio/config`, {
     method: "GET",
-    headers: getAuthHeaders(),
+    headers,
     cache: "no-store",
   });
 
@@ -29,21 +29,27 @@ export async function getStudioConfig(): Promise<StudioConfig> {
 }
 
 export async function updateStudioConfigClient(payload: StudioConfigUpdate): Promise<StudioConfig> {
-  const response = await fetch("/api/config", {
-    method: "POST",
-    headers: getAuthHeaders(),
+  const session = useSessionStore.getState().session;
+  const token = session?.accessToken;
+  
+  const headers: HeadersInit = {
+    "Content-Type": "application/json",
+  };
+  
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+  
+  const response = await fetch(`${BACKEND_URL}/api/v1/studio/config`, {
+    method: "PATCH",
+    headers,
     body: JSON.stringify(payload),
   });
 
   if (!response.ok) {
-    const errorPayload = await response.json().catch(() => ({}));
-    throw new Error(errorPayload.error ?? "Failed to update studio config");
+    const errorText = await response.text().catch(() => "Unknown error");
+    throw new Error(`Failed to update studio config: ${errorText}`);
   }
 
-  const data = await response.json();
-  if (!data.success || !data.config) {
-    throw new Error("Unexpected configuration response");
-  }
-
-  return data.config as StudioConfig;
+  return response.json();
 }
