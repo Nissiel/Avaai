@@ -99,7 +99,20 @@
     "product": "Product",
     "resources": "Resources",
     "support": "Support",
+    "hero": {
+      "badge": "AI-Powered Voice Assistant",
+      "title": "Your AI receptionist",
+      "titleHighlight": "always available",
+      "subtitle": "Design, launch, and operate a human-level voice assistant that greets callers, qualifies leads, and schedules appointments in minutes."
+    },
+    "socialProof": {
+      "calls": "100+ calls handled",
+      "setup": "Setup in 3 min",
+      "available": "Available 24/7"
+    },
     "cta": {
+      "signup": "Start Free",
+      "login": "Sign In",
       "primary": "Start onboarding",
       "secondary": "Talk to an expert"
     },

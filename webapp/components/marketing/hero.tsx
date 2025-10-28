@@ -2,16 +2,15 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { translate } from "@/lib/translation";
-import { fallbackLocale, isLocale, type Locale } from "@/lib/i18n/locales";
-import { ArrowRight, Phone, Sparkles, Zap } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { ArrowRight, Phone, Sparkles, Zap, LogIn } from "lucide-react";
 
 interface HeroProps {
   locale: string;
 }
 
-export function Hero({ locale: localeParam }: HeroProps) {
-  const locale: Locale = isLocale(localeParam) ? localeParam : fallbackLocale;
+export function Hero({ locale }: HeroProps) {
+  const t = useTranslations("marketing");
   const signupHref = `/${locale}/signup` as const;
   const loginHref = `/${locale}/login` as const;
   
@@ -31,7 +30,7 @@ export function Hero({ locale: localeParam }: HeroProps) {
           className="mb-8 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-sm font-medium text-primary backdrop-blur-sm"
         >
           <Sparkles className="h-4 w-4" />
-          <span>Réceptionniste IA disponible 24/7</span>
+          <span>{t("hero.badge")}</span>
         </motion.div>
 
         {/* Main heading */}
@@ -41,9 +40,9 @@ export function Hero({ locale: localeParam }: HeroProps) {
           transition={{ delay: 0.1, duration: 0.6 }}
           className="mb-6 max-w-4xl text-6xl font-bold tracking-tight sm:text-7xl lg:text-8xl"
         >
-          {translate(locale, "marketing.heroTitle", "Votre secrétaire IA")}{" "}
+          {t("hero.title")}{" "}
           <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
-            qui ne dort jamais
+            {t("hero.titleHighlight")}
           </span>
         </motion.h1>
 
@@ -54,20 +53,17 @@ export function Hero({ locale: localeParam }: HeroProps) {
           transition={{ delay: 0.2, duration: 0.6 }}
           className="mb-12 max-w-2xl text-xl leading-relaxed text-muted-foreground sm:text-2xl"
         >
-          {translate(
-            locale,
-            "marketing.heroSubtitle",
-            "Ava répond à vos appels, qualifie vos leads et gère vos rendez-vous. Prêt en 3 minutes."
-          )}
+          {t("hero.subtitle")}
         </motion.p>
 
-        {/* Divine Login Button - Scientifiquement irrésistible */}
+        {/* CTA Buttons - Login + Signup */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.6 }}
-          className="mb-12"
+          className="mb-12 flex flex-col items-center gap-4 sm:flex-row sm:gap-6"
         >
+          {/* Primary CTA - Start Free */}
           <Link href={signupHref}>
             <motion.div
               whileHover={{ scale: 1.05, y: -2 }}
@@ -80,10 +76,22 @@ export function Hero({ locale: localeParam }: HeroProps) {
               {/* Button */}
               <div className="relative flex items-center gap-3 rounded-2xl bg-gradient-to-r from-primary via-secondary to-accent px-12 py-5 text-lg font-bold text-white shadow-2xl transition-all duration-300">
                 <Sparkles className="h-5 w-5 transition-transform duration-300 group-hover:rotate-12" />
-                <span>{translate(locale, "nav.login", "Se connecter")}</span>
+                <span>{t("cta.signup")}</span>
                 <ArrowRight className="h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" />
               </div>
             </motion.div>
+          </Link>
+
+          {/* Secondary CTA - Login */}
+          <Link href={loginHref}>
+            <Button
+              variant="outline"
+              size="lg"
+              className="group border-2 px-8 py-6 text-lg font-semibold transition-all hover:border-primary hover:bg-primary/5"
+            >
+              <LogIn className="mr-2 h-5 w-5 transition-transform group-hover:-translate-x-1" />
+              {t("cta.login")}
+            </Button>
           </Link>
         </motion.div>
 
@@ -96,17 +104,17 @@ export function Hero({ locale: localeParam }: HeroProps) {
         >
           <div className="flex items-center gap-2">
             <Phone className="h-4 w-4 text-primary" />
-            <span className="font-medium">100+ appels gérés</span>
+            <span className="font-medium">{t("socialProof.calls")}</span>
           </div>
           <div className="h-1 w-1 rounded-full bg-muted-foreground/30" />
           <div className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-primary" />
-            <span className="font-medium">Setup en 3 min</span>
+            <span className="font-medium">{t("socialProof.setup")}</span>
           </div>
           <div className="h-1 w-1 rounded-full bg-muted-foreground/30" />
           <div className="flex items-center gap-2">
             <Zap className="h-4 w-4 text-primary" />
-            <span className="font-medium">Disponible 24/7</span>
+            <span className="font-medium">{t("socialProof.available")}</span>
           </div>
         </motion.div>
       </div>

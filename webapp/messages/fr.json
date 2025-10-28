@@ -99,9 +99,22 @@
     "product": "Product",
     "resources": "Resources",
     "support": "Support",
+    "hero": {
+      "badge": "Assistant vocal IA",
+      "title": "Votre réceptionniste IA",
+      "titleHighlight": "toujours disponible",
+      "subtitle": "Concevez, lancez et gérez un assistant vocal de niveau humain qui accueille les appelants, qualifie les prospects et planifie les rendez-vous en quelques minutes."
+    },
+    "socialProof": {
+      "calls": "100+ appels gérés",
+      "setup": "Configuration en 3 min",
+      "available": "Disponible 24/7"
+    },
     "cta": {
-      "primary": "Start onboarding",
-      "secondary": "Talk to an expert"
+      "signup": "Commencer gratuitement",
+      "login": "Se connecter",
+      "primary": "Commencer l'intégration",
+      "secondary": "Parler à un expert"
     },
     "taglineFooter": "The AI receptionist that captures every opportunity 24/7.",
     "fallback": {

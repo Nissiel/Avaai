@@ -99,9 +99,22 @@
     "product": "Product",
     "resources": "Resources",
     "support": "Support",
+    "hero": {
+      "badge": "עוזר קולי מבוסס בינה מלאכותית",
+      "title": "פקידת הקבלה הדיגיטלית שלכם",
+      "titleHighlight": "זמינה תמיד",
+      "subtitle": "תכננו, השיקו והפעילו עוזר קולי ברמה אנושית שמקבל שיחות, מסנן לידים ומתאם פגישות תוך דקות."
+    },
+    "socialProof": {
+      "calls": "100+ שיחות טופלו",
+      "setup": "התקנה ב-3 דקות",
+      "available": "זמין 24/7"
+    },
     "cta": {
-      "primary": "Start onboarding",
-      "secondary": "Talk to an expert"
+      "signup": "התחילו בחינם",
+      "login": "התחברות",
+      "primary": "התחילו התקנה",
+      "secondary": "שוחחו עם מומחה"
     },
     "taglineFooter": "The AI receptionist that captures every opportunity 24/7.",
     "fallback": {
