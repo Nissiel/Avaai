@@ -14,13 +14,12 @@ fi
 
 echo "✅ Database URL configured"
 
-# Aller dans le dossier api
-cd "$(dirname "$0")"
-
 echo "📦 Installing dependencies..."
 pip install alembic asyncpg psycopg2-binary
 
 echo "🔄 Running Alembic migrations..."
+# alembic.ini est dans le dossier parent (racine du projet)
+cd ..
 alembic upgrade head
 
 echo "✅ Database migration completed successfully!"
