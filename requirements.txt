@@ -26,4 +26,4 @@ PyJWT==2.9.0
 
 # Email & Validation
 email-validator==2.2.0
-resend==2.5.0
+resend==2.17.0
