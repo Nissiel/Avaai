@@ -57,9 +57,11 @@
     "title": "Welcome back",
     "subtitle": "Sign in with a magic link or your favourite identity provider.",
     "login": {
-      "title": "Sign in",
-      "subtitle": "Sign in with your email or phone number",
-      "description": "Access your AVA account"
+      "title": "Welcome back",
+      "subtitle": "Sign in to your account",
+      "description": "Access your AVA account",
+      "noAccount": "Don't have an account yet?",
+      "createAccount": "Create a free account"
     },
     "fields": {
       "email": "Work email",

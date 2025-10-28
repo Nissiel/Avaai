@@ -57,9 +57,11 @@
     "title": "Bienvenue",
     "subtitle": "Connectez-vous avec un lien magique ou votre fournisseur préféré.",
     "login": {
-      "title": "Connexion",
-      "subtitle": "Connectez-vous avec votre email ou numéro de téléphone",
-      "description": "Accédez à votre compte AVA"
+      "title": "Bon retour",
+      "subtitle": "Connectez-vous à votre compte",
+      "description": "Accédez à votre compte AVA",
+      "noAccount": "Pas encore de compte ?",
+      "createAccount": "Créer un compte gratuitement"
     },
     "fields": {
       "email": "Email professionnel",

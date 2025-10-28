@@ -80,9 +80,11 @@
     "oauth": "המשיכו עם {provider}",
     "policy": "בהמשך אתם מאשרים את התנאים ומדיניות הפרטיות של Ava.ai.",
     "login": {
-      "title": "Sign in",
-      "subtitle": "Sign in with your email or phone number",
-      "description": "Access your AVA account"
+      "title": "ברוכים השבים",
+      "subtitle": "התחברו לחשבון שלכם",
+      "description": "גישה לחשבון AVA שלכם",
+      "noAccount": "עדיין אין לכם חשבון?",
+      "createAccount": "צרו חשבון חינם"
     }
   },
   "marketing": {

@@ -1,5 +1,6 @@
 import { Metadata } from "next";
-import { getTranslations } from "next-intl/server";
+import { getTranslations, unstable_setRequestLocale } from "next-intl/server";
+import { useTranslations } from "next-intl";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
@@ -8,19 +9,18 @@ const LoginForm = dynamic(() => import("@/components/auth/login-form").then((mod
   ssr: false,
 });
 
-export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("auth");
+export async function generateMetadata({ params }: { params: { locale: string } }): Promise<Metadata> {
+  const t = await getTranslations({ locale: params.locale, namespace: "auth.login" });
   
   return {
-    title: t("login.title", { defaultValue: "Connexion" }),
-    description: t("login.description", {
-      defaultValue: "Connectez-vous à votre compte AVA",
-    }),
+    title: t("title"),
+    description: t("description"),
   };
 }
 
-export default function LoginPage({ params }: { params: { locale: string } }) {
-  const { locale } = params;
+function LoginPageContent({ locale }: { locale: string }) {
+  const t = useTranslations("auth.login");
+  const tCommon = useTranslations("common");
   
   return (
     <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-background via-background to-secondary/5">
@@ -34,7 +34,7 @@ export default function LoginPage({ params }: { params: { locale: string } }) {
             className="mb-8 inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
             <ArrowLeft className="h-4 w-4" />
-            <span>Retour à l'accueil</span>
+            <span>{tCommon("nav.home")}</span>
           </Link>
           
           <div className="mb-8 space-y-4 text-center">
@@ -44,10 +44,10 @@ export default function LoginPage({ params }: { params: { locale: string } }) {
             
             <div className="space-y-2">
               <h1 className="text-4xl font-bold tracking-tight">
-                Bon retour ! 👋
+                {t("title")} 👋
               </h1>
               <p className="text-lg text-muted-foreground">
-                Connectez-vous à votre compte
+                {t("subtitle")}
               </p>
             </div>
           </div>
@@ -58,12 +58,12 @@ export default function LoginPage({ params }: { params: { locale: string } }) {
           
           <div className="mt-8 text-center">
             <p className="text-sm text-muted-foreground">
-              Pas encore de compte ?{" "}
+              {t("noAccount")}{" "}
               <Link 
                 href={`/${locale}/signup` as any}
                 className="font-semibold text-primary transition-colors hover:text-primary/80"
               >
-                Créer un compte gratuitement
+                {t("createAccount")}
               </Link>
             </p>
           </div>
@@ -71,4 +71,10 @@ export default function LoginPage({ params }: { params: { locale: string } }) {
       </div>
     </div>
   );
+}
+
+export default function LoginPage({ params }: { params: { locale: string } }) {
+  unstable_setRequestLocale(params.locale);
+  
+  return <LoginPageContent locale={params.locale} />;
 }
