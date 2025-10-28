@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from api.src.infrastructure.database.session import get_db
+from api.src.infrastructure.database.session import get_session
 from api.src.infrastructure.persistence.models.user import User
 from api.src.infrastructure.persistence.models.studio_config import StudioConfig as StudioConfigModel
 from api.src.presentation.api.v1.routes.auth import get_current_user
@@ -104,7 +104,7 @@ def _client() -> VapiClient:
 
 @router.get("/config", response_model=StudioConfig)
 async def get_studio_config(
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ) -> StudioConfig:
     """Get current studio configuration from database."""
@@ -115,7 +115,7 @@ async def get_studio_config(
 @router.patch("/config", response_model=StudioConfig)
 async def update_studio_config(
     payload: StudioConfigUpdate,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ) -> StudioConfig:
     """
@@ -168,7 +168,7 @@ async def update_studio_config(
 
 @router.post("/sync-vapi")
 async def sync_config_to_vapi(
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ) -> dict:
     """

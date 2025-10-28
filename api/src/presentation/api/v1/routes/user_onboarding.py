@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import BaseModel, Field
 
-from api.src.infrastructure.database.session import get_db
+from api.src.infrastructure.database.session import get_session
 from api.src.infrastructure.persistence.models.user import User
 from api.src.presentation.api.v1.routes.auth import get_current_user
 
@@ -56,7 +56,7 @@ class CompleteOnboardingResponse(BaseModel):
 @router.patch("/user/onboarding", response_model=OnboardingResponse)
 async def update_onboarding_flags(
     payload: OnboardingUpdatePayload,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
     """
@@ -102,7 +102,7 @@ async def get_onboarding_status(
 @router.patch("/user/profile", response_model=UserProfileResponse)
 async def update_user_profile(
     payload: UserProfilePayload,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
     """
@@ -141,7 +141,7 @@ async def update_user_profile(
 
 @router.post("/user/complete-onboarding", response_model=CompleteOnboardingResponse)
 async def complete_onboarding(
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
     """
