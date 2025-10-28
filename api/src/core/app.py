@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sys
 from fastapi import FastAPI
 
 from api.src.core.middleware import configure_middleware
@@ -20,7 +21,17 @@ def create_app() -> FastAPI:
         redoc_url=f"{settings.api_prefix}/redoc",
     )
 
+    print("=" * 80, flush=True)
+    print("🚀 AVA API STARTING...", flush=True)
+    print("=" * 80, flush=True)
+    sys.stdout.flush()
+    
     configure_middleware(app)
+    
+    print("=" * 80, flush=True)
+    print("✅ MIDDLEWARE CONFIGURED", flush=True)
+    print("=" * 80, flush=True)
+    sys.stdout.flush()
 
     @app.get("/healthz", tags=["Health"])
     async def healthcheck() -> dict[str, str]:  # pragma: no cover - trivial

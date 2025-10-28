@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sys
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.cors import ALL_METHODS
@@ -30,8 +31,11 @@ def configure_middleware(app: FastAPI) -> None:
     if settings.allowed_origins:
         allowed_origins = settings.allowed_origins
     
-    print(f"🔥🔥🔥 CORS Allowed Origins: {allowed_origins}")
-    print(f"🔥🔥🔥 CORS Origins count: {len(allowed_origins)}")
+    print("=" * 80, flush=True)
+    print(f"🔥🔥🔥 CORS Allowed Origins: {allowed_origins}", flush=True)
+    print(f"🔥🔥🔥 CORS Origins count: {len(allowed_origins)}", flush=True)
+    print("=" * 80, flush=True)
+    sys.stdout.flush()
     
     app.add_middleware(
         CORSMiddleware,
