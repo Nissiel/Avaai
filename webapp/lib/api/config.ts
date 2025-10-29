@@ -1,9 +1,13 @@
 import type { StudioConfig, StudioConfigUpdate } from "@/lib/dto";
-import { getBackendBaseUrl } from "@/lib/auth/session-client";
 import { getAuthHeaders } from "./auth-helper";
 
+/**
+ * 🎯 DIVINE FIX: Use Next.js API routes to avoid CORS issues
+ * Frontend calls /api/studio/config → Next.js proxies to backend
+ */
+
 export async function getStudioConfig(): Promise<StudioConfig> {
-  const response = await fetch(`${getBackendBaseUrl()}/api/v1/studio/config`, {
+  const response = await fetch(`/api/studio/config`, {
     method: "GET",
     headers: getAuthHeaders(),
     cache: "no-store",
@@ -17,7 +21,7 @@ export async function getStudioConfig(): Promise<StudioConfig> {
 }
 
 export async function updateStudioConfigClient(payload: StudioConfigUpdate): Promise<StudioConfig> {
-  const response = await fetch(`${getBackendBaseUrl()}/api/v1/studio/config`, {
+  const response = await fetch(`/api/studio/config`, {
     method: "PATCH",
     headers: getAuthHeaders(),
     body: JSON.stringify(payload),
