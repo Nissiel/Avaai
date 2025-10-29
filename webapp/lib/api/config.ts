@@ -1,22 +1,11 @@
 import type { StudioConfig, StudioConfigUpdate } from "@/lib/dto";
-import { useSessionStore } from "@/lib/stores/session-store";
 import { getBackendBaseUrl } from "@/lib/auth/session-client";
+import { getAuthHeaders } from "./auth-helper";
 
 export async function getStudioConfig(): Promise<StudioConfig> {
-  const session = useSessionStore.getState().session;
-  const token = session?.accessToken;
-  
-  const headers: HeadersInit = {
-    "Content-Type": "application/json",
-  };
-  
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
-  
   const response = await fetch(`${getBackendBaseUrl()}/api/v1/studio/config`, {
     method: "GET",
-    headers,
+    headers: getAuthHeaders(),
     cache: "no-store",
   });
 
@@ -28,20 +17,9 @@ export async function getStudioConfig(): Promise<StudioConfig> {
 }
 
 export async function updateStudioConfigClient(payload: StudioConfigUpdate): Promise<StudioConfig> {
-  const session = useSessionStore.getState().session;
-  const token = session?.accessToken;
-  
-  const headers: HeadersInit = {
-    "Content-Type": "application/json",
-  };
-  
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
-  
   const response = await fetch(`${getBackendBaseUrl()}/api/v1/studio/config`, {
     method: "PATCH",
-    headers,
+    headers: getAuthHeaders(),
     body: JSON.stringify(payload),
   });
 
