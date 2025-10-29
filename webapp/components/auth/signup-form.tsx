@@ -133,7 +133,7 @@ export function SignupForm() {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${backendBaseUrl}/api/v1/auth/signup`, {
+      const response = await fetch(`/api/auth/signup`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
