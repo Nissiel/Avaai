@@ -13,16 +13,27 @@ from api.src.core.settings import get_settings
 
 settings = get_settings()
 
-# Fix for Render's PgBouncer: Disable prepared statement cache
-# asyncpg documentation: "set statement_cache_size to 0 when creating the asyncpg connection"
+# DIVINE FIX: Configure asyncpg for production (Supabase/Render)
+# - statement_cache_size=0: Required for PgBouncer transaction pooling mode
+# - server_settings jit=off: Better ENUM handling + pooler compatibility
+# - timeout=10: Reasonable connection timeout
+# - command_timeout=60: Prevent hanging queries
 # See: https://github.com/MagicStack/asyncpg/issues/530
 engine = create_async_engine(
     settings.database_url,
     echo=False,
     future=True,
+    pool_pre_ping=True,  # Verify connections before using them
+    pool_size=5,  # Reasonable for serverless
+    max_overflow=10,  # Allow burst traffic
     connect_args={
-        "statement_cache_size": 0,  # MUST be 0 for PgBouncer transaction mode
-        "server_settings": {"jit": "off"}  # Also disable JIT for better ENUM handling
+        "statement_cache_size": 0,  # Disable for pooler compatibility
+        "timeout": 10,  # Connection timeout (seconds)
+        "command_timeout": 60,  # Query timeout (seconds)
+        "server_settings": {
+            "jit": "off",  # Disable JIT for stability
+            "application_name": "ava-api-production"  # For monitoring
+        }
     }
 )
 SessionLocal = async_sessionmaker(bind=engine, expire_on_commit=False, class_=AsyncSession)
