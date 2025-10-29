@@ -10,16 +10,16 @@ from pydantic import BaseModel, EmailStr, Field
 class StudioConfig(BaseModel):
     # Organization settings
     organizationName: str = Field(min_length=2)
-    adminEmail: EmailStr
+    adminEmail: Optional[EmailStr] = None  # 🔥 FIX: Optional for DB compatibility
     timezone: str = Field(default="Europe/Paris", min_length=3)
     language: str = Field(default="fr-FR", min_length=2)
     persona: str = Field(default="secretary", min_length=2)
     tone: str = Field(default="warm", min_length=2)
-    guidelines: str = Field(default="", min_length=0)
+    guidelines: Optional[str] = None  # 🔥 FIX: Optional for DB compatibility
     phoneNumber: str = Field(default="", min_length=0)
     businessHours: str = Field(default="09:00-18:00")
-    fallbackEmail: EmailStr
-    summaryEmail: EmailStr
+    fallbackEmail: Optional[EmailStr] = None  # 🔥 FIX: Optional for DB compatibility
+    summaryEmail: Optional[EmailStr] = None  # 🔥 FIX: Optional for DB compatibility
     smtpServer: str = Field(default="")
     smtpPort: str = Field(default="587")
     smtpUsername: str = Field(default="")
