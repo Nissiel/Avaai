@@ -8,7 +8,11 @@ from pathlib import Path
 from typing import List, Optional
 
 from pydantic import field_validator
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+API_DIR = Path(__file__).resolve().parents[2]
+IS_TESTING = bool(os.getenv("PYTEST_CURRENT_TEST"))
 
 
 class Settings(BaseSettings):
@@ -37,13 +41,12 @@ class Settings(BaseSettings):
                 return []
             return [origin.strip() for origin in v.split(",") if origin.strip()]
         return []
-
-    class Config:
-        # Load .env.test in test environment, otherwise .env
-        env_file_path = Path(__file__).parent.parent.parent / "api"
-        is_testing = os.getenv("PYTEST_CURRENT_TEST") is not None
-        env_file = str(env_file_path / (".env.test" if is_testing else ".env"))
-        env_prefix = "AVA_API_"
+    
+    model_config = SettingsConfigDict(
+        env_file=str(API_DIR / (".env.test" if IS_TESTING else ".env")),
+        env_prefix="AVA_API_",
+        extra="ignore",
+    )
 
 
 @lru_cache(maxsize=1)

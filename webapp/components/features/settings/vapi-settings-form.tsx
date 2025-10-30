@@ -102,12 +102,18 @@ export function VapiSettingsForm() {
     }
 
     setLoading(true);
+    
+    console.log("🔄 Saving Vapi API key...");
+    
     try {
       const token = session?.accessToken;
       if (!token) {
+        console.error("❌ No access token available");
         toast.error(t("errors.noAuth"));
         return;
       }
+
+      console.log("📡 Sending POST to /api/v1/vapi-settings with token:", token.substring(0, 20) + "...");
 
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/vapi-settings`, {
         method: "POST",
@@ -118,20 +124,32 @@ export function VapiSettingsForm() {
         body: JSON.stringify({ vapi_api_key: apiKey }),
       });
 
+      console.log("📥 Response status:", res.status, res.statusText);
+
       if (res.ok) {
+        const data = await res.json();
+        console.log("✅ Vapi API key saved successfully:", data);
         toast.success(t("success.saved"), {
           description: t("success.savedDesc"),
         });
         setApiKey("");
         await fetchSettings();
       } else {
-        const error = await res.json();
+        const error = await res.json().catch(() => ({ detail: "Unknown error" }));
+        console.error("❌ Backend error:", { status: res.status, error });
         toast.error(t("errors.saveFailed"), {
           description: error.detail || t("errors.saveFailedDesc"),
         });
       }
     } catch (error) {
-      toast.error(t("errors.saveFailed"));
+      console.error("❌ Exception saving Vapi API key:", error);
+      if (error instanceof Error) {
+        toast.error(t("errors.saveFailed"), {
+          description: error.message,
+        });
+      } else {
+        toast.error(t("errors.saveFailed"));
+      }
     } finally {
       setLoading(false);
     }
