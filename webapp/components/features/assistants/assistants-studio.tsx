@@ -14,9 +14,20 @@ import type { StudioConfigInput } from "@/lib/validations/config";
 const STUDIO_CONFIG_QUERY_KEY = ["studio-config"] as const;
 
 async function fetchStudioConfig(): Promise<StudioConfigInput> {
+  // 🔐 DIVINE: Get token from localStorage for authenticated request
+  const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
+  
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
   const response = await fetch("/api/config", {
     method: "GET",
-    headers: { "Content-Type": "application/json" },
+    headers,
   });
 
   if (!response.ok) {
