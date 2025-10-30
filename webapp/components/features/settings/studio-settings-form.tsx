@@ -293,15 +293,92 @@ export function StudioSettingsForm({
       // 2. Auto-sync to Vapi after successful save
       try {
         console.log("🔄 Auto-syncing to Vapi...");
+        
+        // 🎯 DIVINE: Get token for Vapi sync (reuse or get fresh one)
+        const syncToken = token || (typeof window !== "undefined" ? localStorage.getItem("access_token") : null);
+        
+        const syncHeaders: Record<string, string> = {
+          "Content-Type": "application/json",
+        };
+        
+        if (syncToken) {
+          syncHeaders.Authorization = `Bearer ${syncToken}`;
+        }
+        
         const vapiResponse = await fetch(
           `${backendConfig.baseUrl}/api/v1/studio/sync-vapi`,
           {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
+            headers: syncHeaders,
           },
         );
+
+        // 🎯 DIVINE: Handle 401 on Vapi sync too
+        if (vapiResponse.status === 401) {
+          console.log("⚠️ Vapi Sync: 401 Unauthorized - Attempting token refresh...");
+          
+          const refreshToken = typeof window !== "undefined" ? localStorage.getItem("refresh_token") : null;
+          if (refreshToken) {
+            const newAccessToken = await refreshAccessToken(refreshToken);
+            
+            if (newAccessToken) {
+              console.log("✅ Vapi Sync: Token refreshed! Retrying sync...");
+              
+              // Retry Vapi sync with new token
+              const retrySyncResponse = await fetch(
+                `${backendConfig.baseUrl}/api/v1/studio/sync-vapi`,
+                {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${newAccessToken}`,
+                  },
+                },
+              );
+              
+              if (retrySyncResponse.ok) {
+                const vapiResult = await retrySyncResponse.json();
+                console.log("✅ Vapi Sync Success (after refresh):", vapiResult);
+                
+                // Show success toast with details
+                const settings = vapiResult.settings || {};
+                if (vapiResult.action === "updated") {
+                  toast.success("🔄 Assistant Updated Successfully!", {
+                    description: (
+                      <div className="space-y-1 text-xs">
+                        <div>✅ Voice: {settings.voiceProvider} @ {settings.voiceSpeed}x</div>
+                        <div>✅ Model: {settings.model} (temp={settings.temperature})</div>
+                        <div>✅ Max Tokens: {settings.maxTokens}</div>
+                        <div className="pt-1 text-[10px] opacity-70">
+                          ID: {vapiResult.assistantId?.slice(0, 12)}...
+                        </div>
+                      </div>
+                    ),
+                    duration: 5000,
+                  });
+                } else if (vapiResult.action === "created") {
+                  toast.success("🆕 New Assistant Created!", {
+                    description: `Created new assistant: ${vapiResult.assistantId}`,
+                  });
+                }
+                
+                // Update assistant ID if returned
+                if (vapiResult.assistantId && vapiResult.assistantId !== values.vapiAssistantId) {
+                  result.config = { ...result.config, vapiAssistantId: vapiResult.assistantId };
+                }
+                
+                return result;
+              }
+            }
+          }
+          
+          // If refresh failed, show warning but don't fail the whole save
+          console.warn("⚠️ Vapi sync failed due to auth, but config was saved successfully");
+          toast.warning("⚠️ Config saved but Vapi sync failed", {
+            description: "Session expired. Please refresh and try again.",
+          });
+          return result;
+        }
 
         if (vapiResponse.ok) {
           const vapiResult = await vapiResponse.json();
