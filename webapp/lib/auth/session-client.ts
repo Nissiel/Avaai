@@ -104,3 +104,43 @@ export function clearPersistedSession() {
     console.warn("Failed to clear persisted session", error);
   }
 }
+
+/**
+ * 🎯 DIVINE: Refresh access token using refresh token
+ * Returns new access token or null if refresh failed
+ */
+export async function refreshAccessToken(refreshToken: string): Promise<string | null> {
+  try {
+    console.log("🔄 Attempting to refresh access token...");
+    
+    const response = await fetch(`${getBackendBaseUrl()}/api/v1/auth/refresh`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ refresh_token: refreshToken }),
+    });
+
+    if (!response.ok) {
+      console.error("❌ Token refresh failed:", response.status);
+      return null;
+    }
+
+    const data: AuthTokenResponse = await response.json();
+    console.log("✅ Token refreshed successfully");
+    
+    // Update localStorage with new tokens
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("access_token", data.access_token);
+      if (data.refresh_token) {
+        window.localStorage.setItem("refresh_token", data.refresh_token);
+      }
+    }
+    
+    return data.access_token;
+  } catch (error) {
+    console.error("❌ Exception during token refresh:", error);
+    return null;
+  }
+}
+

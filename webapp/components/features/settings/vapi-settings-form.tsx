@@ -25,6 +25,7 @@ import { Label } from "@/components/ui/label";
 import { GlassCard } from "@/components/ui/glass-card";
 import { toast } from "sonner";
 import { useSessionStore } from "@/stores/session-store";
+import { refreshAccessToken } from "@/lib/auth/session-client";
 
 interface VapiSettings {
   has_vapi_key: boolean;
@@ -60,12 +61,16 @@ export function VapiSettingsForm() {
   const fetchSettings = async () => {
     setFetching(true);
     try {
-      const token = session?.accessToken;
+      // 🎯 DIVINE: Fallback to localStorage if session store is empty
+      const token = session?.accessToken || localStorage.getItem("access_token");
+      
       if (!token) {
-        console.warn("No access token available");
+        console.warn("⚠️ No access token available in session OR localStorage");
         setFetching(false);
         return;
       }
+
+      console.log("📖 Fetching Vapi settings with token (first 30):", token.substring(0, 30) + "...");
 
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/vapi-settings`, {
         headers: {
@@ -73,14 +78,20 @@ export function VapiSettingsForm() {
         },
       });
 
+      console.log("📥 Fetch Vapi settings response:", res.status);
+
       if (res.ok) {
         const data = await res.json();
+        console.log("✅ Vapi settings loaded:", data);
         setSettings(data);
       } else {
-        console.error("Failed to fetch Vapi settings:", res.status);
+        console.error("❌ Failed to fetch Vapi settings:", res.status);
+        if (res.status === 401) {
+          console.error("❌ 401 Unauthorized - Token may be expired. Please login again.");
+        }
       }
     } catch (error) {
-      console.error("Failed to fetch Vapi settings:", error);
+      console.error("❌ Exception fetching Vapi settings:", error);
     } finally {
       setFetching(false);
     }
@@ -104,16 +115,25 @@ export function VapiSettingsForm() {
     setLoading(true);
     
     console.log("🔄 Saving Vapi API key...");
+    console.log("🔍 DEBUG: session object:", session);
+    console.log("🔍 DEBUG: session?.accessToken exists:", !!session?.accessToken);
+    console.log("🔍 DEBUG: localStorage access_token:", localStorage.getItem("access_token")?.substring(0, 20));
     
     try {
-      const token = session?.accessToken;
+      // 🎯 DIVINE: Fallback to localStorage if session store is empty
+      const token = session?.accessToken || localStorage.getItem("access_token");
+      
       if (!token) {
-        console.error("❌ No access token available");
-        toast.error(t("errors.noAuth"));
+        console.error("❌ No access token available in session OR localStorage");
+        toast.error(t("errors.noAuth"), {
+          description: "Veuillez vous reconnecter",
+        });
         return;
       }
 
-      console.log("📡 Sending POST to /api/v1/vapi-settings with token:", token.substring(0, 20) + "...");
+      console.log("📡 Sending POST to /api/v1/vapi-settings");
+      console.log("📡 Token (first 30 chars):", token.substring(0, 30) + "...");
+      console.log("📡 API URL:", process.env.NEXT_PUBLIC_API_URL);
 
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/vapi-settings`, {
         method: "POST",
@@ -125,6 +145,50 @@ export function VapiSettingsForm() {
       });
 
       console.log("📥 Response status:", res.status, res.statusText);
+
+      // 🎯 DIVINE: If 401, try to refresh token automatically
+      if (res.status === 401) {
+        console.log("⚠️ 401 Unauthorized - Attempting token refresh...");
+        
+        const refreshToken = session?.refreshToken || localStorage.getItem("refresh_token");
+        if (refreshToken) {
+          const newAccessToken = await refreshAccessToken(refreshToken);
+          
+          if (newAccessToken) {
+            console.log("✅ Token refreshed! Retrying save...");
+            
+            // Retry the request with new token
+            const retryRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/vapi-settings`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${newAccessToken}`,
+              },
+              body: JSON.stringify({ vapi_api_key: apiKey }),
+            });
+            
+            if (retryRes.ok) {
+              const data = await retryRes.json();
+              console.log("✅ Vapi API key saved successfully (after refresh):", data);
+              toast.success(t("success.saved"), {
+                description: t("success.savedDesc"),
+              });
+              setApiKey("");
+              await fetchSettings();
+              return; // Success!
+            }
+          }
+        }
+        
+        // If we get here, refresh failed or no refresh token
+        console.error("❌ Token refresh failed or no refresh token available");
+        toast.error("Session expirée", {
+          description: "Veuillez vous reconnecter",
+        });
+        // Redirect to login
+        router.push("/login");
+        return;
+      }
 
       if (res.ok) {
         const data = await res.json();
