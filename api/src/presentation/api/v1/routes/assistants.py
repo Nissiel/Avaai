@@ -46,13 +46,13 @@ class UpdateAssistantRequest(BaseModel):
 
 
 def _client(user: User) -> VapiClient:
-    """Create VapiClient with user's API key."""
+    """🎯 DIVINE: Create VapiClient with user's personal API key (multi-tenant)."""
     try:
-        return VapiClient(user_api_key=user.vapi_api_key)
+        return VapiClient(token=user.vapi_api_key)
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=str(exc)
+            detail="Vapi API key not configured. Please add your Vapi key in Settings."
         ) from exc
 
 

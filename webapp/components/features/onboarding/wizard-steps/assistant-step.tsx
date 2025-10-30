@@ -57,42 +57,65 @@ export function AssistantStep({ form, onNext, onBack }: AssistantStepProps) {
       // Get the selected voice object
       const voice = DEFAULT_VOICES.find((v) => v.voiceId === selectedVoice) || DEFAULT_VOICES[0];
 
+      // 🎯 DIVINE: Get token from localStorage for authenticated request
+      const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
+      
+      if (!token) {
+        toast.error("Authentication required. Please login first.");
+        return;
+      }
+
       const payload = {
         name: assistantName,
-        instructions: t("defaults.instructions"),
-        phoneNumber: form.getValues("number") || null,
-        firstMessage: t("defaults.firstMessage", { name: assistantName }),
-        voice: {
-          provider: voice.provider,
-          voiceId: voice.voiceId,
-        },
-        model: {
-          provider: "openai",
-          model: "gpt-4o-mini",
-          temperature: 0.7,
-        },
+        voice_provider: voice.provider,
+        voice_id: voice.voiceId,
+        first_message: t("defaults.firstMessage", { name: assistantName }),
+        model_provider: "openai",
+        model: "gpt-4o-mini",
+        temperature: 0.7,
+        max_tokens: 250,
         metadata: {
           created_from: "onboarding",
         },
       };
 
-      const response = await fetch("/api/assistants", {
+      console.log("🚀 Creating assistant with payload:", payload);
+
+      // 🎯 DIVINE: Call Python backend directly with auth
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/assistants`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify(payload),
       });
 
+      console.log("📥 Create assistant response:", response.status);
+
       if (!response.ok) {
-        const error = await response.json();
+        const error = await response.json().catch(() => ({ detail: "Unknown error" }));
+        console.error("❌ Failed to create assistant:", error);
         throw new Error(error.detail || "Failed to create assistant");
       }
 
+      const result = await response.json();
+      console.log("✅ Assistant created:", result);
+
       // Mark assistant as created
-      await fetch("/api/user/onboarding", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ onboarding_assistant_created: true }),
-      });
+      try {
+        await fetch("/api/user/onboarding", {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ onboarding_assistant_created: true }),
+        });
+      } catch (onboardingError) {
+        console.warn("⚠️ Failed to update onboarding status:", onboardingError);
+        // Don't fail the whole flow if this fails
+      }
 
       toast.success(t("success.created", { name: assistantName }));
       if (onNext) onNext();

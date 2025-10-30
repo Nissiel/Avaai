@@ -91,14 +91,14 @@ def db_to_schema(db_config: StudioConfigModel) -> StudioConfig:
     )
 
 
-def _client() -> VapiClient:
-    """Get Vapi client instance."""
+def _client(user: User) -> VapiClient:
+    """🎯 DIVINE: Get Vapi client with user's personal API key (multi-tenant)."""
     try:
-        return VapiClient()
+        return VapiClient(token=user.vapi_api_key)
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=f"Vapi not configured: {str(exc)}"
+            detail="Vapi API key not configured. Please add your Vapi key in Settings."
         ) from exc
 
 
@@ -181,7 +181,7 @@ async def sync_config_to_vapi(
 
     This is THE MAGIC that makes your settings actually work!
     """
-    client = _client()
+    client = _client(current_user)
     db_config = await get_or_create_user_config(db, current_user)
     config = db_to_schema(db_config)
 
