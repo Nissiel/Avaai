@@ -23,6 +23,7 @@ import { LabeledSlider } from "@/components/ui/labeled-slider";
 import { createStudioConfigSchema, type StudioConfigInput } from "@/lib/validations/config";
 import { Badge } from "@/components/ui/badge";
 import { backendConfig } from "@/services/backend-service";
+import { refreshAccessToken } from "@/lib/auth/session-client";
 
 const TIMEZONE_OPTIONS = ["europe/paris", "america/new_york", "asia/tokyo"] as const;
 const LANGUAGE_OPTIONS = ["fr", "en", "es"] as const;
@@ -91,7 +92,49 @@ export function StudioSettingsForm({
   const configQuery = useQuery<StudioConfigResponse>({
     queryKey: ["studio-config"],
     queryFn: async () => {
-      const response = await fetch("/api/config");
+      // 🎯 DIVINE: Get token from localStorage for authenticated request
+      const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
+      
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
+      const response = await fetch("/api/config", {
+        headers,
+      });
+
+      // 🎯 DIVINE: If 401, try to refresh token automatically
+      if (response.status === 401) {
+        console.log("⚠️ Studio Config: 401 Unauthorized - Attempting token refresh...");
+        
+        const refreshToken = typeof window !== "undefined" ? localStorage.getItem("refresh_token") : null;
+        if (refreshToken) {
+          const newAccessToken = await refreshAccessToken(refreshToken);
+          
+          if (newAccessToken) {
+            console.log("✅ Studio Config: Token refreshed! Retrying...");
+            
+            // Retry the request with new token
+            const retryResponse = await fetch("/api/config", {
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${newAccessToken}`,
+              },
+            });
+            
+            if (retryResponse.ok) {
+              return retryResponse.json();
+            }
+          }
+        }
+        
+        throw new Error("Session expired. Please login again.");
+      }
+
       if (!response.ok) {
         const detail = await response.json().catch(() => ({}));
         throw new Error(detail.error ?? tMessages("error"));
@@ -188,14 +231,55 @@ export function StudioSettingsForm({
       console.log("🚀 Studio Config Update Starting:", values);
       localizedSchema.parse(values);
 
+      // 🎯 DIVINE: Get token from localStorage
+      const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
+      
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
       // 1. Save to database
       const response = await fetch("/api/config", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers,
         body: JSON.stringify(values),
       });
+
+      // 🎯 DIVINE: If 401, try to refresh token automatically
+      if (response.status === 401) {
+        console.log("⚠️ Studio Config Update: 401 Unauthorized - Attempting token refresh...");
+        
+        const refreshToken = typeof window !== "undefined" ? localStorage.getItem("refresh_token") : null;
+        if (refreshToken) {
+          const newAccessToken = await refreshAccessToken(refreshToken);
+          
+          if (newAccessToken) {
+            console.log("✅ Studio Config Update: Token refreshed! Retrying...");
+            
+            // Retry the request with new token
+            const retryResponse = await fetch("/api/config", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${newAccessToken}`,
+              },
+              body: JSON.stringify(values),
+            });
+            
+            if (retryResponse.ok) {
+              const result = await retryResponse.json();
+              console.log("✅ Studio Config Update Success (after refresh):", result);
+              return result;
+            }
+          }
+        }
+        
+        throw new Error("Session expired. Please login again.");
+      }
 
       if (!response.ok) {
         const detail = await response.json().catch(() => ({}));
