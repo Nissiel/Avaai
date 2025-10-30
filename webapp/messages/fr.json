@@ -552,8 +552,8 @@
       },
       "errors": {
         "emptyKey": "Veuillez entrer une clé API",
-        "invalidFormat": "Format de clé API invalide",
-        "invalidFormatDesc": "Les clés Vapi commencent par 'sk_'",
+        "invalidFormat": "Clé API invalide",
+        "invalidFormatDesc": "Votre clé API Vapi doit contenir au moins 10 caractères",
         "noAuth": "Authentification requise",
         "saveFailed": "Échec de la sauvegarde de la clé API",
         "saveFailedDesc": "Veuillez réessayer",
@@ -758,8 +758,8 @@
       },
       "errors": {
         "emptyKey": "Veuillez entrer une clé API",
-        "invalidFormat": "Format de clé invalide",
-        "invalidFormatDesc": "Les clés Vapi commencent par 'sk_'",
+        "invalidFormat": "Clé API invalide",
+        "invalidFormatDesc": "Votre clé API Vapi doit contenir au moins 10 caractères",
         "noAuth": "Authentification requise",
         "saveFailed": "Échec de la sauvegarde"
       }

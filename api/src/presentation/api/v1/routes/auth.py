@@ -20,7 +20,10 @@ from api.src.infrastructure.persistence.repositories.user_repository import User
 from api.src.infrastructure.persistence.models.user import User
 
 router = APIRouter(prefix="/auth", tags=["auth"])
-security = HTTPBearer()
+
+# 🔐 DIVINE: Dev mode allows optional auth for local testing
+DEV_MODE = get_settings().environment == "development"
+security = HTTPBearer(auto_error=not DEV_MODE)  # Optional auth in dev
 settings = get_settings()
 
 
@@ -228,9 +231,43 @@ async def get_current_user(
     session: AsyncSession = Depends(get_session),
 ):
     """
-    Dependency to get current authenticated user from JWT token
+    Dependency to get current authenticated user from JWT token.
+    
+    🔐 DIVINE: In DEV mode, creates/uses default test user if no auth provided.
+    In PRODUCTION, authentication is ALWAYS required.
+    
     Usage: user = Depends(get_current_user)
     """
+    # 🧪 DEV MODE: Use default test user if no credentials
+    if DEV_MODE and credentials is None:
+        repository = UserRepository(session)
+        # Get or create default test user
+        test_user = await repository.get_by_email(DEFAULT_USER_FIXTURES[0]["email"])
+        if not test_user:
+            # Create test user on-the-fly
+            hashed_password = bcrypt.hashpw(
+                DEFAULT_USER_FIXTURES[0]["password"].encode("utf-8"),
+                bcrypt.gensalt()
+            ).decode("utf-8")
+            test_user = User(
+                email=DEFAULT_USER_FIXTURES[0]["email"],
+                hashed_password=hashed_password,
+                name=DEFAULT_USER_FIXTURES[0]["name"],
+                phone=DEFAULT_USER_FIXTURES[0]["phone"],
+                locale=DEFAULT_USER_FIXTURES[0]["locale"],
+            )
+            session.add(test_user)
+            await session.commit()
+            await session.refresh(test_user)
+        return test_user
+    
+    # 🔒 PRODUCTION: Always require authentication
+    if credentials is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication required"
+        )
+    
     token = credentials.credentials
     payload = verify_token(token)
 

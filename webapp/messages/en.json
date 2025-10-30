@@ -651,8 +651,8 @@
       },
       "errors": {
         "emptyKey": "Please enter an API key",
-        "invalidFormat": "Invalid API key format",
-        "invalidFormatDesc": "Vapi keys start with 'sk_'",
+        "invalidFormat": "Invalid API key",
+        "invalidFormatDesc": "Your Vapi API key must be at least 10 characters long",
         "noAuth": "Authentication required",
         "saveFailed": "Failed to save API key",
         "saveFailedDesc": "Please try again",
@@ -761,8 +761,8 @@
       },
       "errors": {
         "emptyKey": "Please enter an API key",
-        "invalidFormat": "Invalid API key format",
-        "invalidFormatDesc": "Vapi keys start with 'sk_'",
+        "invalidFormat": "Invalid API key",
+        "invalidFormatDesc": "Your Vapi API key must be at least 10 characters long",
         "noAuth": "Authentication required",
         "saveFailed": "Failed to save"
       }

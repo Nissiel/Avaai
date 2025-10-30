@@ -52,13 +52,17 @@ export function OnboardingVapiStep({ onNext, onSkip }: OnboardingVapiStepProps) 
   }
 
   const handleInlineSave = async () => {
-    if (!vapiKey) {
-      toast.error(t("errors.emptyKey"));
+    // 🎯 DIVINE: Validation minimale - longueur uniquement
+    // Le backend vérifiera la validité réelle via l'API Vapi
+    if (!vapiKey || vapiKey.trim().length === 0) {
+      toast.error(t("errors.emptyKey", { defaultValue: "Veuillez entrer une clé API" }));
       return;
     }
 
-    if (!vapiKey.startsWith("sk_")) {
-      toast.error(t("errors.invalidFormat"));
+    if (vapiKey.trim().length < 10) {
+      toast.error(t("errors.invalidFormat", { defaultValue: "Clé API trop courte" }), {
+        description: "Une clé API Vapi contient au minimum 10 caractères",
+      });
       return;
     }
 

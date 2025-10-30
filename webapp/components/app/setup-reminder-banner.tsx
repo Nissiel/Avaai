@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useLocale } from "next-intl";
 import { AlertCircle, CheckCircle2, ChevronRight, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
@@ -26,6 +27,7 @@ async function checkSetupStatus() {
 
 export function SetupReminderBanner() {
   const [dismissed, setDismissed] = useState(false);
+  const locale = useLocale();
 
   const { data: status } = useQuery({
     queryKey: ["setup-status"],
@@ -56,14 +58,14 @@ export function SetupReminderBanner() {
     missingSteps.push({
       name: "Vapi Configuration",
       description: "Connect your Vapi API key to create voice assistants",
-      href: "/settings/integrations",
+      href: `/${locale}/settings?section=vapi`, // 🎯 DIVINE: Navigate to Settings with Vapi tab
     });
   }
   if (!status?.twilio) {
     missingSteps.push({
       name: "Twilio Configuration",
       description: "Add your Twilio credentials to enable phone calls",
-      href: "/settings/integrations",
+      href: `/${locale}/settings?section=twilio`, // 🎯 DIVINE: Navigate to Settings with Twilio tab
     });
   }
 

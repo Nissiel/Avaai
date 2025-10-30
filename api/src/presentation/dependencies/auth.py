@@ -21,6 +21,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from ...core.settings import Settings, get_settings
 from ...infrastructure.persistence.models.tenant import Tenant
 from ...infrastructure.persistence.models.user import User
 from ...infrastructure.database.session import get_session
@@ -50,10 +51,17 @@ class CurrentTenant:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient role")
 
 
-async def _parse_token(token: str) -> dict:
-    secret = os.getenv("JWT_SECRET")
-    if not secret:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Missing JWT secret")
+async def _parse_token(token: str, settings: Settings) -> dict:
+    """Parse and validate JWT token using settings-based secret.
+    
+    🔐 DIVINE: Uses Pydantic settings instead of direct os.getenv for consistency.
+    """
+    secret = settings.jwt_secret_key
+    if not secret or secret == "CHANGE_ME_IN_PRODUCTION_USE_ENV_VAR":
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
+            detail="JWT secret not configured. Set AVA_API_JWT_SECRET_KEY environment variable."
+        )
     try:
         return jwt.decode(token, secret, algorithms=["HS256"])
     except JWTError as exc:  # pragma: no cover - defensive
@@ -63,6 +71,7 @@ async def _parse_token(token: str) -> dict:
 async def get_current_tenant(
     credentials: Annotated[HTTPAuthorizationCredentials | None, Security(bearer_scheme)] = None,
     session: Annotated[AsyncSession, Depends(get_session)] = None,
+    settings: Annotated[Settings, Depends(get_settings)] = None,
 ) -> CurrentTenant:
     """Resolve the tenant and enforce owner/admin RBAC.
     
@@ -77,7 +86,7 @@ async def get_current_tenant(
     if credentials is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required")
 
-    payload = await _parse_token(credentials.credentials)
+    payload = await _parse_token(credentials.credentials, settings)
     tenant_id_raw = payload.get("tenant_id")
     user_id_raw = payload.get("sub")
     roles = set(payload.get("roles") or [])

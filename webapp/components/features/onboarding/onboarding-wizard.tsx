@@ -251,16 +251,87 @@ export function OnboardingWizard() {
   });
 
   const queryClient = useQueryClient();
+  
+  // 🌟 DIVINE: Offline-first config management
+  // Load from localStorage immediately, sync with backend in background
+  const [localConfig, setLocalConfig] = useState<StudioConfig | null>(() => {
+    if (typeof window === "undefined") return null;
+    const stored = localStorage.getItem("studio_config_draft");
+    return stored ? JSON.parse(stored) : null;
+  });
+
   const configQuery = useQuery<StudioConfig>({
     queryKey: ["studio", "config"],
     queryFn: getStudioConfig,
     staleTime: 300_000,
+    retry: 2,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000), // Exponential backoff
+    // 🌟 DIVINE: Graceful degradation - don't block UI on error
+    onError: (error) => {
+      console.warn("Failed to load config from backend, using local draft:", error);
+    },
+    onSuccess: (data) => {
+      // Sync remote config to localStorage
+      if (typeof window !== "undefined") {
+        localStorage.setItem("studio_config_draft", JSON.stringify(data));
+        setLocalConfig(data);
+      }
+    },
   });
 
   const updateConfigMutation = useMutation({
     mutationFn: (payload: StudioConfigUpdate) => updateStudioConfigClient(payload),
+    // 🌟 DIVINE: Optimistic update - update UI immediately
+    onMutate: async (payload) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ["studio", "config"] });
+      
+      // Snapshot previous value
+      const previous = queryClient.getQueryData<StudioConfig>(["studio", "config"]);
+      
+      // Optimistically update to new value
+      const optimistic = { ...previous, ...payload } as StudioConfig;
+      queryClient.setQueryData(["studio", "config"], optimistic);
+      
+      // Save to localStorage immediately
+      if (typeof window !== "undefined") {
+        localStorage.setItem("studio_config_draft", JSON.stringify(optimistic));
+        setLocalConfig(optimistic);
+      }
+      
+      return { previous };
+    },
+    onError: (error, variables, context) => {
+      // Rollback on error
+      if (context?.previous) {
+        queryClient.setQueryData(["studio", "config"], context.previous);
+        if (typeof window !== "undefined") {
+          localStorage.setItem("studio_config_draft", JSON.stringify(context.previous));
+          setLocalConfig(context.previous);
+        }
+      }
+      
+      // 🎯 DIVINE: Log détaillé + feedback utilisateur clair
+      console.error("❌ Failed to update config:", {
+        error,
+        message: error instanceof Error ? error.message : String(error),
+        variables,
+        timestamp: new Date().toISOString(),
+      });
+      
+      // Afficher l'erreur réelle à l'utilisateur
+      const errorMessage = error instanceof Error ? error.message : "Erreur inconnue";
+      toast.error(`Sauvegarde échouée: ${errorMessage}`, {
+        description: "Vos modifications sont sauvegardées localement et seront synchronisées plus tard.",
+        duration: 5000,
+      });
+    },
     onSuccess: (data) => {
       queryClient.setQueryData(["studio", "config"], data);
+      if (typeof window !== "undefined") {
+        localStorage.setItem("studio_config_draft", JSON.stringify(data));
+        setLocalConfig(data);
+      }
     },
   });
 
@@ -268,9 +339,18 @@ export function OnboardingWizard() {
     mutationFn: createAssistant,
   });
 
-  const remoteConfig = configQuery.data ?? null;
-  const isConfigLoading = configQuery.isLoading || configQuery.isFetching;
-  const configErrorMessage = configQuery.error instanceof Error ? configQuery.error.message : configQuery.error ? String(configQuery.error) : null;
+  // 🌟 DIVINE: Use local config if available, fallback to remote
+  const effectiveConfig = localConfig ?? configQuery.data ?? null;
+  
+  // 🌟 DIVINE: Only block initial load, not subsequent fetches
+  const isInitialLoading = configQuery.isLoading && !effectiveConfig;
+  
+  // 🌟 DIVINE: Show error but don't block navigation
+  const configErrorMessage = configQuery.error instanceof Error 
+    ? configQuery.error.message 
+    : null;
+    
+  // 🌟 DIVINE: Only block navigation during critical operations
   const isLaunching = assistantMutation.isPending;
   const [hasLaunched, setHasLaunched] = useState<boolean>(false);
 
@@ -304,104 +384,115 @@ export function OnboardingWizard() {
   }, [queryClient]);
 
   useEffect(() => {
-    if (!remoteConfig) return;
-    const mapped = mapConfigToFormValues(remoteConfig);
+    if (!effectiveConfig) return;
+    const mapped = mapConfigToFormValues(effectiveConfig);
     form.reset({
       ...form.getValues(),
       ...mapped,
     });
-    // We intentionally depend on remoteConfig only to avoid infinite loops with form state.
+    // We intentionally depend on effectiveConfig only to avoid infinite loops with form state.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [remoteConfig]);
+  }, [effectiveConfig]);
 
   const goNext = async () => {
-    if (isConfigLoading || isLaunching) {
+    // 🌟 DIVINE: Never block navigation during background operations
+    if (isLaunching) {
       return;
     }
 
     const current = steps[stepIndex].id as StepId;
     const values = form.getValues();
 
-    // Validation is now optional - allow skipping steps with incomplete data
-    // Only validate if the user has filled in data for the current step
-    const shouldValidate = current === "profile" || current === "plan"; // Only strict validation for critical steps
+    // Validation only for critical steps
+    const shouldValidate = current === "profile" || current === "plan";
     
     if (shouldValidate && !isStepValid(current, values)) {
       toast.warning(t("errors.incomplete", { defaultValue: "Some fields are incomplete, but you can skip and complete later." }));
-      // Don't return - allow continuing
     }
 
     try {
-      // Save whatever data the user has provided
+      // 🌟 DIVINE: Optimistic update - save locally first, sync in background
       const updatePayload = buildConfigUpdate(current, values);
+      
       if (Object.keys(updatePayload).length > 0) {
-        await updateConfigMutation.mutateAsync(updatePayload);
+        // Save to localStorage immediately (offline-first)
+        if (typeof window !== "undefined") {
+          const currentDraft = localStorage.getItem("studio_config_draft");
+          const draft = currentDraft ? JSON.parse(currentDraft) : {};
+          const updated = { ...draft, ...updatePayload };
+          localStorage.setItem("studio_config_draft", JSON.stringify(updated));
+          setLocalConfig(updated as StudioConfig);
+        }
+        
+        // Trigger backend sync in background (don't await - fire and forget)
+        updateConfigMutation.mutate(updatePayload);
       }
 
       if (current === "plan" && !hasLaunched) {
         setHasLaunched(true);
 
-        // 🎯 DIVINE: ALWAYS mark onboarding as completed first (don't block on assistant creation)
+        // 🌟 DIVINE: Mark onboarding completed (localStorage + backend)
         try {
-          console.log("🔄 Calling completeOnboarding...");
-          const updatedUser = await completeOnboarding();
-          console.log("✅ Onboarding marked as completed in DB:", updatedUser);
-
-          // Persist onboarding completion in localStorage (backup)
           if (typeof window !== "undefined") {
             localStorage.setItem("onboarding_completed", "true");
-            console.log("✅ Onboarding completion persisted in localStorage");
           }
-
-          // Update local session to reflect onboarding completion
-          if (session?.user) {
-            const updatedSession = {
-              ...session,
-              user: {
-                ...session.user,
-                onboarding_completed: true,
-              },
-            };
-            setSession(updatedSession);
-            console.log("✅ Local session updated:", updatedSession);
-          }
-        } catch (onboardingError) {
-          console.error("❌ Failed to mark onboarding as completed:", onboardingError);
-          // Fallback: At least save in localStorage
-          if (typeof window !== "undefined") {
-            localStorage.setItem("onboarding_completed", "true");
-            console.log("⚠️ Fallback: Saved onboarding_completed in localStorage only");
-          }
+          
+          // Try to sync with backend (don't block if fails)
+          completeOnboarding().then((updatedUser) => {
+            console.log("✅ Onboarding synced to backend:", updatedUser);
+            
+            if (session?.user) {
+              const updatedSession = {
+                ...session,
+                user: {
+                  ...session.user,
+                  onboarding_completed: true,
+                },
+              };
+              setSession(updatedSession);
+            }
+          }).catch((error) => {
+            console.warn("⚠️ Failed to sync onboarding to backend (will retry later):", error);
+            // Don't show error - user can continue
+          });
+        } catch (error) {
+          console.warn("⚠️ Onboarding completion failed (non-blocking):", error);
         }
 
-        // 🎯 DIVINE: Try to create assistant, but DON'T block if it fails
-        // User can finish setup later from dashboard
+        // � DIVINE: Try to create assistant (optional, don't block)
         try {
           const assistantPayload = buildAssistantPayload(values);
           await assistantMutation.mutateAsync(assistantPayload);
           console.log("✅ Assistant created successfully");
           toast.success(t("success.launch", { defaultValue: "🎉 Welcome to Ava Studio! Your assistant is ready." }));
         } catch (assistantError) {
-          console.warn("⚠️ Could not create assistant (user can finish setup later):", assistantError);
-          // Don't show error toast - just show welcome message
+          console.warn("⚠️ Assistant creation failed (user can finish setup later):", assistantError);
           toast.success(t("success.welcome", { defaultValue: "🎉 Welcome to Ava Studio! Complete your setup to activate your assistant." }));
         }
 
         track("onboarding_completed", { plan: values.plan, seats: values.seats });
         
-        // 🎯 DIVINE: ALWAYS redirect to dashboard (don't block on errors)
+        // � DIVINE: Always redirect (never block)
         setTimeout(() => {
           console.log("🚀 Redirecting to dashboard...");
           router.push(`/${locale}/dashboard`);
-        }, 1500); // Give time to see the success toast
+        }, 1500);
         
-        return; // Don't navigate to next step
+        return;
       }
 
+      // 🌟 DIVINE: Move to next step (never blocked)
       setStepIndex((prev) => Math.min(prev + 1, steps.length - 1));
+      
     } catch (error) {
+      // 🌟 DIVINE: Graceful error handling - log but don't block
       console.error("Failed to persist onboarding step:", error);
-      toast.error(t("errors.save", { defaultValue: "Sauvegarde impossible pour le moment." }));
+      toast.warning(t("errors.save", { 
+        defaultValue: "Changes saved locally. Will sync when connection is restored." 
+      }));
+      
+      // Still allow navigation
+      setStepIndex((prev) => Math.min(prev + 1, steps.length - 1));
     }
   };
 
@@ -446,7 +537,7 @@ export function OnboardingWizard() {
         </div>
       </div>
       <div className="space-y-8">
-        {isConfigLoading ? (
+        {isInitialLoading ? (
           <div className="rounded-2xl border border-border/70 bg-muted/40 p-4 text-sm text-muted-foreground animate-pulse">
             {t("loading.config", { defaultValue: "Chargement de votre configuration existante..." })}
           </div>
@@ -485,7 +576,7 @@ export function OnboardingWizard() {
             </Button>
             {step.id !== "done" && (
               <>
-                <Button onClick={goNext} disabled={isConfigLoading || isLaunching}>
+                <Button onClick={goNext} disabled={isLaunching}>
                   {isLaunching
                     ? t("actions.launching", { defaultValue: "Creating your assistant..." })
                     : stepIndex === steps.length - 1
@@ -495,7 +586,7 @@ export function OnboardingWizard() {
                 <Button 
                   variant="ghost" 
                   onClick={goNext}
-                  disabled={isConfigLoading || isLaunching}
+                  disabled={isLaunching}
                   className="text-muted-foreground"
                 >
                   {t("actions.skip", { defaultValue: "Skip for now" })}

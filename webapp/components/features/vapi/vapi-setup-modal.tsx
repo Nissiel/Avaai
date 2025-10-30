@@ -51,16 +51,16 @@ export function VapiSetupModal({ isOpen, onClose, onSuccess }: VapiSetupModalPro
   const [step, setStep] = useState<"choice" | "quick" | "success">("choice");
 
   const saveApiKey = async () => {
+    // 🎯 DIVINE: Validation minimale - longueur uniquement
+    // Le backend vérifiera la validité réelle via l'API Vapi
     if (!apiKey.trim()) {
       toast.error(t("errors.emptyKey", { defaultValue: "Veuillez entrer une clé API" }));
       return;
     }
 
-    if (!apiKey.startsWith("sk_")) {
+    if (apiKey.trim().length < 10) {
       toast.error(t("errors.invalidFormat", { defaultValue: "Format de clé invalide" }), {
-        description: t("errors.invalidFormatDesc", {
-          defaultValue: "Les clés Vapi commencent par 'sk_'"
-        }),
+        description: "Une clé API Vapi contient au minimum 10 caractères",
       });
       return;
     }

@@ -87,14 +87,16 @@ export function VapiSettingsForm() {
   };
 
   const saveApiKey = async () => {
+    // 🎯 DIVINE: Validation minimale - longueur uniquement
+    // Le backend vérifiera la validité réelle via l'API Vapi
     if (!apiKey.trim()) {
       toast.error(t("errors.emptyKey"));
       return;
     }
 
-    if (!apiKey.startsWith("sk_")) {
+    if (apiKey.trim().length < 10) {
       toast.error(t("errors.invalidFormat"), {
-        description: t("errors.invalidFormatDesc"),
+        description: "Une clé API Vapi contient au minimum 10 caractères",
       });
       return;
     }
