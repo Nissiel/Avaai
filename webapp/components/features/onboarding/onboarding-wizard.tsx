@@ -266,18 +266,24 @@ export function OnboardingWizard() {
     staleTime: 300_000,
     retry: 2,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000), // Exponential backoff
-    // 🌟 DIVINE: Graceful degradation - don't block UI on error
-    onError: (error) => {
-      console.warn("Failed to load config from backend, using local draft:", error);
-    },
-    onSuccess: (data) => {
-      // Sync remote config to localStorage
-      if (typeof window !== "undefined") {
-        localStorage.setItem("studio_config_draft", JSON.stringify(data));
-        setLocalConfig(data);
-      }
-    },
+    // 🌟 DIVINE: Don't fetch if no token (user not authenticated yet during onboarding)
+    enabled: typeof window !== "undefined" && !!localStorage.getItem("access_token"),
   });
+
+  // 🌟 DIVINE: Sync remote config to localStorage when loaded (React Query v5 pattern)
+  useEffect(() => {
+    if (configQuery.data && typeof window !== "undefined") {
+      localStorage.setItem("studio_config_draft", JSON.stringify(configQuery.data));
+      setLocalConfig(configQuery.data);
+    }
+  }, [configQuery.data]);
+
+  // 🌟 DIVINE: Log errors gracefully (React Query v5 pattern)
+  useEffect(() => {
+    if (configQuery.error) {
+      console.warn("Failed to load config from backend, using local draft:", configQuery.error);
+    }
+  }, [configQuery.error]);
 
   const updateConfigMutation = useMutation({
     mutationFn: (payload: StudioConfigUpdate) => updateStudioConfigClient(payload),
