@@ -29,6 +29,22 @@ class CreateAssistantRequest(BaseModel):
     metadata: dict | None = Field(default=None, description="Optional metadata")
 
 
+class UpdateAssistantRequest(BaseModel):
+    """Request body for updating an assistant."""
+    
+    model_config = {"protected_namespaces": ()}  # Allow model_* fields
+    
+    name: str | None = Field(None, min_length=1, max_length=40, description="Assistant name")
+    voice_provider: str | None = Field(None, description="Voice provider")
+    voice_id: str | None = Field(None, description="Voice ID from provider")
+    first_message: str | None = Field(None, description="Greeting message")
+    model_provider: str | None = Field(None, description="LLM provider")
+    model: str | None = Field(None, description="Model name")
+    temperature: float | None = Field(None, ge=0.0, le=1.0, description="Model creativity")
+    max_tokens: int | None = Field(None, ge=50, le=1000, description="Max response length")
+    metadata: dict | None = Field(None, description="Optional metadata")
+
+
 def _client(user: User) -> VapiClient:
     """Create VapiClient with user's API key."""
     try:
@@ -49,9 +65,14 @@ async def list_assistants(
     client = _client(user)
     try:
         assistants = await client.list_assistants(limit=limit)
+        # 🎯 DIVINE: Return format compatible with frontend expectations
+        return {
+            "success": True,
+            "assistants": assistants,
+            "configured": True,
+        }
     except VapiApiError as exc:
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(exc)) from exc
-    return {"assistants": assistants}
 
 
 @router.get("/{assistant_id}")
@@ -63,12 +84,16 @@ async def get_assistant(
     client = _client(user)
     try:
         assistant = await client.get_assistant(assistant_id)
+        # 🎯 DIVINE: Return format compatible with frontend expectations
+        return {
+            "success": True,
+            "assistant": assistant,
+        }
     except VapiApiError as exc:
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(exc)) from exc
-    return {"assistant": assistant}
 
 
-@router.post("/create")
+@router.post("")
 async def create_assistant(
     request: CreateAssistantRequest,
     user: User = Depends(get_current_user),
@@ -120,7 +145,67 @@ async def create_assistant(
             detail=f"Failed to create assistant: {str(exc)}"
         ) from exc
     
-    return {"assistant": assistant}
+    # 🎯 DIVINE: Return format compatible with frontend expectations
+    return {
+        "success": True,
+        "assistant": assistant,
+    }
+
+
+@router.patch("/{assistant_id}")
+async def update_assistant(
+    assistant_id: str,
+    request: UpdateAssistantRequest,
+    user: User = Depends(get_current_user),
+    _: CurrentTenant = Depends(get_current_tenant),
+) -> dict[str, object]:
+    """
+    Update an existing AI assistant.
+    
+    Only provided fields will be updated. Omitted fields remain unchanged.
+    """
+    client = _client(user)
+    
+    try:
+        # Build update payload - only include fields that were provided
+        update_data = {}
+        if request.name is not None:
+            update_data["name"] = request.name
+        if request.voice_provider is not None and request.voice_id is not None:
+            update_data["voice"] = {
+                "provider": request.voice_provider,
+                "voiceId": request.voice_id,
+            }
+        if request.first_message is not None:
+            update_data["firstMessage"] = request.first_message
+        if request.model is not None:
+            update_data["model"] = {
+                "provider": request.model_provider or "openai",
+                "model": request.model,
+            }
+            if request.temperature is not None:
+                update_data["model"]["temperature"] = request.temperature
+            if request.max_tokens is not None:
+                update_data["model"]["maxTokens"] = request.max_tokens
+        if request.metadata is not None:
+            update_data["metadata"] = request.metadata
+        
+        assistant = await client.update_assistant(assistant_id, update_data)
+    except VapiApiError as exc:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Vapi API error updating assistant {assistant_id}: {exc}")
+        
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY, 
+            detail=f"Failed to update assistant: {str(exc)}"
+        ) from exc
+    
+    # 🎯 DIVINE: Return format compatible with frontend expectations
+    return {
+        "success": True,
+        "assistant": assistant,
+    }
 
 
 __all__ = ["router"]

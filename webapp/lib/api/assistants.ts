@@ -7,6 +7,14 @@ import type {
   CreateAssistantPayload,
   UpdateAssistantPayload,
 } from "@/lib/dto";
+import { getAuthHeaders } from "./auth-helper";
+
+/**
+ * 🎯 DIVINE: Get backend API base URL
+ */
+function getBackendUrl(): string {
+  return process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+}
 
 type AssistantListApiPayload = AssistantListResponse & {
   error?: string;
@@ -32,9 +40,10 @@ export interface AssistantsResult {
 
 export async function listAssistants(): Promise<AssistantsResult> {
   try {
-    const response = await fetch("/api/vapi/assistants", {
+    // 🎯 DIVINE: Call Python backend with user's Vapi key (multi-tenant)
+    const response = await fetch(`${getBackendUrl()}/api/v1/assistants`, {
       method: "GET",
-      headers: { "Content-Type": "application/json" },
+      headers: getAuthHeaders(),
     });
 
     const text = await response.text();
@@ -120,9 +129,10 @@ export async function listAssistants(): Promise<AssistantsResult> {
 }
 
 export async function createAssistant(payload: CreateAssistantPayload) {
-  const response = await fetch("/api/vapi/assistants", {
+  // 🎯 DIVINE: Call Python backend with user's Vapi key (multi-tenant)
+  const response = await fetch(`${getBackendUrl()}/api/v1/assistants`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: getAuthHeaders(),
     body: JSON.stringify(payload),
   });
 
@@ -140,9 +150,10 @@ export async function createAssistant(payload: CreateAssistantPayload) {
 }
 
 export async function getAssistantDetail(id: string) {
-  const response = await fetch(`/api/vapi/assistants?id=${encodeURIComponent(id)}`, {
+  // 🎯 DIVINE: Call Python backend with user's Vapi key (multi-tenant)
+  const response = await fetch(`${getBackendUrl()}/api/v1/assistants/${encodeURIComponent(id)}`, {
     method: "GET",
-    headers: { "Content-Type": "application/json" },
+    headers: getAuthHeaders(),
     cache: "no-store",
   });
 
@@ -159,9 +170,10 @@ export async function getAssistantDetail(id: string) {
 }
 
 export async function updateAssistant(payload: UpdateAssistantPayload) {
-  const response = await fetch("/api/vapi/assistants", {
+  // 🎯 DIVINE: Call Python backend with user's Vapi key (multi-tenant)
+  const response = await fetch(`${getBackendUrl()}/api/v1/assistants/${encodeURIComponent(payload.id)}`, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json" },
+    headers: getAuthHeaders(),
     body: JSON.stringify(payload),
   });
 
