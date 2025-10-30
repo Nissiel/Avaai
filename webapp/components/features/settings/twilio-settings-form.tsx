@@ -45,6 +45,12 @@ export function TwilioSettingsForm() {
     setIsSaving(true);
 
     try {
+      console.log("🔄 Saving Twilio credentials...");
+      
+      // 🎯 DIVINE: Add timeout to prevent infinite loading
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/api/v1/twilio-settings`,
         {
@@ -58,21 +64,41 @@ export function TwilioSettingsForm() {
             auth_token: authToken,
             phone_number: twilioPhoneNumber || null,
           }),
+          signal: controller.signal,
         }
       );
 
+      clearTimeout(timeoutId);
+
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || "Failed to save Twilio credentials");
+        const error = await response.json().catch(() => ({ detail: "Unknown error" }));
+        console.error("❌ Backend error:", { status: response.status, error });
+        throw new Error(error.detail || `HTTP ${response.status}: Failed to save Twilio credentials`);
       }
 
+      console.log("✅ Twilio credentials saved successfully");
       toast.success(t("success.credentialsSaved"));
       setAccountSid("");
       setAuthToken("");
-      refetch();
+      
+      // 🎯 DIVINE: Refetch in background, don't block UI
+      refetch().catch((err) => console.error("Refetch failed:", err));
     } catch (error) {
-      console.error("Error saving Twilio credentials:", error);
-      toast.error(t("errors.saveFailed"));
+      console.error("❌ Error saving Twilio credentials:", error);
+      
+      if (error instanceof Error) {
+        if (error.name === "AbortError") {
+          toast.error("Request timeout", {
+            description: "La requête a pris trop de temps. Réessayez.",
+          });
+        } else {
+          toast.error(t("errors.saveFailed"), {
+            description: error.message,
+          });
+        }
+      } else {
+        toast.error(t("errors.saveFailed"));
+      }
     } finally {
       setIsSaving(false);
     }
