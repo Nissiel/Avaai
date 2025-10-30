@@ -69,22 +69,41 @@ export function OnboardingVapiStep({ onNext, onSkip }: OnboardingVapiStepProps) 
     setIsSaving(true);
 
     try {
+      // 🔐 DIVINE: Check for authentication token
+      if (!session?.accessToken) {
+        console.error("❌ No access token available");
+        toast.error("Authentification requise", {
+          description: "Veuillez vous reconnecter",
+        });
+        return;
+      }
+
+      console.log("🔄 Saving Vapi key to backend...");
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/api/v1/vapi-settings`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${session?.accessToken}`,
+            Authorization: `Bearer ${session.accessToken}`,
           },
           body: JSON.stringify({ vapi_api_key: vapiKey }),
         }
       );
 
       if (!response.ok) {
-        throw new Error("Failed to save Vapi key");
+        // 🌟 DIVINE: Extract and show actual backend error
+        const errorData = await response.json().catch(() => ({ detail: "Unknown error" }));
+        const errorMessage = errorData.detail || `HTTP ${response.status}`;
+        console.error("❌ Backend error:", { status: response.status, errorData });
+        
+        toast.error("Impossible de sauvegarder la clé Vapi", {
+          description: errorMessage,
+        });
+        return;
       }
 
+      console.log("✅ Vapi key saved successfully");
       toast.success(t("success.saved"));
       invalidate();
       
@@ -93,8 +112,10 @@ export function OnboardingVapiStep({ onNext, onSkip }: OnboardingVapiStepProps) 
         onNext();
       }, 800);
     } catch (error) {
-      console.error("Error saving Vapi key:", error);
-      toast.error(t("errors.saveFailed"));
+      console.error("❌ Error saving Vapi key:", error);
+      toast.error(t("errors.saveFailed"), {
+        description: error instanceof Error ? error.message : "Erreur inconnue",
+      });
     } finally {
       setIsSaving(false);
     }

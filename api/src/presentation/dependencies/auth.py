@@ -137,6 +137,7 @@ async def _get_dev_tenant(session: AsyncSession) -> CurrentTenant:
 async def get_current_user(
     credentials: Annotated[HTTPAuthorizationCredentials | None, Security(bearer_scheme)] = None,
     session: Annotated[AsyncSession, Depends(get_session)] = None,
+    settings: Annotated[Settings, Depends(get_settings)] = None,
 ) -> User:
     """
     Resolve the authenticated user from JWT token.
@@ -170,7 +171,7 @@ async def get_current_user(
     if credentials is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required")
     
-    payload = await _parse_token(credentials.credentials)
+    payload = await _parse_token(credentials.credentials, settings)
     user_id_raw = payload.get("sub")
     
     if not user_id_raw:
