@@ -1115,25 +1115,82 @@ export function StudioSettingsForm({
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="px-5 pb-5">
-                  <div className="space-y-4 pt-3">
-                    <FormField
-                      control={form.control}
-                      name="systemPrompt"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-sm font-semibold">System Prompt</FormLabel>
-                          <FormControl>
-                            <Textarea {...field} rows={6} disabled={isDisabled} placeholder="You are AVA, a professional AI assistant..." className="resize-none" />
-                          </FormControl>
-                          <FormDescription className="flex items-center gap-2 text-xs">
-                            <Sparkles className="h-3 w-3 text-orange-500" />
-                            Core AI instructions - defines personality and behavior
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                  <div className="space-y-6 pt-3">
+                    
+                    {/* 🔥 DIVINE: SYSTEM PROMPT - MAKE IT OBVIOUS */}
+                    <div className="rounded-xl border-2 border-amber-300 dark:border-amber-700 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950 dark:to-orange-950 p-6 space-y-4">
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-amber-500/20">
+                          <Sparkles className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="text-lg font-bold text-amber-900 dark:text-amber-100 flex items-center gap-2">
+                            🧠 System Prompt (AI Brain)
+                          </h4>
+                          <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
+                            ⚠️ <strong>CRITICAL</strong>: This is the MOST IMPORTANT setting.
+                            It defines your assistant's personality, knowledge, and behavior.
+                          </p>
+                        </div>
+                      </div>
 
+                      <FormField
+                        control={form.control}
+                        name="systemPrompt"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-base font-semibold text-amber-900 dark:text-amber-100">
+                              AI Instructions (Be VERY specific)
+                            </FormLabel>
+                            <FormControl>
+                              <Textarea 
+                                {...field} 
+                                rows={18}
+                                disabled={isDisabled} 
+                                placeholder="Tu es [name], [role] de [company]...&#10;&#10;🎯 MISSION:&#10;1. [What to do]&#10;2. [How to behave]&#10;&#10;✨ TONE: [professional/warm/energetic]&#10;&#10;⚠️ IMPORTANT: [Critical instructions]"
+                                className="resize-y min-h-[400px] font-mono text-sm leading-relaxed"
+                              />
+                            </FormControl>
+                            <FormDescription className="space-y-2 text-xs">
+                              <div className="flex items-center gap-2 text-amber-700 dark:text-amber-300">
+                                <AlertCircle className="h-4 w-4" />
+                                <span>
+                                  Current length: <strong className="text-base">{field.value.length}</strong> characters
+                                  {field.value.length < 200 && (
+                                    <span className="ml-2 text-orange-600 dark:text-orange-400 font-semibold">
+                                      ⚠️ Too short! Add more details for better AI performance.
+                                    </span>
+                                  )}
+                                  {field.value.length >= 200 && field.value.length < 500 && (
+                                    <span className="ml-2 text-amber-600 dark:text-amber-400">
+                                      ✓ Good length. Consider adding more specific examples.
+                                    </span>
+                                  )}
+                                  {field.value.length >= 500 && (
+                                    <span className="ml-2 text-green-600 dark:text-green-400 font-semibold">
+                                      ✅ Excellent! Very detailed instructions.
+                                    </span>
+                                  )}
+                                </span>
+                              </div>
+                              <div className="bg-amber-100 dark:bg-amber-900 rounded p-3 space-y-1">
+                                <p className="font-semibold text-amber-900 dark:text-amber-100">💡 Pro Tips:</p>
+                                <ul className="list-disc list-inside space-y-1 text-amber-800 dark:text-amber-200">
+                                  <li>Be SPECIFIC: Define exact role, company, services</li>
+                                  <li>Add MISSION: What should the AI accomplish?</li>
+                                  <li>Define TONE: professional? warm? energetic?</li>
+                                  <li>List DO's and DON'Ts clearly</li>
+                                  <li>Include example conversations if possible</li>
+                                </ul>
+                              </div>
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    {/* First Message */}
                     <FormField
                       control={form.control}
                       name="firstMessage"
@@ -1215,8 +1272,142 @@ export function StudioSettingsForm({
 
           </Accordion>
 
-          {/* 🔥 DIVINE DEBUG PANEL */}
+          {/* 🔥 DIVINE PREVIEW PANEL - Show what will be sent to Vapi */}
           {isDirty && (
+            <GlassCard className="border-2 border-brand-500 bg-gradient-to-br from-brand-50 to-background dark:from-brand-950 dark:to-background" variant="none">
+              <div className="p-6 space-y-5">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-brand-500/20">
+                    <Zap className="h-6 w-6 text-brand-600 dark:text-brand-400" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-xl font-bold text-brand-900 dark:text-brand-100">
+                      🔥 PREVIEW: Ready to Sync to Vapi
+                    </h3>
+                    <p className="text-sm text-brand-700 dark:text-brand-300">
+                      These settings will be applied to your Vapi assistant {vapiAssistantId ? `(ID: ${vapiAssistantId.slice(0, 8)}...)` : '(new assistant will be created)'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  {/* Voice & Model Settings */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="p-4 bg-background rounded-lg border">
+                      <h4 className="font-semibold mb-2 flex items-center gap-2">
+                        <Mic className="h-4 w-4 text-brand-600" />
+                        Voice Settings
+                      </h4>
+                      <div className="space-y-1 text-sm">
+                        <p><strong>Provider:</strong> {form.watch("voiceProvider")}</p>
+                        <p><strong>Voice ID:</strong> {form.watch("voiceId")}</p>
+                        <p><strong>Speed:</strong> {form.watch("voiceSpeed")}x</p>
+                      </div>
+                    </div>
+
+                    <div className="p-4 bg-background rounded-lg border">
+                      <h4 className="font-semibold mb-2 flex items-center gap-2">
+                        <Bot className="h-4 w-4 text-brand-600" />
+                        AI Model
+                      </h4>
+                      <div className="space-y-1 text-sm">
+                        <p><strong>Model:</strong> {form.watch("aiModel")}</p>
+                        <p><strong>Temperature:</strong> {form.watch("aiTemperature")}</p>
+                        <p><strong>Max Tokens:</strong> {form.watch("aiMaxTokens")}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* First Message */}
+                  <div className="p-4 bg-background rounded-lg border">
+                    <h4 className="font-semibold mb-2 flex items-center gap-2">
+                      <MessageSquare className="h-4 w-4 text-brand-600" />
+                      First Message
+                    </h4>
+                    <p className="text-sm italic text-muted-foreground">
+                      "{form.watch("firstMessage")}"
+                    </p>
+                  </div>
+
+                  {/* System Prompt Preview */}
+                  <div className="p-4 bg-amber-50 dark:bg-amber-950 rounded-lg border border-amber-300 dark:border-amber-700">
+                    <h4 className="font-semibold mb-2 flex items-center gap-2 text-amber-900 dark:text-amber-100">
+                      <Sparkles className="h-4 w-4 text-amber-600" />
+                      System Prompt ({form.watch("systemPrompt").length} characters)
+                    </h4>
+                    <div className="max-h-48 overflow-y-auto">
+                      <pre className="text-xs font-mono whitespace-pre-wrap text-amber-800 dark:text-amber-200">
+                        {form.watch("systemPrompt").slice(0, 800)}{form.watch("systemPrompt").length > 800 && "..."}
+                      </pre>
+                    </div>
+                    {form.watch("systemPrompt").length < 200 && (
+                      <p className="text-xs text-orange-600 dark:text-orange-400 mt-2 font-semibold">
+                        ⚠️ Warning: System prompt is very short. Consider adding more details for better AI performance.
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Auto-collect settings */}
+                  <div className="p-4 bg-background rounded-lg border">
+                    <h4 className="font-semibold mb-2">Auto-collect Information</h4>
+                    <div className="flex gap-4 text-sm">
+                      <div className="flex items-center gap-2">
+                        {form.watch("askForName") ? (
+                          <Check className="h-4 w-4 text-green-600" />
+                        ) : (
+                          <span className="h-4 w-4 text-red-600">✗</span>
+                        )}
+                        <span>Name</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {form.watch("askForEmail") ? (
+                          <Check className="h-4 w-4 text-green-600" />
+                        ) : (
+                          <span className="h-4 w-4 text-red-600">✗</span>
+                        )}
+                        <span>Email</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {form.watch("askForPhone") ? (
+                          <Check className="h-4 w-4 text-green-600" />
+                        ) : (
+                          <span className="h-4 w-4 text-red-600">✗</span>
+                        )}
+                        <span>Phone</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Big Save Button */}
+                <Button 
+                  type="submit" 
+                  size="lg" 
+                  className="w-full h-14 text-lg font-semibold"
+                  disabled={updateMutation.isPending}
+                >
+                  {updateMutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-3 h-5 w-5 animate-spin" />
+                      Syncing to Vapi...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="mr-3 h-5 w-5" />
+                      💾 SAVE & SYNC TO VAPI NOW
+                    </>
+                  )}
+                </Button>
+
+                <p className="text-xs text-center text-muted-foreground">
+                  ⚡ This will save to database AND immediately sync to your Vapi assistant
+                </p>
+              </div>
+            </GlassCard>
+          )}
+
+          {/* 🔥 OLD DEBUG PANEL - Hidden but kept for reference */}
+          {false && isDirty && (
             <GlassCard className="border border-orange-500/50 bg-orange-50/50 dark:bg-orange-950/30" variant="none">
               <div className="p-4 space-y-3">
                 <div className="flex items-center gap-2">
