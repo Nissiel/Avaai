@@ -24,6 +24,14 @@ import { createStudioConfigSchema, type StudioConfigInput } from "@/lib/validati
 import { Badge } from "@/components/ui/badge";
 import { backendConfig } from "@/services/backend-service";
 import { refreshAccessToken } from "@/lib/auth/session-client";
+import {
+  PERSONA_PROMPTS,
+  PERSONA_LABELS,
+  PERSONA_DESCRIPTIONS,
+  getPersonaFirstMessage,
+  getPersonaSettings,
+  type PersonaType,
+} from "@/lib/constants/persona-prompts";
 
 const TIMEZONE_OPTIONS = ["europe/paris", "america/new_york", "asia/tokyo"] as const;
 const LANGUAGE_OPTIONS = ["fr", "en", "es"] as const;
@@ -439,7 +447,42 @@ export function StudioSettingsForm({
   const isDirty = form.formState.isDirty;
   const vapiAssistantId = form.watch("vapiAssistantId");
 
-  // 🐛 DEBUG: Log form state
+  // � DIVINE: Persona Preset Selector
+  const [selectedPreset, setSelectedPreset] = useState<PersonaType | "none" | "">("");
+
+  const handlePresetChange = (preset: string) => {
+    if (!preset || preset === "none") {
+      setSelectedPreset("none");
+      return;
+    }
+
+    const personaType = preset as PersonaType;
+    setSelectedPreset(personaType);
+
+    // Apply preset to form
+    const prompt = PERSONA_PROMPTS[personaType];
+    const settings = getPersonaSettings(personaType);
+    const firstMessage = getPersonaFirstMessage(
+      personaType,
+      form.getValues("organizationName")
+    );
+
+    form.setValue("systemPrompt", prompt, { shouldDirty: true, shouldTouch: true });
+    form.setValue("firstMessage", firstMessage, { shouldDirty: true, shouldTouch: true });
+    form.setValue("persona", personaType, { shouldDirty: true, shouldTouch: true });
+    form.setValue("tone", settings.tone, { shouldDirty: true, shouldTouch: true });
+    form.setValue("aiTemperature", settings.temperature, { shouldDirty: true, shouldTouch: true });
+    form.setValue("aiMaxTokens", settings.maxTokens, { shouldDirty: true, shouldTouch: true });
+    form.setValue("askForName", settings.askForName, { shouldDirty: true, shouldTouch: true });
+    form.setValue("askForEmail", settings.askForEmail, { shouldDirty: true, shouldTouch: true });
+    form.setValue("askForPhone", settings.askForPhone, { shouldDirty: true, shouldTouch: true });
+
+    toast.success(`✨ Preset "${PERSONA_LABELS[personaType]}" applied!`, {
+      description: "All settings have been updated. You can customize them further before saving.",
+    });
+  };
+
+  // �🐛 DEBUG: Log form state
   useEffect(() => {
     console.log("🔍 Studio Form State:", {
       isDirty,
@@ -523,6 +566,59 @@ export function StudioSettingsForm({
           console.log("📝 Form Submit Handler Called:", values);
           updateMutation.mutate(values);
         })}>
+
+          {/* 🔥 DIVINE: PRESET SELECTOR - Make personalization OBVIOUS */}
+          <GlassCard className="border border-brand-200 dark:border-brand-800 bg-gradient-to-br from-brand-50 to-background dark:from-brand-950 dark:to-background" variant="none">
+            <div className="p-5 space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-500/10">
+                  <Sparkles className="h-5 w-5 text-brand-600 dark:text-brand-400" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-base font-semibold text-foreground">
+                    🎭 Quick Persona Presets
+                  </h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Select a preset to auto-fill systemPrompt, tone, and behavior. You can customize everything after.
+                  </p>
+                </div>
+              </div>
+
+              <Select value={selectedPreset || "none"} onValueChange={handlePresetChange}>
+                <SelectTrigger className="h-12 text-left">
+                  <SelectValue placeholder="Choose a persona preset..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">
+                    <div className="flex flex-col">
+                      <span className="font-medium">🚫 No Preset (Keep Current)</span>
+                      <span className="text-xs text-muted-foreground">Keep your current settings</span>
+                    </div>
+                  </SelectItem>
+                  {(Object.keys(PERSONA_LABELS) as PersonaType[]).map((personaKey) => (
+                    <SelectItem key={personaKey} value={personaKey}>
+                      <div className="flex flex-col">
+                        <span className="font-medium">{PERSONA_LABELS[personaKey]}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {PERSONA_DESCRIPTIONS[personaKey]}
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {selectedPreset && selectedPreset !== "none" && (
+                <div className="rounded-lg bg-brand-500/10 border border-brand-500/20 p-3 text-sm text-brand-700 dark:text-brand-300">
+                  <strong>✨ Preset applied:</strong> {PERSONA_LABELS[selectedPreset]}
+                  <br />
+                  <span className="text-xs">
+                    System prompt, first message, and behavior settings have been updated. Customize them below before saving.
+                  </span>
+                </div>
+              )}
+            </div>
+          </GlassCard>
 
           <Accordion type="single" collapsible className="space-y-4">
 
