@@ -20,7 +20,28 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(data, { status: response.status });
     }
 
-    return NextResponse.json(data);
+    // ✨ DIVINE: Set httpOnly cookies for security + middleware auth
+    const nextResponse = NextResponse.json(data);
+    
+    // Set access token (7 days)
+    nextResponse.cookies.set('access_token', data.access_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60, // 7 days
+      path: '/',
+    });
+    
+    // Set refresh token (30 days)
+    nextResponse.cookies.set('refresh_token', data.refresh_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 30 * 24 * 60 * 60, // 30 days
+      path: '/',
+    });
+    
+    return nextResponse;
   } catch (error) {
     console.error("Login proxy error:", error);
     return NextResponse.json(
