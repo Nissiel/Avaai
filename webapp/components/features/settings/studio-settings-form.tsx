@@ -24,6 +24,7 @@ import { createStudioConfigSchema, type StudioConfigInput } from "@/lib/validati
 import { Badge } from "@/components/ui/badge";
 import { backendConfig } from "@/services/backend-service";
 import { refreshAccessToken } from "@/lib/auth/session-client";
+import { syncStudioConfigToVapi } from "@/lib/api/studio-sync";
 import {
   PERSONA_PROMPTS,
   PERSONA_LABELS,
@@ -298,154 +299,53 @@ export function StudioSettingsForm({
       const result = await response.json();
       console.log("✅ Studio Config Update Success:", result);
 
-      // 2. 🔥 DIVINE: Sync to Vapi using the SAME endpoint as onboarding (it works!)
+      // 2. 🔥 DIVINE: Sync to Vapi using helper (same proven endpoint as onboarding)
       try {
-        console.log("� DIVINE: Syncing to Vapi using /api/v1/assistants (proven working endpoint)...");
+        console.log("🔥 DIVINE: Using syncStudioConfigToVapi helper (proven working)");
         
-        // 🎯 DIVINE: Get token for Vapi sync (reuse or get fresh one)
-        const syncToken = token || (typeof window !== "undefined" ? localStorage.getItem("access_token") : null);
-        
-        const syncHeaders: Record<string, string> = {
-          "Content-Type": "application/json",
-        };
-        
-        if (syncToken) {
-          syncHeaders.Authorization = `Bearer ${syncToken}`;
-        }
-        
-        const vapiResponse = await fetch(
-          `${backendConfig.baseUrl}/api/v1/studio/sync-vapi`,
-          {
-            method: "POST",
-            headers: syncHeaders,
-          },
+        const syncResult = await syncStudioConfigToVapi(
+          values,
+          values.vapiAssistantId || null
         );
-
-        // 🔥 DIVINE DEBUG: Log response status and body
-        console.log("🔍 Vapi Sync Response Status:", vapiResponse.status);
-        console.log("🔍 Vapi Sync URL:", `${backendConfig.baseUrl}/api/v1/studio/sync-vapi`);
         
-        if (!vapiResponse.ok && vapiResponse.status !== 401) {
-          const errorBody = await vapiResponse.text();
-          console.error("❌ Vapi Sync Failed:", {
-            status: vapiResponse.status,
-            body: errorBody,
-            url: `${backendConfig.baseUrl}/api/v1/studio/sync-vapi`
-          });
-          
-          // Show detailed error toast
+        if (!syncResult.success) {
+          console.error("❌ Vapi Sync Failed:", syncResult.error);
           toast.error("🚨 Vapi Sync Failed", {
-            description: (
-              <div className="space-y-1 text-xs">
-                <div>Status: {vapiResponse.status}</div>
-                <div>Error: {errorBody.slice(0, 100)}</div>
-                <div className="text-[10px] opacity-70">Check console for details</div>
-              </div>
-            ),
+            description: `Error: ${syncResult.error || "Unknown error"}`,
             duration: 10000,
           });
-        }
-
-        // 🎯 DIVINE: Handle 401 on Vapi sync too
-        if (vapiResponse.status === 401) {
-          console.log("⚠️ Vapi Sync: 401 Unauthorized - Attempting token refresh...");
+        } else {
+          const assistant = syncResult.assistant;
+          console.log("✅ Vapi Sync Success:", assistant);
           
-          const refreshToken = typeof window !== "undefined" ? localStorage.getItem("refresh_token") : null;
-          if (refreshToken) {
-            const newAccessToken = await refreshAccessToken(refreshToken);
+          // Determine if created or updated
+          const isNewAssistant = !values.vapiAssistantId && assistant?.id;
+          
+          if (isNewAssistant) {
+            toast.success("🆕 New Assistant Created!", {
+              description: `Created: ${assistant.name}`,
+              duration: 5000,
+            });
             
-            if (newAccessToken) {
-              console.log("✅ Vapi Sync: Token refreshed! Retrying sync...");
-              
-              // Retry Vapi sync with new token
-              const retrySyncResponse = await fetch(
-                `${backendConfig.baseUrl}/api/v1/studio/sync-vapi`,
-                {
-                  method: "POST",
-                  headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${newAccessToken}`,
-                  },
-                },
-              );
-              
-              if (retrySyncResponse.ok) {
-                const vapiResult = await retrySyncResponse.json();
-                console.log("✅ Vapi Sync Success (after refresh):", vapiResult);
-                
-                // Show success toast with details
-                const settings = vapiResult.settings || {};
-                if (vapiResult.action === "updated") {
-                  toast.success("🔄 Assistant Updated Successfully!", {
-                    description: (
-                      <div className="space-y-1 text-xs">
-                        <div>✅ Voice: {settings.voiceProvider} @ {settings.voiceSpeed}x</div>
-                        <div>✅ Model: {settings.model} (temp={settings.temperature})</div>
-                        <div>✅ Max Tokens: {settings.maxTokens}</div>
-                        <div className="pt-1 text-[10px] opacity-70">
-                          ID: {vapiResult.assistantId?.slice(0, 12)}...
-                        </div>
-                      </div>
-                    ),
-                    duration: 5000,
-                  });
-                } else if (vapiResult.action === "created") {
-                  toast.success("🆕 New Assistant Created!", {
-                    description: `Created new assistant: ${vapiResult.assistantId}`,
-                  });
-                }
-                
-                // Update assistant ID if returned
-                if (vapiResult.assistantId && vapiResult.assistantId !== values.vapiAssistantId) {
-                  result.config = { ...result.config, vapiAssistantId: vapiResult.assistantId };
-                }
-                
-                return result;
-              }
+            // Update assistant ID in result
+            if (assistant.id) {
+              result.config = { ...result.config, vapiAssistantId: assistant.id };
             }
-          }
-          
-          // If refresh failed, show warning but don't fail the whole save
-          console.warn("⚠️ Vapi sync failed due to auth, but config was saved successfully");
-          toast.warning("⚠️ Config saved but Vapi sync failed", {
-            description: "Session expired. Please refresh and try again.",
-          });
-          return result;
-        }
-
-        if (vapiResponse.ok) {
-          const vapiResult = await vapiResponse.json();
-          console.log("✅ Vapi Sync Success:", vapiResult);
-
-          // Show detailed toast with what was changed
-          const settings = vapiResult.settings || {};
-          if (vapiResult.action === "updated") {
-            toast.success("� Assistant Updated Successfully!", {
+          } else {
+            toast.success("🔄 Assistant Updated Successfully!", {
               description: (
                 <div className="space-y-1 text-xs">
-                  <div>✅ Voice: {settings.voiceProvider} @ {settings.voiceSpeed}x</div>
-                  <div>✅ Model: {settings.model} (temp={settings.temperature})</div>
-                  <div>✅ Max Tokens: {settings.maxTokens}</div>
+                  <div>✅ Voice: {assistant.voice?.provider} @ {assistant.voice?.speed || 1}x</div>
+                  <div>✅ Model: {assistant.model?.model}</div>
+                  <div>✅ System Prompt: {assistant.model?.messages?.[0]?.content?.substring(0, 50)}...</div>
                   <div className="pt-1 text-[10px] opacity-70">
-                    ID: {vapiResult.assistantId?.slice(0, 12)}...
+                    ID: {assistant.id?.slice(0, 12)}...
                   </div>
                 </div>
               ),
               duration: 5000,
             });
-          } else if (vapiResult.action === "created") {
-            toast.success("🆕 New Assistant Created!", {
-              description: `Created new assistant: ${vapiResult.assistantId}`,
-            });
           }
-
-          // Update assistant ID if returned
-          if (vapiResult.assistantId && vapiResult.assistantId !== values.vapiAssistantId) {
-            result.config = { ...result.config, vapiAssistantId: vapiResult.assistantId };
-          }
-        } else {
-          const detail = await vapiResponse.json().catch(() => ({}));
-          console.warn("⚠️ Vapi sync failed, but config saved successfully", detail);
         }
       } catch (syncError) {
         console.warn("⚠️ Vapi sync error:", syncError);
