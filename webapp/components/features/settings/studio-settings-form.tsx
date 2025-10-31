@@ -298,9 +298,9 @@ export function StudioSettingsForm({
       const result = await response.json();
       console.log("✅ Studio Config Update Success:", result);
 
-      // 2. Auto-sync to Vapi after successful save
+      // 2. 🔥 DIVINE: Sync to Vapi using the SAME endpoint as onboarding (it works!)
       try {
-        console.log("🔄 Auto-syncing to Vapi...");
+        console.log("� DIVINE: Syncing to Vapi using /api/v1/assistants (proven working endpoint)...");
         
         // 🎯 DIVINE: Get token for Vapi sync (reuse or get fresh one)
         const syncToken = token || (typeof window !== "undefined" ? localStorage.getItem("access_token") : null);
