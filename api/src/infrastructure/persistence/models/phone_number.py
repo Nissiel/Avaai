@@ -16,7 +16,7 @@ from sqlalchemy import JSON, DateTime, Enum as SQLEnum, String
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import func
 
-from .tenant import Base
+from .base import Base
 
 
 class PhoneProvider(str, Enum):

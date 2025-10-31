@@ -24,7 +24,8 @@ from api.src.domain.value_objects.ava_profile import (
     DEFAULT_ALLOWED_TOPICS,
     DEFAULT_FORBIDDEN_TOPICS,
 )
-from .tenant import Base, Tenant
+from .base import Base
+from .tenant import Tenant
 
 
 class AvaProfile(Base):

@@ -15,7 +15,7 @@ from sqlalchemy import Boolean, DateTime, Float, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import func
 
-from .tenant import Base
+from .base import Base
 
 
 class StudioConfig(Base):

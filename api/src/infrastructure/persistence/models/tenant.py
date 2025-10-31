@@ -1,9 +1,18 @@
 """
-Tenant data model and helper utilities.
+Tenant data model (LEGACY).
 
-This module defines the SQLAlchemy mapping representing a tenant in the
-platform. Tenants own an Ava profile and are referenced by authenticated
-requests via `tenant_id` coming from JWT claims.
+⚠️ IMPORTANT: This model is LEGACY and not actively used in the application.
+The current architecture uses a simplified 1:1 mapping where user.id = tenant_id.
+
+Historical context:
+- Originally designed for multi-tenant with multiple users per tenant
+- Simplified to single-user-per-tenant model (user.id serves as tenant_id)
+- Table kept in database for backwards compatibility only
+
+Current usage:
+- Provides Base class export (actual definition in base.py)
+- tenant_id references in calls/profiles use user.id directly
+- No active CRUD operations on Tenant table
 """
 
 from __future__ import annotations
@@ -13,13 +22,17 @@ from datetime import datetime
 
 from sqlalchemy import Column, DateTime, String
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import declarative_base
 
-Base = declarative_base()
+from .base import Base
 
 
 class Tenant(Base):
-    """Simple tenant model storing high-level metadata."""
+    """
+    LEGACY tenant model - kept for DB schema compatibility.
+    
+    ⚠️ In current architecture: user.id = tenant_id (1:1 mapping)
+    ⚠️ No active operations - this table exists but is not used
+    """
 
     __tablename__ = "tenants"
 
@@ -28,4 +41,4 @@ class Tenant(Base):
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
 
     def __repr__(self) -> str:  # pragma: no cover - repr helper
-        return f"Tenant(id={self.id}, name={self.name})"
+        return f"Tenant(id={self.id}, name={self.name}) [LEGACY]"

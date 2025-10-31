@@ -11,7 +11,7 @@ from sqlalchemy import DateTime, Float, ForeignKey, Integer, JSON, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
-from .tenant import Base
+from .base import Base
 
 
 class CallRecord(Base):
