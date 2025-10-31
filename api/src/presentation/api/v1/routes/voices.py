@@ -6,7 +6,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
 from api.src.infrastructure.external.vapi_client import VapiApiError, VapiClient
-from api.src.presentation.dependencies.auth import CurrentTenant, get_current_tenant
+from api.src.infrastructure.persistence.models.user import User
+from api.src.presentation.api.v1.routes.auth import get_current_user
 
 router = APIRouter(prefix="/voices", tags=["Voices"])
 
@@ -16,9 +17,10 @@ class VoicePreviewPayload(BaseModel):
     text: str = Field(min_length=4, max_length=240)
 
 
-def _client() -> VapiClient:
+def _client(user: User) -> VapiClient:
+    """Create VapiClient with user's personal API key (multi-tenant)."""
     try:
-        return VapiClient()
+        return VapiClient(token=user.vapi_api_key)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
 
@@ -26,9 +28,9 @@ def _client() -> VapiClient:
 @router.post("/preview")
 async def preview_voice(
     payload: VoicePreviewPayload,
-    _: CurrentTenant = Depends(get_current_tenant),
+    user: User = Depends(get_current_user),
 ) -> dict[str, object]:
-    client = _client()
+    client = _client(user)
     try:
         preview = await client.voice_preview(voice_id=payload.voiceId, text=payload.text)
     except VapiApiError as exc:

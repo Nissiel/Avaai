@@ -6,8 +6,8 @@ from pydantic import BaseModel, Field
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from api.src.infrastructure.external.vapi_client import VapiApiError, VapiClient
-from api.src.presentation.dependencies.auth import CurrentTenant, get_current_tenant, get_current_user
 from api.src.infrastructure.persistence.models.user import User
+from api.src.presentation.api.v1.routes.auth import get_current_user
 from api.src.core.settings import get_settings
 
 router = APIRouter(prefix="/assistants", tags=["Assistants"])
@@ -59,7 +59,6 @@ def _client(user: User) -> VapiClient:
 @router.get("")
 async def list_assistants(
     user: User = Depends(get_current_user),
-    _: CurrentTenant = Depends(get_current_tenant),
     limit: int = Query(default=50, ge=1, le=200),
 ) -> dict[str, object]:
     client = _client(user)
@@ -79,7 +78,6 @@ async def list_assistants(
 async def get_assistant(
     assistant_id: str,
     user: User = Depends(get_current_user),
-    _: CurrentTenant = Depends(get_current_tenant),
 ) -> dict[str, object]:
     client = _client(user)
     try:
@@ -157,7 +155,6 @@ async def update_assistant(
     assistant_id: str,
     request: UpdateAssistantRequest,
     user: User = Depends(get_current_user),
-    _: CurrentTenant = Depends(get_current_tenant),
 ) -> dict[str, object]:
     """
     Update an existing AI assistant.

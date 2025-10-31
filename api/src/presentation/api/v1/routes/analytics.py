@@ -18,15 +18,17 @@ from api.src.infrastructure.external.vapi_client import VapiApiError, VapiClient
 from api.src.infrastructure.database.session import get_session
 from api.src.infrastructure.email import get_email_service
 from api.src.infrastructure.persistence.models.call import CallRecord
-from api.src.presentation.dependencies.auth import CurrentTenant, get_current_tenant
+from api.src.infrastructure.persistence.models.user import User
+from api.src.presentation.api.v1.routes.auth import get_current_user
 from sqlalchemy import select
 
 router = APIRouter(prefix="/analytics", tags=["Analytics"])
 
 
-def _client() -> VapiClient:
+def _client(user: User) -> VapiClient:
+    """Create VapiClient with user's personal API key (multi-tenant)."""
     try:
-        return VapiClient()
+        return VapiClient(token=user.vapi_api_key)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
 
@@ -40,15 +42,15 @@ async def _sync_calls(session: AsyncSession, tenant_id, client: VapiClient) -> N
 
 @router.get("/overview")
 async def analytics_overview(
-    current: CurrentTenant = Depends(get_current_tenant),
+    user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ) -> dict[str, object]:
-    client = _client()
-    await _sync_calls(session, current.tenant.id, client)
+    client = _client(user)
+    await _sync_calls(session, user.id, client)
 
-    overview = await compute_overview_metrics(session, tenant_id=current.tenant.id)
-    calls = await recent_calls_with_transcripts(session, tenant_id=current.tenant.id)
-    topics = await compute_trending_topics(session, tenant_id=current.tenant.id, limit=6)
+    overview = await compute_overview_metrics(session, tenant_id=user.id)
+    calls = await recent_calls_with_transcripts(session, tenant_id=user.id)
+    topics = await compute_trending_topics(session, tenant_id=user.id, limit=6)
 
     return {
         "overview": overview,
@@ -59,52 +61,52 @@ async def analytics_overview(
 
 @router.get("/timeseries")
 async def analytics_timeseries(
-    current: CurrentTenant = Depends(get_current_tenant),
+    user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ) -> dict[str, object]:
-    client = _client()
-    await _sync_calls(session, current.tenant.id, client)
-    series = await compute_time_series(session, tenant_id=current.tenant.id)
+    client = _client(user)
+    await _sync_calls(session, user.id, client)
+    series = await compute_time_series(session, tenant_id=user.id)
     return {"series": series}
 
 
 @router.get("/topics")
 async def analytics_topics(
-    current: CurrentTenant = Depends(get_current_tenant),
+    user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ) -> dict[str, object]:
-    client = _client()
-    await _sync_calls(session, current.tenant.id, client)
-    topics = await compute_trending_topics(session, tenant_id=current.tenant.id)
+    client = _client(user)
+    await _sync_calls(session, user.id, client)
+    topics = await compute_trending_topics(session, tenant_id=user.id)
     return {"topics": topics}
 
 
 @router.get("/anomalies")
 async def analytics_anomalies(
-    current: CurrentTenant = Depends(get_current_tenant),
+    user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ) -> dict[str, object]:
-    client = _client()
-    await _sync_calls(session, current.tenant.id, client)
-    anomalies = await detect_anomalies(session, tenant_id=current.tenant.id)
+    client = _client(user)
+    await _sync_calls(session, user.id, client)
+    anomalies = await detect_anomalies(session, tenant_id=user.id)
     return {"anomalies": anomalies}
 
 
 @router.get("/heatmap")
 async def analytics_heatmap(
-    current: CurrentTenant = Depends(get_current_tenant),
+    user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ) -> dict[str, object]:
-    client = _client()
-    await _sync_calls(session, current.tenant.id, client)
-    heatmap = await compute_activity_heatmap(session, tenant_id=current.tenant.id)
+    client = _client(user)
+    await _sync_calls(session, user.id, client)
+    heatmap = await compute_activity_heatmap(session, tenant_id=user.id)
     return {"heatmap": heatmap}
 
 
 @router.post("/calls/{call_id}/email")
 async def send_call_transcript_email(
     call_id: str,
-    current: CurrentTenant = Depends(get_current_tenant),
+    user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ) -> dict[str, str]:
     """
@@ -112,7 +114,7 @@ async def send_call_transcript_email(
     
     Args:
         call_id: The ID of the call to send
-        current: Current authenticated tenant
+        user: Current authenticated user
         session: Database session
         
     Returns:
@@ -125,7 +127,7 @@ async def send_call_transcript_email(
     result = await session.execute(
         select(CallRecord)
         .where(CallRecord.id == call_id)
-        .where(CallRecord.tenant_id == current.tenant.id)
+        .where(CallRecord.tenant_id == user.id)
     )
     call = result.scalar_one_or_none()
     

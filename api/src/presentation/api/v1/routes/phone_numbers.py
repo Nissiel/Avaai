@@ -5,6 +5,8 @@ from pydantic import BaseModel, Field
 from typing import Optional
 
 from api.src.infrastructure.vapi.client import VapiClient
+from api.src.infrastructure.persistence.models.user import User
+from api.src.presentation.api.v1.routes.auth import get_current_user
 from twilio.rest import Client as TwilioClient
 
 router = APIRouter(prefix="/phone-numbers", tags=["phone"])
@@ -43,11 +45,28 @@ class VerifyTwilioRequest(BaseModel):
     phone_number: str = Field(..., description="Phone number to verify exists")
 
 
+# ==================== Helper ====================
+
+
+def _get_vapi_client(user: User) -> VapiClient:
+    """Create VapiClient with user's personal API key (multi-tenant)."""
+    try:
+        return VapiClient(token=user.vapi_api_key)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc)
+        ) from exc
+
+
 # ==================== Routes ====================
 
 
 @router.post("/create-us", status_code=status.HTTP_201_CREATED)
-async def create_us_number(request: CreateUSNumberRequest):
+async def create_us_number(
+    request: CreateUSNumberRequest,
+    user: User = Depends(get_current_user),
+):
     """
     Create a free US phone number via Vapi.
     
@@ -65,7 +84,7 @@ async def create_us_number(request: CreateUSNumberRequest):
         }
     """
     try:
-        vapi = VapiClient()
+        vapi = _get_vapi_client(user)
 
         # Create via Vapi (US only, free, max 10)
         created = await vapi.create_phone_number(
@@ -116,7 +135,10 @@ async def create_us_number(request: CreateUSNumberRequest):
 
 
 @router.post("/import-twilio", status_code=status.HTTP_201_CREATED)
-async def import_twilio_number(request: ImportTwilioRequest):
+async def import_twilio_number(
+    request: ImportTwilioRequest,
+    user: User = Depends(get_current_user),
+):
     """
     Import an existing Twilio number into Vapi.
     
@@ -161,7 +183,7 @@ async def import_twilio_number(request: ImportTwilioRequest):
             )
 
         # 2. Import to Vapi
-        vapi = VapiClient()
+        vapi = _get_vapi_client(user)
 
         imported = await vapi.import_phone_number(
             twilio_account_sid=request.twilio_account_sid,
