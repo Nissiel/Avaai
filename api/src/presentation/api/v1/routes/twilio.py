@@ -8,12 +8,18 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from twilio.base.exceptions import TwilioRestException
 from twilio.rest import Client as TwilioClient
 
-from api.src.presentation.dependencies.auth import CurrentTenant, get_current_tenant
+from api.src.infrastructure.persistence.models.user import User
+from api.src.presentation.api.v1.routes.auth import get_current_user
 
 router = APIRouter(prefix="/twilio", tags=["Twilio"])
 
 
 def _client() -> TwilioClient:
+    """Create Twilio client from environment credentials.
+    
+    TODO: Move to user-specific credentials (user.twilio_account_sid, user.twilio_auth_token)
+    for true multi-tenant support.
+    """
     account_sid = os.getenv("TWILIO_ACCOUNT_SID")
     auth_token = os.getenv("TWILIO_AUTH_TOKEN")
     if not account_sid or not auth_token:
@@ -22,7 +28,12 @@ def _client() -> TwilioClient:
 
 
 @router.get("/numbers")
-async def list_numbers(_: CurrentTenant = Depends(get_current_tenant)) -> dict[str, object]:
+async def list_numbers(user: User = Depends(get_current_user)) -> dict[str, object]:
+    """List Twilio phone numbers.
+    
+    Currently uses global credentials. 
+    TODO: Use user.twilio_account_sid and user.twilio_auth_token for user-specific numbers.
+    """
     client = _client()
     try:
         numbers = client.incoming_phone_numbers.list(limit=50)

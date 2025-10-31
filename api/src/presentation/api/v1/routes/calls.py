@@ -9,13 +9,14 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.src.infrastructure.database.session import get_session
+from api.src.infrastructure.persistence.models.user import User
+from api.src.presentation.api.v1.routes.auth import get_current_user
 from api.src.infrastructure.persistence.repositories.call_repository import (
     delete_call_record,
     get_call_by_id,
     get_recent_calls,
     scrub_transcript_if_expired,
 )
-from api.src.presentation.dependencies.auth import CurrentTenant, get_current_tenant
 
 router = APIRouter(prefix="/calls", tags=["calls"])
 TRANSCRIPT_RETENTION = timedelta(hours=24)
@@ -25,7 +26,7 @@ TRANSCRIPT_RETENTION = timedelta(hours=24)
 async def list_calls(
     limit: int = Query(50, ge=1, le=200),
     status: Optional[str] = Query(None),
-    current: CurrentTenant = Depends(get_current_tenant),
+    user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ):
     """
@@ -36,7 +37,7 @@ async def list_calls(
     - status: Filter by status (in-progress, ended, failed)
     """
 
-    calls = await get_recent_calls(session, tenant_id=str(current.tenant.id), limit=limit)
+    calls = await get_recent_calls(session, tenant_id=str(user.id), limit=limit)
     now_utc = datetime.now(timezone.utc)
     scrubbed = False
     for call in calls:
@@ -75,7 +76,7 @@ async def list_calls(
 @router.get("/{call_id}")
 async def get_call_detail(
     call_id: str,
-    current: CurrentTenant = Depends(get_current_tenant),
+    user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ):
     """
@@ -83,7 +84,7 @@ async def get_call_detail(
     """
 
     call = await get_call_by_id(session, call_id)
-    if not call or str(call.tenant_id) != str(current.tenant.id):
+    if not call or str(call.tenant_id) != str(user.id):
         raise HTTPException(status_code=404, detail="Call not found")
 
     scrubbed = await scrub_transcript_if_expired(
@@ -113,7 +114,7 @@ async def get_call_detail(
 @router.get("/{call_id}/recording")
 async def get_call_recording(
     call_id: str,
-    current: CurrentTenant = Depends(get_current_tenant),
+    user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ):
     """
@@ -121,7 +122,7 @@ async def get_call_recording(
     """
 
     call = await get_call_by_id(session, call_id)
-    if not call or str(call.tenant_id) != str(current.tenant.id):
+    if not call or str(call.tenant_id) != str(user.id):
         raise HTTPException(status_code=404, detail="Call not found")
 
     recording_url = call.meta.get("recordingUrl") if isinstance(call.meta, dict) else None
@@ -134,14 +135,14 @@ async def get_call_recording(
 @router.delete("/{call_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_call(
     call_id: str,
-    current: CurrentTenant = Depends(get_current_tenant),
+    user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ):
     """
     Permanently delete a call and its associated transcript/metadata.
     """
 
-    deleted = await delete_call_record(session, call_id, str(current.tenant.id))
+    deleted = await delete_call_record(session, call_id, str(user.id))
     if not deleted:
         raise HTTPException(status_code=404, detail="Call not found")
     return Response(status_code=status.HTTP_204_NO_CONTENT)

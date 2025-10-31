@@ -1,5 +1,5 @@
 """
-REST endpoints to manage Ava personalisation per tenant.
+REST endpoints to manage Ava personalisation per user.
 """
 
 from __future__ import annotations
@@ -13,7 +13,8 @@ from pydantic import BaseModel, constr
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from api.src.presentation.dependencies.auth import CurrentTenant, get_current_tenant
+from api.src.infrastructure.persistence.models.user import User
+from api.src.presentation.api.v1.routes.auth import get_current_user
 from api.src.presentation.schemas.ava_profile import AvaProfileIn, AvaProfileOut
 from api.src.infrastructure.persistence.models.ava_profile import AvaProfile
 from api.src.application.services.realtime_session import (
@@ -33,14 +34,15 @@ from api.src.domain.value_objects.ava_profile import (
 router = APIRouter(prefix="/tenant/ava-profile", tags=["Ava Profile"])
 
 
-async def _get_or_create_profile(session: AsyncSession, tenant_id) -> AvaProfile:
-    result = await session.execute(select(AvaProfile).where(AvaProfile.tenant_id == tenant_id))
+async def _get_or_create_profile(session: AsyncSession, user_id) -> AvaProfile:
+    """Get or create AVA profile for user. User ID = Tenant ID in our 1:1 model."""
+    result = await session.execute(select(AvaProfile).where(AvaProfile.tenant_id == user_id))
     profile: AvaProfile | None = result.scalar_one_or_none()
     if profile:
         return profile
 
     profile = AvaProfile(
-        tenant_id=tenant_id,
+        tenant_id=user_id,  # user.id is used as tenant_id (1:1 mapping)
         name="Ava",
         voice="alloy",
         language="fr-FR",
@@ -71,20 +73,20 @@ async def _get_or_create_profile(session: AsyncSession, tenant_id) -> AvaProfile
 
 @router.get("", response_model=AvaProfileOut)
 async def get_ava_profile(
-    current: Annotated[CurrentTenant, Depends(get_current_tenant)],
+    user: Annotated[User, Depends(get_current_user)],
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> AvaProfileOut:
-    profile = await _get_or_create_profile(session, current.tenant.id)
+    profile = await _get_or_create_profile(session, user.id)
     return AvaProfileOut.from_model(profile)
 
 
 @router.put("", response_model=AvaProfileOut)
 async def update_ava_profile(
     payload: AvaProfileIn,
-    current: Annotated[CurrentTenant, Depends(get_current_tenant)],
+    user: Annotated[User, Depends(get_current_user)],
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> AvaProfileOut:
-    profile = await _get_or_create_profile(session, current.tenant.id)
+    profile = await _get_or_create_profile(session, user.id)
 
     for field, value in payload.model_dump().items():
         setattr(profile, field, value)
@@ -101,7 +103,7 @@ class VoicePreviewRequest(BaseModel):
 @router.post("/test-voice")
 async def test_voice_snippet(
     payload: VoicePreviewRequest,
-    current: Annotated[CurrentTenant, Depends(get_current_tenant)],
+    user: Annotated[User, Depends(get_current_user)],
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> dict:
     """Generate a short audio preview for the selected voice."""
@@ -110,7 +112,7 @@ async def test_voice_snippet(
     if not api_key:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="OpenAI API key not configured")
 
-    profile = await _get_or_create_profile(session, current.tenant.id)
+    profile = await _get_or_create_profile(session, user.id)
 
     try:
         audio_b64 = await synthesize_preview(
