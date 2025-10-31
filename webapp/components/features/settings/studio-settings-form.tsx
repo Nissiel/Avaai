@@ -321,6 +321,31 @@ export function StudioSettingsForm({
           },
         );
 
+        // 🔥 DIVINE DEBUG: Log response status and body
+        console.log("🔍 Vapi Sync Response Status:", vapiResponse.status);
+        console.log("🔍 Vapi Sync URL:", `${backendConfig.baseUrl}/api/v1/studio/sync-vapi`);
+        
+        if (!vapiResponse.ok && vapiResponse.status !== 401) {
+          const errorBody = await vapiResponse.text();
+          console.error("❌ Vapi Sync Failed:", {
+            status: vapiResponse.status,
+            body: errorBody,
+            url: `${backendConfig.baseUrl}/api/v1/studio/sync-vapi`
+          });
+          
+          // Show detailed error toast
+          toast.error("🚨 Vapi Sync Failed", {
+            description: (
+              <div className="space-y-1 text-xs">
+                <div>Status: {vapiResponse.status}</div>
+                <div>Error: {errorBody.slice(0, 100)}</div>
+                <div className="text-[10px] opacity-70">Check console for details</div>
+              </div>
+            ),
+            duration: 10000,
+          });
+        }
+
         // 🎯 DIVINE: Handle 401 on Vapi sync too
         if (vapiResponse.status === 401) {
           console.log("⚠️ Vapi Sync: 401 Unauthorized - Attempting token refresh...");
