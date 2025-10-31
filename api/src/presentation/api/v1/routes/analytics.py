@@ -19,7 +19,7 @@ from api.src.infrastructure.database.session import get_session
 from api.src.infrastructure.email import get_email_service
 from api.src.infrastructure.persistence.models.call import CallRecord
 from api.src.infrastructure.persistence.models.user import User
-from api.src.presentation.api.v1.routes.auth import get_current_user
+from api.src.presentation.dependencies.auth import get_current_user
 from sqlalchemy import select
 
 router = APIRouter(prefix="/analytics", tags=["Analytics"])

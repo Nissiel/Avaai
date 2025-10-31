@@ -18,6 +18,7 @@ from api.src.core.settings import get_settings
 from api.src.infrastructure.database.session import get_session
 from api.src.infrastructure.persistence.repositories.user_repository import UserRepository
 from api.src.infrastructure.persistence.models.user import User
+from api.src.presentation.dependencies.auth import get_current_user
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -220,74 +221,6 @@ def verify_token(token: str) -> dict:
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid token"
         )
-
-
-# ============================================================================
-# Auth Dependency (for protected routes)
-# ============================================================================
-
-async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-    session: AsyncSession = Depends(get_session),
-):
-    """
-    Dependency to get current authenticated user from JWT token.
-    
-    🔐 DIVINE: In DEV mode, creates/uses default test user if no auth provided.
-    In PRODUCTION, authentication is ALWAYS required.
-    
-    Usage: user = Depends(get_current_user)
-    """
-    # 🧪 DEV MODE: Use default test user if no credentials
-    if DEV_MODE and credentials is None:
-        repository = UserRepository(session)
-        # Get or create default test user
-        test_user = await repository.get_by_email(DEFAULT_USER_FIXTURES[0]["email"])
-        if not test_user:
-            # Create test user on-the-fly
-            hashed_password = bcrypt.hashpw(
-                DEFAULT_USER_FIXTURES[0]["password"].encode("utf-8"),
-                bcrypt.gensalt()
-            ).decode("utf-8")
-            test_user = User(
-                email=DEFAULT_USER_FIXTURES[0]["email"],
-                hashed_password=hashed_password,
-                name=DEFAULT_USER_FIXTURES[0]["name"],
-                phone=DEFAULT_USER_FIXTURES[0]["phone"],
-                locale=DEFAULT_USER_FIXTURES[0]["locale"],
-            )
-            session.add(test_user)
-            await session.commit()
-            await session.refresh(test_user)
-        return test_user
-    
-    # 🔒 PRODUCTION: Always require authentication
-    if credentials is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication required"
-        )
-    
-    token = credentials.credentials
-    payload = verify_token(token)
-
-    user_id = payload.get("sub")
-    if not user_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token payload"
-        )
-
-    repository = UserRepository(session)
-    user = await repository.get_by_id(user_id)
-
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
-
-    return user
 
 
 # ============================================================================

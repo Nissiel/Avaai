@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from api.src.infrastructure.external.vapi_client import VapiApiError, VapiClient
 from api.src.infrastructure.persistence.models.user import User
-from api.src.presentation.api.v1.routes.auth import get_current_user
+from api.src.presentation.dependencies.auth import get_current_user
 from api.src.core.settings import get_settings
 
 router = APIRouter(prefix="/assistants", tags=["Assistants"])

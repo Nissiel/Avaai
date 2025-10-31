@@ -6,7 +6,7 @@ from typing import Optional
 
 from api.src.infrastructure.vapi.client import VapiClient
 from api.src.infrastructure.persistence.models.user import User
-from api.src.presentation.api.v1.routes.auth import get_current_user
+from api.src.presentation.dependencies.auth import get_current_user
 from twilio.rest import Client as TwilioClient
 
 router = APIRouter(prefix="/phone-numbers", tags=["phone"])

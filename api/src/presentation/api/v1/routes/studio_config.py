@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from api.src.infrastructure.database.session import get_session
 from api.src.infrastructure.persistence.models.user import User
 from api.src.infrastructure.persistence.models.studio_config import StudioConfig as StudioConfigModel
-from api.src.presentation.api.v1.routes.auth import get_current_user
+from api.src.presentation.dependencies.auth import get_current_user
 from api.src.presentation.schemas.studio_config import (
     DEFAULT_STUDIO_CONFIG,
     StudioConfig,

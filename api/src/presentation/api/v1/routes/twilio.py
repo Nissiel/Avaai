@@ -9,7 +9,7 @@ from twilio.base.exceptions import TwilioRestException
 from twilio.rest import Client as TwilioClient
 
 from api.src.infrastructure.persistence.models.user import User
-from api.src.presentation.api.v1.routes.auth import get_current_user
+from api.src.presentation.dependencies.auth import get_current_user
 
 router = APIRouter(prefix="/twilio", tags=["Twilio"])
 

@@ -14,7 +14,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.src.infrastructure.persistence.models.user import User
-from api.src.presentation.api.v1.routes.auth import get_current_user
+from api.src.presentation.dependencies.auth import get_current_user
 from api.src.presentation.schemas.ava_profile import AvaProfileIn, AvaProfileOut
 from api.src.infrastructure.persistence.models.ava_profile import AvaProfile
 from api.src.application.services.realtime_session import (
