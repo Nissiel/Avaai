@@ -22,10 +22,15 @@ class CreateAssistantRequest(BaseModel):
     voice_provider: str = Field(..., description="Voice provider (11labs, azure, deepgram, etc.)")
     voice_id: str = Field(..., description="Voice ID from provider")
     first_message: str = Field(..., description="Greeting message when call starts")
+    system_prompt: str | None = Field(default=None, description="🔥 DIVINE: Custom system instructions for AI behavior")
+    voice_speed: float = Field(default=1.0, ge=0.5, le=2.0, description="Voice speed multiplier")
     model_provider: str = Field(default="openai", description="LLM provider")
     model: str = Field(default="gpt-3.5-turbo", description="Model name")
     temperature: float = Field(default=0.7, ge=0.0, le=1.0, description="Model creativity")
     max_tokens: int = Field(default=250, ge=50, le=1000, description="Max response length")
+    transcriber_provider: str = Field(default="deepgram", description="Speech-to-text provider")
+    transcriber_model: str = Field(default="nova-2", description="STT model")
+    transcriber_language: str = Field(default="fr", description="Language code")
     metadata: dict | None = Field(default=None, description="Optional metadata")
 
 
@@ -38,10 +43,15 @@ class UpdateAssistantRequest(BaseModel):
     voice_provider: str | None = Field(None, description="Voice provider")
     voice_id: str | None = Field(None, description="Voice ID from provider")
     first_message: str | None = Field(None, description="Greeting message")
+    system_prompt: str | None = Field(None, description="🔥 DIVINE: Custom system instructions")
+    voice_speed: float | None = Field(None, ge=0.5, le=2.0, description="Voice speed multiplier")
     model_provider: str | None = Field(None, description="LLM provider")
     model: str | None = Field(None, description="Model name")
     temperature: float | None = Field(None, ge=0.0, le=1.0, description="Model creativity")
     max_tokens: int | None = Field(None, ge=50, le=1000, description="Max response length")
+    transcriber_provider: str | None = Field(None, description="STT provider")
+    transcriber_model: str | None = Field(None, description="STT model")
+    transcriber_language: str | None = Field(None, description="Language code")
     metadata: dict | None = Field(None, description="Optional metadata")
 
 
@@ -123,11 +133,16 @@ async def create_assistant(
             name=request.name,
             voice_provider=request.voice_provider,
             voice_id=request.voice_id,
+            voice_speed=request.voice_speed,
             first_message=request.first_message,
+            system_prompt=request.system_prompt,  # 🔥 DIVINE: Pass system prompt!
             model_provider=request.model_provider,
             model=request.model,
             temperature=request.temperature,
             max_tokens=request.max_tokens,
+            transcriber_provider=request.transcriber_provider,
+            transcriber_model=request.transcriber_model,
+            transcriber_language=request.transcriber_language,
             metadata=metadata,  # Use safe metadata
             functions=functions,  # Disabled temporarily - Vapi format issue
         )
