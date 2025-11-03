@@ -3,6 +3,12 @@ Twilio Settings API Routes.
 
 Multi-tenant architecture: Each user manages their own Twilio credentials.
 Allows users to configure their personal Twilio Account SID, Auth Token, and phone number.
+
+🎯 DIVINE ARCHITECTURE:
+- This endpoint handles ONLY credential storage (Single Responsibility)
+- Auto-import orchestration is frontend's responsibility
+- Frontend calls: 1) Save credentials 2) List assistants 3) Import number
+- Clean separation: Backend = Data, Frontend = User Flow
 """
 
 from typing import Optional
@@ -86,12 +92,16 @@ async def update_twilio_settings(
     db: AsyncSession = Depends(get_session),
 ):
     """
-    Save or update user's Twilio credentials.
+    🎯 DIVINE: Save Twilio credentials (Single Responsibility Principle).
     
-    Validates that Account SID starts with 'AC' and stores credentials securely.
+    This endpoint ONLY handles credential storage.
+    Auto-import orchestration is handled by frontend calling /phone-numbers/import-twilio.
+    
+    Why this design?
+    - Backend = Data layer (save credentials)
+    - Frontend = UX layer (orchestrate multi-step flows)
+    - Separation of Concerns = DIVINE 🌟
     """
-    from sqlalchemy import select
-    
     # Validate Account SID format
     if not settings.account_sid.startswith("AC"):
         raise HTTPException(
@@ -134,8 +144,6 @@ async def delete_twilio_settings(
     
     Removes all Twilio configuration from the user's profile.
     """
-    from sqlalchemy import select
-    
     # 🔥 DIVINE: Merge user into current session to ensure deletes are tracked
     user = await db.merge(current_user)
     
@@ -144,6 +152,5 @@ async def delete_twilio_settings(
     user.twilio_phone_number = None
     
     await db.commit()
-    await db.refresh(user)
     
     return None

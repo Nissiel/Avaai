@@ -8,6 +8,7 @@ import { Phone, Eye, EyeOff, Check, X, ExternalLink, Shield, Zap, Globe, ArrowLe
 import { toast } from "sonner";
 import { useSessionStore } from "@/lib/stores/session-store";
 import { useTwilioStatus } from "@/lib/hooks/use-twilio-status";
+import { autoImportTwilioNumber, getAutoImportGuidance } from "@/lib/api/twilio-auto-import";
 
 export function TwilioSettingsForm() {
   const t = useTranslations("settingsPage.twilio");
@@ -84,6 +85,52 @@ export function TwilioSettingsForm() {
 
       console.log("✅ Twilio credentials saved successfully");
       toast.success(t("success.credentialsSaved"));
+      
+      // 🔥 DIVINE: Auto-import orchestration!
+      // If user provided phone number, attempt auto-import
+      if (twilioPhoneNumber) {
+        console.log("🚀 Starting auto-import orchestration...");
+        toast.loading("Configuring phone number...", { id: "auto-import" });
+        
+        try {
+          const importResult = await autoImportTwilioNumber(
+            accountSid,
+            authToken,
+            twilioPhoneNumber
+          );
+          
+          if (importResult.imported) {
+            // Success! Number is imported and ready
+            toast.success(importResult.message, { 
+              id: "auto-import",
+              duration: 5000,
+            });
+          } else if (importResult.missingPrerequisites) {
+            // Prerequisites missing - guide user
+            toast.info(importResult.message, {
+              id: "auto-import",
+              duration: 7000,
+              description: "Complete these steps to activate your number",
+            });
+          } else if (importResult.error) {
+            // Import failed
+            toast.error("Could not import number", {
+              id: "auto-import",
+              description: importResult.error,
+              duration: 5000,
+            });
+          }
+        } catch (importError) {
+          console.error("❌ Auto-import failed:", importError);
+          toast.warning("Credentials saved, but number import failed", {
+            id: "auto-import",
+            description: "You can import manually from Phone Numbers section",
+          });
+        }
+      } else {
+        toast.dismiss("auto-import");
+      }
+      
       setAccountSid("");
       setAuthToken("");
       
