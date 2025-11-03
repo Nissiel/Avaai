@@ -262,6 +262,7 @@ class VapiClient:
         temperature: float = 0.7,
         max_tokens: int = 250,
         metadata: Optional[Dict[str, Any]] = None,
+        server_url: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Create a new AI assistant in Vapi.
@@ -279,6 +280,8 @@ class VapiClient:
             temperature: Model creativity (0.0-1.0)
             max_tokens: Max response length
             metadata: Optional metadata to store on assistant
+            server_url: 🔥 DIVINE: Webhook URL to receive call events
+                       Example: "https://ava-api-production.onrender.com/api/v1/webhooks/vapi"
         
         Returns:
             Dict with:
@@ -286,6 +289,7 @@ class VapiClient:
                 - name: Assistant name
                 - voice: Voice configuration
                 - model: LLM configuration
+                - serverUrl: Webhook URL (if provided)
                 - createdAt: ISO 8601 timestamp
         
         Raises:
@@ -297,6 +301,7 @@ class VapiClient:
                 voice_provider="11labs",
                 voice_id="21m00Tcm4TlvDq8ikWAM",  # Rachel voice
                 first_message="Hi! I'm AVA, Sarah's assistant. How can I help you today?",
+                server_url="https://ava-api-production.onrender.com/api/v1/webhooks/vapi",
                 metadata={"industry": "real_estate", "user_id": "123"}
             )
             # assistant['id'] = "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
@@ -315,6 +320,10 @@ class VapiClient:
             },
             "firstMessage": first_message,
         }
+
+        # Add optional webhook URL (🔥 DIVINE: This makes calls appear in app!)
+        if server_url:
+            payload["serverUrl"] = server_url
 
         # Add optional metadata
         if metadata:
@@ -393,3 +402,115 @@ class VapiClient:
                 raise Exception(f"Vapi get_assistant failed: {response.text}")
 
             return response.json()
+    
+    # ==================== WEBHOOK MANAGEMENT ====================
+    
+    async def configure_server_webhook(
+        self,
+        server_url: str,
+        events: Optional[list[str]] = None,
+    ) -> Dict[str, Any]:
+        """
+        Configure Vapi to send webhooks to your backend server.
+        
+        🔥 DIVINE: This is what makes calls appear in your app!
+        
+        Vapi will send HTTP POST requests to your server_url whenever
+        call events happen (call started, call ended, transcript updated, etc.)
+        
+        NOTE: In Vapi API, webhook configuration is done at ASSISTANT level,
+        not globally. This method updates the assistant's serverUrl.
+        
+        Args:
+            server_url: Your backend webhook endpoint URL
+                       Example: "https://ava-api-production.onrender.com/api/v1/webhooks/vapi"
+            events: Not used (kept for API compatibility). Vapi sends all events to serverUrl.
+                   
+        Returns:
+            Dict with success status
+        
+        Raises:
+            Exception: If configuration fails (400 = invalid URL, 401 = bad API key)
+        
+        Example:
+            await client.configure_server_webhook(
+                server_url="https://ava-api-production.onrender.com/api/v1/webhooks/vapi"
+            )
+        
+        Note:
+            - Vapi doesn't have a dedicated /server endpoint
+            - Webhook URL must be set when creating/updating assistants
+            - This is a helper that will be called during assistant creation
+            - Vapi automatically sends: call.started, call.ended, transcript events
+        """
+        # For Vapi, there's no separate webhook config endpoint
+        # The serverUrl must be set on each assistant
+        # This method is kept for API compatibility and returns success
+        # The actual webhook URL should be set during assistant creation/update
+        
+        return {
+            "success": True,
+            "serverUrl": server_url,
+            "message": "Webhook URL should be set on assistant. This is a helper method.",
+            "note": "Call update_assistant() with serverUrl parameter to actually configure webhooks"
+        }
+    
+    async def update_assistant_webhook(
+        self,
+        assistant_id: str,
+        server_url: str,
+    ) -> Dict[str, Any]:
+        """
+        Update an assistant's webhook URL.
+        
+        This is the ACTUAL way to configure webhooks in Vapi.
+        Each assistant can have its own serverUrl for receiving events.
+        
+        Args:
+            assistant_id: UUID of the assistant to update
+            server_url: Your backend webhook endpoint URL
+        
+        Returns:
+            Updated assistant object with new serverUrl
+        
+        Example:
+            await client.update_assistant_webhook(
+                assistant_id="a1b2c3d4...",
+                server_url="https://ava-api-production.onrender.com/api/v1/webhooks/vapi"
+            )
+        """
+        async with httpx.AsyncClient() as client:
+            response = await client.patch(
+                f"{self.base_url}/assistant/{assistant_id}",
+                headers=self.headers,
+                json={"serverUrl": server_url},
+                timeout=30.0,
+            )
+            
+            if response.status_code not in (200, 201):
+                error_detail = response.text
+                try:
+                    error_json = response.json()
+                    error_detail = error_json.get("message", error_detail)
+                except:
+                    pass
+                raise Exception(
+                    f"Vapi update_assistant_webhook failed ({response.status_code}): {error_detail}"
+                )
+            
+            return response.json()
+    
+    async def get_server_webhook(self) -> Dict[str, Any]:
+        """
+        Get current webhook configuration.
+        
+        NOTE: In Vapi, webhooks are per-assistant, not global.
+        This method returns a helper message.
+        
+        Returns:
+            Dict with info about webhook configuration
+        """
+        return {
+            "note": "Vapi webhooks are configured per-assistant via serverUrl property",
+            "message": "Use get_assistant(id) to see an assistant's webhook URL"
+        }

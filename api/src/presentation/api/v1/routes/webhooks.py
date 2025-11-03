@@ -18,9 +18,14 @@ from typing import Optional
 import hmac
 import hashlib
 import json
+from sqlalchemy import select
 
 from api.src.infrastructure.email import get_email_service
 from api.src.core.settings import get_settings
+from api.src.infrastructure.database import get_db
+from api.src.infrastructure.persistence.models.call import CallRecord
+from api.src.infrastructure.persistence.models.user import User
+from api.src.infrastructure.persistence.models.tenant import Tenant
 
 router = APIRouter(prefix="/webhooks", tags=["webhooks"])
 
@@ -154,13 +159,7 @@ async def handle_call_ended(event: dict):
     print(f"   Duration: {duration}s")
     print(f"   Caller: {caller_phone}")
     
-    # Save to database
-    from api.src.infrastructure.database import get_db
-    from api.src.infrastructure.persistence.models.call import CallRecord
-    from api.src.infrastructure.persistence.models.user import User
-    from api.src.infrastructure.persistence.models.tenant import Tenant
-    from sqlalchemy import select
-    
+    # Prepare caller info
     caller_name = customer_data.get("name", "Unknown Caller")
     business_name = "AVA Business"  # TODO: Get from org
     org_email = "nissieltb@gmail.com"  # Fallback for MVP

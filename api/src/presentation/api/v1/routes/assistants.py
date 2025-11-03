@@ -129,6 +129,9 @@ async def create_assistant(
     functions = None  # Disabled temporarily due to Vapi format requirements
     
     try:
+        # 🔥 DIVINE: Create assistant with webhook URL so calls appear in app!
+        webhook_url = f"{settings.backend_url}/api/v1/webhooks/vapi"
+        
         assistant = await client.create_assistant(
             name=request.name,
             voice_provider=request.voice_provider,
@@ -145,6 +148,7 @@ async def create_assistant(
             transcriber_language=request.transcriber_language,
             metadata=metadata,  # Use safe metadata
             functions=functions,  # Disabled temporarily - Vapi format issue
+            server_url=webhook_url,  # 🔥 DIVINE: Webhook for call events!
         )
     except VapiApiError as exc:
         # DIVINE: Log the full error for debugging

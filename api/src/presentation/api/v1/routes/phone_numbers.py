@@ -3,13 +3,17 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 from typing import Optional
+import logging
 
 from api.src.infrastructure.vapi.client import VapiClient
 from api.src.infrastructure.persistence.models.user import User
 from api.src.presentation.dependencies.auth import get_current_user
+from api.src.core.settings import get_settings
 from twilio.rest import Client as TwilioClient
 
 router = APIRouter(prefix="/phone-numbers", tags=["phone"])
+logger = logging.getLogger(__name__)
+settings = get_settings()
 
 
 # ==================== DTOs ====================
@@ -144,16 +148,20 @@ async def import_twilio_number(
     
     ✅ SOLUTION pour France, Israël, et tous pays hors US.
     
+    🔥 DIVINE CODEX: Configuration COMPLÈTE et AUTOMATIQUE!
+    
     Workflow:
     1. Vérifie que le numéro existe dans Twilio
     2. Appelle Vapi /phone-numbers/import
     3. Vapi configure automatiquement le webhook Twilio → Vapi
-    4. Sauvegarde dans notre DB
+    4. 🆕 Configure automatiquement le webhook Vapi → Backend
+    5. Sauvegarde dans notre DB
     
     Returns:
         {
             "success": True,
             "phone": {...},
+            "webhook_configured": True,
             "message": "Numéro importé avec succès"
         }
     """
@@ -191,8 +199,29 @@ async def import_twilio_number(
             phone_number=request.phone_number,
             assistant_id=request.assistant_id,
         )
+        
+        logger.info(f"✅ Numéro {request.phone_number} importé dans Vapi: {imported.get('id')}")
+        
+        # 3. 🔥 DIVINE: Configure Vapi webhook → Backend AUTOMATIQUEMENT
+        # Vapi webhooks are configured per-assistant, not globally
+        webhook_configured = False
+        webhook_url = f"{settings.backend_url}/api/v1/webhooks/vapi"
+        
+        try:
+            # Update the assistant to send webhooks to our backend
+            webhook_result = await vapi.update_assistant_webhook(
+                assistant_id=request.assistant_id,
+                server_url=webhook_url
+            )
+            webhook_configured = True
+            logger.info(f"✅ Webhook Vapi → Backend configuré sur assistant: {webhook_url}")
+        except Exception as webhook_error:
+            # Don't fail the whole import if webhook config fails
+            # User can configure it manually later
+            logger.warning(f"⚠️ Webhook config failed (non-fatal): {webhook_error}")
+            webhook_configured = False
 
-        # 3. Save to our DB
+        # 4. Save to our DB
         # TODO: Implement database save
         # phone = PhoneNumber(
         #     org_id=request.org_id,
@@ -213,7 +242,12 @@ async def import_twilio_number(
                 "provider": "VAPI_TWILIO",
                 "assistantId": imported.get("assistantId"),
             },
-            "message": "Numéro importé avec succès dans Vapi",
+            "webhook_configured": webhook_configured,
+            "webhook_url": webhook_url if webhook_configured else None,
+            "message": (
+                f"✅ Numéro importé avec succès! "
+                f"{'Webhook configuré automatiquement.' if webhook_configured else 'Webhook à configurer manuellement.'}"
+            ),
         }
 
     except HTTPException:

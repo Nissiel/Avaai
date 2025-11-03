@@ -77,6 +77,7 @@ class VapiClient:
         transcriber_provider: str = "deepgram",
         transcriber_model: str = "nova-2",
         transcriber_language: str = "fr",
+        server_url: str | None = None,
     ) -> dict:
         """
         Create a new AI assistant in Vapi.
@@ -97,6 +98,8 @@ class VapiClient:
             transcriber_provider: STT provider (default "deepgram")
             transcriber_model: STT model (default "nova-2")
             transcriber_language: Language code (default "fr")
+            server_url: 🔥 DIVINE: Webhook URL to receive call events
+                       Example: "https://ava-api-production.onrender.com/api/v1/webhooks/vapi"
 
         Returns:
             Assistant object with 'id' (UUID), 'name', 'voice', 'model', etc.
@@ -139,6 +142,10 @@ class VapiClient:
             },
             "firstMessage": first_message,
         }
+
+        # 🔥 DIVINE: Add webhook URL (makes calls appear in app!)
+        if server_url:
+            payload["serverUrl"] = server_url
 
         if metadata:
             payload["metadata"] = metadata

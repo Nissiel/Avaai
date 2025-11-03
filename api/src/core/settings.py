@@ -29,6 +29,9 @@ class Settings(BaseSettings):
     resend_api_key: Optional[str] = None
     resend_domain: str = "avaai.app"
     app_url: str = "http://localhost:3000"
+    
+    # Backend URL (for webhook configuration)
+    backend_url: str = "https://ava-api-production.onrender.com"
 
     @field_validator("allowed_origins", mode="before")
     @classmethod
