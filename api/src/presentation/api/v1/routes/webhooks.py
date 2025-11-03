@@ -22,7 +22,7 @@ from sqlalchemy import select
 
 from api.src.infrastructure.email import get_email_service
 from api.src.core.settings import get_settings
-from api.src.infrastructure.database import get_db
+from api.src.infrastructure.database.session import get_session
 from api.src.infrastructure.persistence.models.call import CallRecord
 from api.src.infrastructure.persistence.models.user import User
 from api.src.infrastructure.persistence.models.tenant import Tenant
@@ -166,7 +166,7 @@ async def handle_call_ended(event: dict):
     
     # Save call to database
     try:
-        async for db in get_db():
+        async for db in get_session():
             # Find first user and their tenant (MVP: single user)
             result = await db.execute(select(User).limit(1))
             user = result.scalar_one_or_none()
