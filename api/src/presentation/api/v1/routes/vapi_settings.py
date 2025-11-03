@@ -60,7 +60,7 @@ async def get_vapi_settings(
 @router.post("")
 async def update_vapi_key(
     request: UpdateVapiKeyRequest,
-    user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ) -> dict[str, str]:
     """
@@ -71,6 +71,9 @@ async def update_vapi_key(
     
     Get your Vapi API key at: https://vapi.ai/dashboard
     """
+    # 🔥 DIVINE: Merge user into current session to ensure updates are tracked
+    user = await session.merge(current_user)
+    
     # Update user's Vapi key
     user.vapi_api_key = request.vapi_api_key
     
@@ -92,7 +95,7 @@ async def update_vapi_key(
 
 @router.delete("")
 async def delete_vapi_key(
-    user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ) -> dict[str, str]:
     """
@@ -100,6 +103,9 @@ async def delete_vapi_key(
     
     This will disable Vapi features until a new key is configured.
     """
+    # 🔥 DIVINE: Merge user into current session to ensure deletes are tracked
+    user = await session.merge(current_user)
+    
     user.vapi_api_key = None
     
     try:

@@ -90,6 +90,8 @@ async def update_twilio_settings(
     
     Validates that Account SID starts with 'AC' and stores credentials securely.
     """
+    from sqlalchemy import select
+    
     # Validate Account SID format
     if not settings.account_sid.startswith("AC"):
         raise HTTPException(
@@ -104,13 +106,16 @@ async def update_twilio_settings(
             detail="Phone number must be in E.164 format (e.g., +15551234567)",
         )
     
+    # 🔥 DIVINE: Merge user into current session to ensure updates are tracked
+    user = await db.merge(current_user)
+    
     # Update user's Twilio credentials
-    current_user.twilio_account_sid = settings.account_sid
-    current_user.twilio_auth_token = settings.auth_token
-    current_user.twilio_phone_number = settings.phone_number
+    user.twilio_account_sid = settings.account_sid
+    user.twilio_auth_token = settings.auth_token
+    user.twilio_phone_number = settings.phone_number
     
     await db.commit()
-    await db.refresh(current_user)
+    await db.refresh(user)
     
     return TwilioSettingsResponse(
         has_twilio_credentials=True,
@@ -129,10 +134,16 @@ async def delete_twilio_settings(
     
     Removes all Twilio configuration from the user's profile.
     """
-    current_user.twilio_account_sid = None
-    current_user.twilio_auth_token = None
-    current_user.twilio_phone_number = None
+    from sqlalchemy import select
+    
+    # 🔥 DIVINE: Merge user into current session to ensure deletes are tracked
+    user = await db.merge(current_user)
+    
+    user.twilio_account_sid = None
+    user.twilio_auth_token = None
+    user.twilio_phone_number = None
     
     await db.commit()
+    await db.refresh(user)
     
     return None

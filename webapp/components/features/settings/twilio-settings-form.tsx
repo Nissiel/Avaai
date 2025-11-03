@@ -46,6 +46,9 @@ export function TwilioSettingsForm() {
 
     try {
       console.log("🔄 Saving Twilio credentials...");
+      console.log("📍 API URL:", process.env.NEXT_PUBLIC_API_URL);
+      console.log("🔑 Has token:", !!session?.accessToken);
+      console.log("📦 Payload:", { account_sid: accountSid.substring(0, 8) + "...", has_phone: !!twilioPhoneNumber });
       
       // 🎯 DIVINE: Add timeout to prevent infinite loading
       const controller = new AbortController();
@@ -69,6 +72,9 @@ export function TwilioSettingsForm() {
       );
 
       clearTimeout(timeoutId);
+      
+      console.log("📥 Response status:", response.status);
+      console.log("📥 Response OK:", response.ok);
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ detail: "Unknown error" }));

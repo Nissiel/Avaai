@@ -224,4 +224,59 @@ async def update_assistant(
     }
 
 
+@router.post("/{assistant_id}/configure-webhook")
+async def configure_webhook(
+    assistant_id: str,
+    user: User = Depends(get_current_user),
+) -> dict[str, object]:
+    """
+    🔥 DIVINE: Configure webhook on existing assistant.
+    
+    Use this endpoint to migrate existing assistants created before
+    automatic webhook configuration was implemented.
+    
+    This endpoint:
+    1. Gets the backend webhook URL from settings
+    2. Updates the assistant's serverUrl via Vapi API
+    3. Returns confirmation with webhook URL
+    
+    Returns:
+        {
+            "success": True,
+            "assistant_id": "abc-123",
+            "webhook_url": "https://ava-api-production.onrender.com/api/v1/webhooks/vapi",
+            "message": "Webhook configured successfully"
+        }
+    """
+    client = _client(user)
+    settings = get_settings()
+    
+    webhook_url = f"{settings.backend_url}/api/v1/webhooks/vapi"
+    
+    try:
+        # Update assistant with webhook URL
+        update_data = {"serverUrl": webhook_url}
+        assistant = await client.update_assistant(assistant_id, update_data)
+        
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"✅ Webhook configured on assistant {assistant_id}: {webhook_url}")
+        
+        return {
+            "success": True,
+            "assistant_id": assistant_id,
+            "webhook_url": webhook_url,
+            "message": "✅ Webhook configuré avec succès! Les appels vont maintenant apparaître dans l'app.",
+        }
+    except VapiApiError as exc:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Failed to configure webhook on assistant {assistant_id}: {exc}")
+        
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Failed to configure webhook: {str(exc)}"
+        ) from exc
+
+
 __all__ = ["router"]
