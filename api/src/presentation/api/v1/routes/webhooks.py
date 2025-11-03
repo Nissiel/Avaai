@@ -154,13 +154,64 @@ async def handle_call_ended(event: dict):
     print(f"   Duration: {duration}s")
     print(f"   Caller: {caller_phone}")
     
-    # TODO: Save to database
-    # For now, just send email with the data
+    # Save to database
+    from api.src.infrastructure.database import get_db
+    from api.src.infrastructure.persistence.models.call import CallRecord
+    from api.src.infrastructure.persistence.models.user import User
+    from api.src.infrastructure.persistence.models.tenant import Tenant
+    from sqlalchemy import select
     
-    # Fallback values for MVP
     caller_name = customer_data.get("name", "Unknown Caller")
-    org_email = "nissieltb@gmail.com"  # Using verified Resend email for testing
     business_name = "AVA Business"  # TODO: Get from org
+    org_email = "nissieltb@gmail.com"  # Fallback for MVP
+    
+    # Save call to database
+    try:
+        async for db in get_db():
+            # Find first user and their tenant (MVP: single user)
+            result = await db.execute(select(User).limit(1))
+            user = result.scalar_one_or_none()
+            
+            if user:
+                # Get user's tenant (or create default one)
+                result = await db.execute(select(Tenant).limit(1))
+                tenant = result.scalar_one_or_none()
+                
+                if tenant:
+                    # Create call record
+                    new_call = CallRecord(
+                        id=vapi_call_id,
+                        assistant_id=assistant_id or "unknown",
+                        tenant_id=tenant.id,
+                        customer_number=caller_phone,
+                        status="completed",
+                        started_at=datetime.fromisoformat(started_at.replace("Z", "+00:00")) if started_at else datetime.utcnow(),
+                        ended_at=datetime.fromisoformat(ended_at.replace("Z", "+00:00")) if ended_at else None,
+                        duration_seconds=duration,
+                        cost=cost,
+                        transcript=transcript_text,
+                        meta={
+                            "caller_name": caller_name,
+                            "recording_url": recording_url
+                        }
+                    )
+                    
+                    db.add(new_call)
+                    await db.commit()
+                    
+                    print(f"   ✅ Call saved to database (ID: {new_call.id})")
+                    org_email = user.email  # Use user's email
+                else:
+                    print(f"   ⚠️  No tenant found, skipping DB save")
+            else:
+                print(f"   ⚠️  No user found, skipping DB save")
+            
+            break  # Exit async generator
+    except Exception as e:
+        print(f"   ❌ Failed to save call to DB: {e}")
+        import traceback
+        traceback.print_exc()
+        # Continue with email even if DB save fails
     
     # Send email notification
     email_service = get_email_service()
