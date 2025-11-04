@@ -20,8 +20,7 @@ export function useVapiStatus() {
       }
 
       // 🔥 DIVINE: Use centralized API (has retry + token refresh built-in)
-      const response = await getVapiSettings();
-      return response.settings;
+      return await getVapiSettings();
     },
     enabled: !!token, // 🔥 DIVINE: Only run if token exists (no race condition!)
     staleTime: 0, // 🔥 DIVINE: Always fresh, credentials change frequently
@@ -35,8 +34,9 @@ export function useVapiStatus() {
   };
 
   return {
-    hasVapiKey: data?.api_key_set ?? false,
-    configured: data?.configured ?? false,
+    hasVapiKey: data?.has_vapi_key ?? false,
+    configured: data?.has_vapi_key ?? false,
+    keyPreview: data?.vapi_api_key_preview,
     isLoading,
     refetch,
     invalidate, // 🔥 DIVINE: Expose invalidate for DELETE operations

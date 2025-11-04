@@ -62,7 +62,7 @@ async def update_vapi_key(
     request: UpdateVapiKeyRequest,
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
-) -> dict[str, str]:
+) -> VapiSettingsResponse:
     """
     Update user's personal Vapi.ai API key.
     
@@ -87,17 +87,20 @@ async def update_vapi_key(
             detail=f"Failed to save Vapi API key: {str(exc)}"
         ) from exc
     
-    return {
-        "message": "Vapi API key saved successfully",
-        "preview": user.vapi_api_key[:8] + "..." if len(user.vapi_api_key) > 8 else "***",
-    }
+    # 🔥 DIVINE: Return proper response format
+    preview = user.vapi_api_key[:8] + "..." if len(user.vapi_api_key) > 8 else "***"
+    
+    return VapiSettingsResponse(
+        has_vapi_key=True,
+        vapi_api_key_preview=preview,
+    )
 
 
 @router.delete("")
 async def delete_vapi_key(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
-) -> dict[str, str]:
+) -> VapiSettingsResponse:
     """
     Remove user's Vapi API key.
     
@@ -118,4 +121,8 @@ async def delete_vapi_key(
             detail=f"Failed to delete Vapi API key: {str(exc)}"
         ) from exc
     
-    return {"message": "Vapi API key deleted successfully"}
+    # 🔥 DIVINE: Return proper response format
+    return VapiSettingsResponse(
+        has_vapi_key=False,
+        vapi_api_key_preview=None,
+    )

@@ -29,14 +29,22 @@ export function useIntegrationsStatus() {
       }
 
       // 🔥 DIVINE: Use centralized APIs (parallel execution, automatic retry)
-      const [vapiResponse, twilioResponse] = await Promise.all([
-        getVapiSettings().catch(() => ({ settings: { configured: false, api_key_set: false } })),
-        getTwilioSettings().catch(() => ({ settings: { configured: false, account_sid_set: false, auth_token_set: false, phone_number: undefined } })),
+      const [vapiData, twilioResponse] = await Promise.all([
+        getVapiSettings().catch(() => ({ has_vapi_key: false, vapi_api_key_preview: null })),
+        getTwilioSettings().catch(() => ({ 
+          success: false, 
+          settings: { 
+            configured: false, 
+            account_sid_set: false, 
+            auth_token_set: false, 
+            phone_number: undefined 
+          } 
+        })),
       ]);
 
       return {
         vapi: {
-          configured: vapiResponse.settings.configured,
+          configured: vapiData.has_vapi_key,
         },
         twilio: {
           configured: twilioResponse.settings.configured,

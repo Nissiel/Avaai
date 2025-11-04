@@ -11,20 +11,14 @@ function getBackendUrl(): string {
 }
 
 export interface VapiSettings {
-  configured: boolean;
-  api_key_set: boolean;
-  has_assistants?: boolean;
-}
-
-export interface VapiSettingsResponse {
-  success: boolean;
-  settings: VapiSettings;
+  has_vapi_key: boolean;
+  vapi_api_key_preview?: string | null;
 }
 
 /**
  * Get current Vapi settings
  */
-export async function getVapiSettings(): Promise<VapiSettingsResponse> {
+export async function getVapiSettings(): Promise<VapiSettings> {
   const response = await fetch(`${getBackendUrl()}/api/v1/vapi-settings`, {
     method: "GET",
     headers: getAuthHeaders(),
@@ -69,7 +63,7 @@ export async function getVapiSettings(): Promise<VapiSettingsResponse> {
 /**
  * Save Vapi API key
  */
-export async function saveVapiSettings(apiKey: string): Promise<VapiSettingsResponse> {
+export async function saveVapiSettings(apiKey: string): Promise<VapiSettings> {
   const response = await fetch(`${getBackendUrl()}/api/v1/vapi-settings`, {
     method: "POST",
     headers: getAuthHeaders(),
