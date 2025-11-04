@@ -31,14 +31,26 @@ const PROTECTED_ROUTE_PREFIXES = [
 ]
 
 /**
+ * Normalise le chemin en retirant le préfixe locale (/fr, /en, /he)
+ * tout en conservant un slash unique (évite //login → casse les règles).
+ */
+function stripLocale(pathname: string): string {
+  const match = pathname.match(/^\/[a-z]{2}(\/.*)?$/)
+  if (!match) {
+    return pathname
+  }
+
+  return match[1] ?? '/'
+}
+
+/**
  * Vérifie si la route est publique
  */
 function isPublicRoute(pathname: string): boolean {
-  // Remove locale prefix (e.g., /fr/login → /login)
-  const pathWithoutLocale = pathname.replace(/^\/[a-z]{2}(\/|$)/, '/$1')
+  const normalizedPath = stripLocale(pathname)
   
   return PUBLIC_ROUTES.some(route => 
-    pathWithoutLocale === route || pathWithoutLocale.startsWith(`${route}/`)
+    normalizedPath === route || normalizedPath.startsWith(`${route}/`)
   )
 }
 
@@ -46,11 +58,10 @@ function isPublicRoute(pathname: string): boolean {
  * Vérifie si la route nécessite une authentification
  */
 function isProtectedRoute(pathname: string): boolean {
-  // Remove locale prefix
-  const pathWithoutLocale = pathname.replace(/^\/[a-z]{2}(\/|$)/, '/$1')
+  const normalizedPath = stripLocale(pathname)
   
   return PROTECTED_ROUTE_PREFIXES.some(prefix => 
-    pathWithoutLocale.startsWith(prefix)
+    normalizedPath.startsWith(prefix)
   )
 }
 
