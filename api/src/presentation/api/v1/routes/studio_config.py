@@ -94,7 +94,8 @@ def db_to_schema(db_config: StudioConfigModel) -> StudioConfig:
 def _client(user: User) -> VapiClient:
     """🎯 DIVINE: Get Vapi client with user's personal API key (multi-tenant)."""
     try:
-        return VapiClient(token=user.vapi_api_key)
+        # 🔥 DIVINE FIX: Correct parameter is user_api_key, not token
+        return VapiClient(user_api_key=user.vapi_api_key)
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,

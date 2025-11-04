@@ -235,7 +235,15 @@ export function StudioSettingsForm({
     };
   }, [form.watch("aiModel"), form.watch("voiceId")]);
 
-  const updateMutation = useMutation<{ success?: boolean; config?: StudioConfigInput }, Error, StudioConfigInput>({
+  // 🔥 DIVINE: Extended type for mutation result with Vapi sync status
+  type MutationResult = {
+    success?: boolean;
+    config?: StudioConfigInput;
+    vapiSyncSuccess?: boolean;
+    vapiSyncError?: string | null;
+  };
+
+  const updateMutation = useMutation<MutationResult, Error, StudioConfigInput>({
     mutationFn: async (values) => {
       console.log("🚀 Studio Config Update Starting:", values);
       localizedSchema.parse(values);
@@ -296,7 +304,7 @@ export function StudioSettingsForm({
         throw new Error(detail.error ?? tMessages("error"));
       }
 
-      const result = await response.json();
+      const result: MutationResult = await response.json();
       console.log("✅ Studio Config Update Success:", result);
 
       // 2. 🔥 DIVINE: Sync to Vapi using helper (same proven endpoint as onboarding)
