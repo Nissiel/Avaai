@@ -44,8 +44,11 @@ export interface AutoImportPrerequisites {
 export interface AutoImportResult {
   success: boolean;
   imported: boolean;
+  auto_linked?: boolean;  // 🔥 DIVINE: Indicates if number was auto-linked to assistant
+  assistant_id?: string;  // 🔥 DIVINE: The assistant ID used
   webhookConfigured?: boolean;
   message: string;
+  description?: string;  // 🔥 DIVINE: Additional toast description
   error?: string;
   missingPrerequisites?: string[];
 }
@@ -191,11 +194,23 @@ export async function autoImportTwilioNumber(
 
     console.log("✅ AUTO-IMPORT: Success!", data);
 
+    // 🔥 DIVINE: Better feedback for auto-linked numbers
+    let message = data.message || "✅ Number imported successfully! Ready to receive calls.";
+    let description = undefined;
+    
+    if (data.auto_linked) {
+      message = "✅ Number imported and automatically linked!";
+      description = "Your number is ready to receive calls";
+    }
+
     return {
       success: true,
       imported: true,
+      auto_linked: data.auto_linked,
+      assistant_id: data.assistant_id,
       webhookConfigured: data.webhook_configured,
-      message: data.message || "✅ Number imported successfully! Ready to receive calls.",
+      message,
+      description,
     };
   } catch (error) {
     console.error("❌ AUTO-IMPORT: Failed", error);

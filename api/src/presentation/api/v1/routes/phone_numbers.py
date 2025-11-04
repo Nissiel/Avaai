@@ -152,20 +152,53 @@ async def import_twilio_number(
     
     Workflow:
     1. Vérifie que le numéro existe dans Twilio
-    2. Appelle Vapi /phone-numbers/import
-    3. Vapi configure automatiquement le webhook Twilio → Vapi
-    4. 🆕 Configure automatiquement le webhook Vapi → Backend
-    5. Sauvegarde dans notre DB
+    2. 🔥 DIVINE: Auto-liaison intelligente à l'assistant si pas fourni
+    3. Appelle Vapi /phone-numbers/import avec assistant_id
+    4. Vapi configure automatiquement le webhook Twilio → Vapi
+    5. 🆕 Configure automatiquement le webhook Vapi → Backend
+    6. Sauvegarde dans notre DB
     
     Returns:
         {
             "success": True,
             "phone": {...},
+            "auto_linked": bool,
+            "assistant_id": str,
             "webhook_configured": True,
             "message": "Numéro importé avec succès"
         }
     """
     try:
+        # 🔥 DIVINE: Auto-liaison intelligente si pas d'assistant_id fourni
+        assistant_id = request.assistant_id
+        auto_linked = False
+        
+        if not assistant_id:
+            logger.info("⚠️ Pas d'assistant_id fourni, recherche du premier assistant...")
+            vapi = _get_vapi_client(user)
+            
+            try:
+                assistants = await vapi.list_assistants()
+                
+                if not assistants or len(assistants) == 0:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=(
+                            "Vous devez créer un assistant avant d'importer un numéro. "
+                            "Créez votre assistant depuis Settings → AVA Profile."
+                        )
+                    )
+                
+                assistant_id = assistants[0]["id"]
+                auto_linked = True
+                logger.info(f"✅ Lié automatiquement à l'assistant: {assistant_id}")
+            except Exception as e:
+                logger.error(f"❌ Erreur lors de la récupération des assistants: {e}")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Impossible de récupérer vos assistants. Vérifiez votre clé API Vapi."
+                )
+        
         # 1. Verify Twilio number exists
         twilio = TwilioClient(request.twilio_account_sid, request.twilio_auth_token)
 
@@ -197,10 +230,12 @@ async def import_twilio_number(
             twilio_account_sid=request.twilio_account_sid,
             twilio_auth_token=request.twilio_auth_token,
             phone_number=request.phone_number,
-            assistant_id=request.assistant_id,
+            assistant_id=assistant_id,  # 🔥 DIVINE: Toujours défini maintenant!
         )
         
         logger.info(f"✅ Numéro {request.phone_number} importé dans Vapi: {imported.get('id')}")
+        if auto_linked:
+            logger.info(f"🔗 Lié automatiquement à l'assistant: {assistant_id}")
         
         # 3. 🔥 DIVINE: Configure Vapi webhook → Backend AUTOMATIQUEMENT
         # Vapi webhooks are configured per-assistant, not globally
@@ -210,7 +245,7 @@ async def import_twilio_number(
         try:
             # Update the assistant to send webhooks to our backend
             webhook_result = await vapi.update_assistant_webhook(
-                assistant_id=request.assistant_id,
+                assistant_id=assistant_id,  # 🔥 DIVINE: Use the (maybe auto-linked) assistant_id
                 server_url=webhook_url
             )
             webhook_configured = True
@@ -242,10 +277,12 @@ async def import_twilio_number(
                 "provider": "VAPI_TWILIO",
                 "assistantId": imported.get("assistantId"),
             },
+            "auto_linked": auto_linked,  # 🔥 DIVINE: Indicate if auto-linked
+            "assistant_id": assistant_id,  # 🔥 DIVINE: Return the assistant_id used
             "webhook_configured": webhook_configured,
             "webhook_url": webhook_url if webhook_configured else None,
             "message": (
-                f"✅ Numéro importé avec succès! "
+                f"✅ Numéro importé et {'automatiquement lié' if auto_linked else 'lié'} à l'assistant! "
                 f"{'Webhook configuré automatiquement.' if webhook_configured else 'Webhook à configurer manuellement.'}"
             ),
         }

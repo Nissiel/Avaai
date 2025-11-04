@@ -103,6 +103,7 @@ export function TwilioSettingsForm() {
             // Success! Number is imported and ready
             toast.success(importResult.message, { 
               id: "auto-import",
+              description: importResult.description,  // 🔥 DIVINE: Show auto-link status
               duration: 5000,
             });
           } else if (importResult.missingPrerequisites) {
