@@ -4,80 +4,27 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useLocale } from "next-intl";
 import { AlertCircle, CheckCircle2, ChevronRight, X } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
-import { useSessionStore } from "@/stores/session-store";
+import { useVapiStatus } from "@/lib/hooks/use-vapi-status";
+import { useTwilioStatus } from "@/lib/hooks/use-twilio-status";
 
 type SetupStatus = {
   vapi: boolean;
   twilio: boolean;
 };
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? "";
-
-function resolveApiUrl(path: string) {
-  return `${API_BASE_URL}${path}`;
-}
-
-async function fetchIntegrationStatus<T extends Record<string, unknown>>(
-  path: string,
-  token: string,
-) {
-  const response = await fetch(resolveApiUrl(path), {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    cache: "no-store",
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch ${path}: ${response.status}`);
-  }
-
-  return response.json() as Promise<T>;
-}
-
-// Check integration status from API
-async function checkSetupStatus(token?: string): Promise<SetupStatus> {
-  if (!token) {
-    return { vapi: false, twilio: false };
-  }
-
-  try {
-    const [vapiResult, twilioResult] = await Promise.allSettled([
-      fetchIntegrationStatus<{ has_vapi_key?: boolean }>("/api/v1/vapi-settings", token),
-      fetchIntegrationStatus<{ has_twilio_credentials?: boolean }>("/api/v1/twilio-settings", token),
-    ]);
-
-    if (vapiResult.status === "rejected") {
-      console.error("Failed to fetch Vapi status:", vapiResult.reason);
-    }
-    if (twilioResult.status === "rejected") {
-      console.error("Failed to fetch Twilio status:", twilioResult.reason);
-    }
-
-    return {
-      vapi: vapiResult.status === "fulfilled" ? !!vapiResult.value?.has_vapi_key : false,
-      twilio: twilioResult.status === "fulfilled" ? !!twilioResult.value?.has_twilio_credentials : false,
-    };
-  } catch (error) {
-    console.error("Failed to check setup status:", error);
-    return { vapi: false, twilio: false };
-  }
-}
-
 export function SetupReminderBanner() {
   const [dismissed, setDismissed] = useState(false);
   const locale = useLocale();
-  const { session } = useSessionStore((state) => ({ session: state.session }));
-  const token = session?.accessToken;
+  
+  const { hasVapiKey, isLoading: vapiLoading } = useVapiStatus();
+  const { hasTwilioCredentials, isLoading: twilioLoading } = useTwilioStatus();
 
-  const { data: status, isLoading } = useQuery({
-    queryKey: ["setup-status", token],
-    queryFn: () => checkSetupStatus(token),
-    enabled: Boolean(token),
-    staleTime: 30_000,
-  });
+  const isLoading = vapiLoading || twilioLoading;
+  const status: SetupStatus = {
+    vapi: hasVapiKey,
+    twilio: hasTwilioCredentials,
+  };
 
   useEffect(() => {
     // Check if banner was dismissed in localStorage
@@ -116,8 +63,8 @@ export function SetupReminderBanner() {
     return steps;
   }, [status, locale]);
 
-  // Don't show if dismissed or if everything is configured
-  if (dismissed || !token || isLoading || missingSteps.length === 0) {
+  // Don't show if dismissed or if everything is configured or still loading
+  if (dismissed || isLoading || missingSteps.length === 0) {
     return null;
   }
 

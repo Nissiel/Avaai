@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { motion, AnimatePresence } from "framer-motion";
+import { useMutation } from "@tanstack/react-query";
 import {
   Phone,
   Key,
@@ -28,8 +29,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { useSessionStore } from "@/stores/session-store";
 import { useVapiStatus } from "@/lib/hooks/use-vapi-status";
+import { saveVapiSettings } from "@/lib/api/vapi-settings";
 
 interface VapiSetupModalProps {
   isOpen: boolean;
@@ -42,17 +43,34 @@ export function VapiSetupModal({ isOpen, onClose, onSuccess }: VapiSetupModalPro
   const router = useRouter();
   const params = useParams();
   const locale = params.locale as string;
-  const { session } = useSessionStore((state) => ({ session: state.session }));
   const { refetch } = useVapiStatus();
 
   const [apiKey, setApiKey] = useState("");
-  const [loading, setLoading] = useState(false);
   const [showKey, setShowKey] = useState(false);
   const [step, setStep] = useState<"choice" | "quick" | "success">("choice");
 
-  const saveApiKey = async () => {
-    // 🎯 DIVINE: Validation minimale - longueur uniquement
-    // Le backend vérifiera la validité réelle via l'API Vapi
+  const saveMutation = useMutation({
+    mutationFn: (key: string) => saveVapiSettings(key),
+    onSuccess: async () => {
+      setStep("success");
+      await refetch();
+      onSuccess?.();
+      
+      setTimeout(() => {
+        onClose();
+        setStep("choice");
+        setApiKey("");
+      }, 2000);
+    },
+    onError: (error: Error) => {
+      toast.error(t("errors.saveFailed", { defaultValue: "Échec de la sauvegarde" }), {
+        description: error.message,
+      });
+    },
+  });
+
+  const handleSaveApiKey = () => {
+    // Validation minimale - longueur uniquement
     if (!apiKey.trim()) {
       toast.error(t("errors.emptyKey", { defaultValue: "Veuillez entrer une clé API" }));
       return;
@@ -65,44 +83,7 @@ export function VapiSetupModal({ isOpen, onClose, onSuccess }: VapiSetupModalPro
       return;
     }
 
-    setLoading(true);
-    try {
-      const token = session?.accessToken;
-      if (!token) {
-        toast.error(t("errors.noAuth", { defaultValue: "Authentification requise" }));
-        return;
-      }
-
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/vapi-settings`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ vapi_api_key: apiKey }),
-      });
-
-      if (res.ok) {
-        setStep("success");
-        await refetch(); // Refresh Vapi status
-        onSuccess?.();
-        
-        setTimeout(() => {
-          onClose();
-          setStep("choice");
-          setApiKey("");
-        }, 2000);
-      } else {
-        const error = await res.json();
-        toast.error(t("errors.saveFailed", { defaultValue: "Échec de la sauvegarde" }), {
-          description: error.detail,
-        });
-      }
-    } catch (error) {
-      toast.error(t("errors.saveFailed", { defaultValue: "Échec de la sauvegarde" }));
-    } finally {
-      setLoading(false);
-    }
+    saveMutation.mutate(apiKey.trim());
   };
 
   const handleGoToSettings = () => {
@@ -261,7 +242,7 @@ export function VapiSetupModal({ isOpen, onClose, onSuccess }: VapiSetupModalPro
                       value={apiKey}
                       onChange={(e) => setApiKey(e.target.value)}
                       className="pl-10 pr-12"
-                      disabled={loading}
+                      disabled={saveMutation.isPending}
                     />
                     <button
                       type="button"
@@ -278,16 +259,16 @@ export function VapiSetupModal({ isOpen, onClose, onSuccess }: VapiSetupModalPro
                     onClick={() => setStep("choice")}
                     variant="outline"
                     className="flex-1"
-                    disabled={loading}
+                    disabled={saveMutation.isPending}
                   >
                     {t("back", { defaultValue: "Retour" })}
                   </Button>
                   <Button
-                    onClick={saveApiKey}
-                    disabled={loading || !apiKey.trim()}
+                    onClick={handleSaveApiKey}
+                    disabled={saveMutation.isPending || !apiKey.trim()}
                     className="flex-1 bg-gradient-to-r from-brand-500 to-violet-500"
                   >
-                    {loading ? (
+                    {saveMutation.isPending ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         {t("saving", { defaultValue: "Enregistrement..." })}

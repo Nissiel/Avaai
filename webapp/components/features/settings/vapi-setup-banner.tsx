@@ -8,20 +8,17 @@ import { AlertCircle, X, ArrowRight, Sparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { GlassCard } from "@/components/ui/glass-card";
-import { useSessionStore } from "@/stores/session-store";
+import { useVapiStatus } from "@/lib/hooks/use-vapi-status";
 
 const DISMISSED_KEY = "vapi-setup-banner-dismissed";
-const CHECK_INTERVAL = 60000; // Check every 60 seconds
 
 export function VapiSetupBanner() {
   const t = useTranslations("vapiSetup");
   const router = useRouter();
   const pathname = usePathname();
-  const { session } = useSessionStore((state) => ({ session: state.session }));
   
-  const [hasVapiKey, setHasVapiKey] = useState<boolean | null>(null);
+  const { hasVapiKey } = useVapiStatus();
   const [isDismissed, setIsDismissed] = useState(true);
-  const [isChecking, setIsChecking] = useState(false);
 
   // Don't show on settings page or auth pages
   const isSettingsPage = pathname?.includes("/settings");
@@ -32,44 +29,11 @@ export function VapiSetupBanner() {
     const dismissed = localStorage.getItem(DISMISSED_KEY);
     if (dismissed) {
       setIsDismissed(true);
-      return;
+    } else if (!hasVapiKey) {
+      // Show banner if no key and not dismissed
+      setIsDismissed(false);
     }
-
-    // Check Vapi key status periodically
-    const checkVapiKey = async () => {
-      if (!session?.accessToken || isSettingsPage || isAuthPage) {
-        return;
-      }
-
-      setIsChecking(true);
-      try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/vapi-settings`, {
-          headers: {
-            Authorization: `Bearer ${session.accessToken}`,
-          },
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          setHasVapiKey(data.has_vapi_key);
-          
-          // Show banner if no key
-          if (!data.has_vapi_key) {
-            setIsDismissed(false);
-          }
-        }
-      } catch (error) {
-        console.error("Failed to check Vapi key:", error);
-      } finally {
-        setIsChecking(false);
-      }
-    };
-
-    checkVapiKey();
-    const interval = setInterval(checkVapiKey, CHECK_INTERVAL);
-
-    return () => clearInterval(interval);
-  }, [session?.accessToken, isSettingsPage, isAuthPage, pathname]);
+  }, [hasVapiKey]);
 
   const handleDismiss = () => {
     localStorage.setItem(DISMISSED_KEY, "true");
@@ -85,14 +49,13 @@ export function VapiSetupBanner() {
   // - Has Vapi key
   // - On settings page
   // - On auth page
-  // - No session
-  if (isDismissed || hasVapiKey || isSettingsPage || isAuthPage || !session) {
+  if (isDismissed || hasVapiKey || isSettingsPage || isAuthPage) {
     return null;
   }
 
   return (
     <AnimatePresence>
-      {hasVapiKey === false && (
+      {!hasVapiKey && (
         <motion.div
           initial={{ y: -100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
