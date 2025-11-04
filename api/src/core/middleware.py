@@ -10,23 +10,53 @@ from starlette.middleware.cors import ALL_METHODS
 from api.src.core.settings import get_settings
 
 
+def _normalize_origin(origin: str | None) -> str | None:
+    if not origin:
+        return None
+    origin = origin.strip()
+    if not origin:
+        return None
+    # Remove trailing slash to avoid duplicates
+    return origin[:-1] if origin.endswith("/") else origin
+
+
 def configure_middleware(app: FastAPI) -> None:
     settings = get_settings()
 
-    # 🔥 DIVINE: CORS ULTRA PERMISSIVE - Allow ALL origins temporarily for debug
-    # TODO: Restreindre en production avec liste exacte des origins
-    allowed_origins = ["*"]  # 🔥 DIVINE: TEMPORARY - Accept ALL origins!
-    
+    env_origins = [_normalize_origin(origin) for origin in settings.allowed_origins]
+    env_origins = [origin for origin in env_origins if origin]
+
+    defaults = {
+        "local": [
+            "http://localhost:3000",
+            "http://localhost:3001",
+            "http://127.0.0.1:3000",
+            "http://127.0.0.1:3001",
+        ],
+        "production": [
+            _normalize_origin(settings.app_url),
+            "https://app.ava.ai",
+            "https://avaai-olive.vercel.app",
+        ],
+    }
+
+    candidate_origins = env_origins or []
+    candidate_origins.extend(defaults["production"])
+    candidate_origins.extend(defaults["local"])
+
+    allowed_origins = sorted({origin for origin in candidate_origins if origin})
+
     print("=" * 80, flush=True)
-    print(f"🔥🔥🔥 CORS DIVINE MODE: Allowing ALL origins (*)", flush=True)
+    print("🔥 CORS ALLOW LIST:", file=sys.stdout, flush=True)
+    for origin in allowed_origins:
+        print(f"  • {origin}", file=sys.stdout, flush=True)
     print("=" * 80, flush=True)
-    sys.stdout.flush()
-    
+
     app.add_middleware(
         CORSMiddleware,
         allow_origins=allowed_origins,
         allow_credentials=True,
-        allow_methods=["*"],
+        allow_methods=list(ALL_METHODS),
         allow_headers=["*"],
         expose_headers=["*"],
     )
