@@ -33,9 +33,11 @@ export function VapiSettingsForm() {
         description: t("success.savedDesc"),
       });
       setApiKey("");
-      // Invalidate all related queries
+      // 🔥 DIVINE: Invalidate ALL related queries to refetch with new key
       queryClient.invalidateQueries({ queryKey: ["vapi-settings"] });
       queryClient.invalidateQueries({ queryKey: ["integrations-status"] });
+      queryClient.invalidateQueries({ queryKey: ["assistants"] }); // 🎯 Force assistants refetch!
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] }); // 🎯 Force dashboard refetch!
     },
     onError: (error: Error) => {
       toast.error(t("errors.saveFailed"), {
@@ -49,9 +51,11 @@ export function VapiSettingsForm() {
     mutationFn: deleteVapiSettings,
     onSuccess: () => {
       toast.success(t("success.deleted"));
-      // Invalidate all related queries
+      // 🔥 DIVINE: Invalidate ALL related queries
       queryClient.invalidateQueries({ queryKey: ["vapi-settings"] });
       queryClient.invalidateQueries({ queryKey: ["integrations-status"] });
+      queryClient.invalidateQueries({ queryKey: ["assistants"] }); // 🎯 Clear assistants cache!
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] }); // 🎯 Clear dashboard cache!
     },
     onError: (error: Error) => {
       toast.error(t("errors.deleteFailed"), {

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { motion } from "framer-motion";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Mic, ExternalLink, Settings, SkipForward, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -19,6 +19,7 @@ export function OnboardingVapiStep({ onNext, onSkip }: OnboardingVapiStepProps) 
   const t = useTranslations("onboarding.vapi");
   const router = useRouter();
   const { vapi, invalidate } = useIntegrationsStatus();
+  const queryClient = useQueryClient();
 
   const [vapiKey, setVapiKey] = useState("");
   const [showKey, setShowKey] = useState(false);
@@ -28,6 +29,10 @@ export function OnboardingVapiStep({ onNext, onSkip }: OnboardingVapiStepProps) 
     onSuccess: () => {
       toast.success(t("success.saved", { defaultValue: "Clé Vapi sauvegardée!" }));
       invalidate();
+      
+      // 🔥 DIVINE: Invalidate ALL caches so dashboard can refetch with new key
+      queryClient.invalidateQueries({ queryKey: ["assistants"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       
       // Wait for success message then advance
       setTimeout(() => {

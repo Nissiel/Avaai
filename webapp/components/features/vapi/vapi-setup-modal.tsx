@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { motion, AnimatePresence } from "framer-motion";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Phone,
   Key,
@@ -44,6 +44,7 @@ export function VapiSetupModal({ isOpen, onClose, onSuccess }: VapiSetupModalPro
   const params = useParams();
   const locale = params.locale as string;
   const { refetch } = useVapiStatus();
+  const queryClient = useQueryClient();
 
   const [apiKey, setApiKey] = useState("");
   const [showKey, setShowKey] = useState(false);
@@ -54,6 +55,12 @@ export function VapiSetupModal({ isOpen, onClose, onSuccess }: VapiSetupModalPro
     onSuccess: async () => {
       setStep("success");
       await refetch();
+      
+      // 🔥 DIVINE: Invalidate ALL related caches so dashboard refetches with new key
+      queryClient.invalidateQueries({ queryKey: ["assistants"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["integrations-status"] });
+      
       onSuccess?.();
       
       setTimeout(() => {
