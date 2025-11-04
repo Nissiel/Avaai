@@ -5,6 +5,7 @@ import type {
   AssistantResponse,
   AssistantSummary,
   CreateAssistantPayload,
+  TwilioLinkResult,
   UpdateAssistantPayload,
 } from "@/lib/dto";
 import { getAuthHeaders } from "./auth-helper";
@@ -170,7 +171,12 @@ export async function listAssistants(): Promise<AssistantsResult> {
   }
 }
 
-export async function createAssistant(payload: CreateAssistantPayload) {
+export interface CreateAssistantResult {
+  assistant: AssistantSummary;
+  twilioLink?: TwilioLinkResult | null;
+}
+
+export async function createAssistant(payload: CreateAssistantPayload): Promise<CreateAssistantResult> {
   // 🎯 DIVINE: Call Python backend with user's Vapi key (multi-tenant)
   const response = await fetch(`${getBackendUrl()}/api/v1/assistants`, {
     method: "POST",
@@ -204,7 +210,10 @@ export async function createAssistant(payload: CreateAssistantPayload) {
           if (!data.success || !data.assistant) {
             throw new Error("Assistant creation response malformed");
           }
-          return data.assistant;
+          return {
+            assistant: data.assistant,
+            twilioLink: data.twilio_link ?? null,
+          };
         }
       }
     }
@@ -222,7 +231,10 @@ export async function createAssistant(payload: CreateAssistantPayload) {
     throw new Error("Assistant creation response malformed");
   }
 
-  return data.assistant;
+  return {
+    assistant: data.assistant,
+    twilioLink: data.twilio_link ?? null,
+  };
 }
 
 export async function getAssistantDetail(id: string) {

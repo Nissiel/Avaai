@@ -2,11 +2,13 @@ import createNextIntlPlugin from "next-intl/plugin";
 import withPWAInit from "@ducanh2912/next-pwa";
 
 const withNextIntl = createNextIntlPlugin("./lib/i18n/request.ts");
+const isPwaEnabled = process.env.NEXT_ENABLE_PWA === "true";
+
 const withPWA = withPWAInit({
   dest: "public",
   register: true,
   skipWaiting: true,
-  disable: false, // Activer le PWA en développement aussi
+  disable: !isPwaEnabled, // Par défaut OFF pour fiabiliser le build (NEXT_ENABLE_PWA=true pour activer)
   workboxOptions: {
     runtimeCaching: [
       {

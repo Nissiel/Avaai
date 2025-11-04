@@ -51,9 +51,28 @@ export interface AssistantListResponse {
   assistants: AssistantSummary[];
 }
 
+export type TwilioLinkStatus =
+  | "imported"
+  | "assigned_existing"
+  | "already_linked"
+  | "linked_elsewhere"
+  | "assignment_failed"
+  | "import_failed"
+  | "vapi_key_missing";
+
+export interface TwilioLinkResult {
+  status?: TwilioLinkStatus;
+  assistantId?: string;
+  phoneId?: string;
+  number?: string;
+  message?: string;
+  error?: string;
+}
+
 export interface AssistantResponse {
   success: boolean;
   assistant: AssistantSummary;
+  twilio_link?: TwilioLinkResult | null;
 }
 
 export interface AssistantDetailResponse {

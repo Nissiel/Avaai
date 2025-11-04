@@ -306,6 +306,23 @@
       },
       "success": {
         "created": "🎉 Assistant '{name}' créé avec succès !"
+      },
+      "twilio": {
+        "link": {
+          "title": {
+            "ready": "Numéro Twilio prêt",
+            "action": "Action Twilio requise",
+            "error": "Échec de liaison Twilio"
+          },
+          "unknownNumber": "votre numéro",
+          "imported": "Le numéro Twilio {number} a été importé et lié automatiquement.",
+          "assigned": "Le numéro Twilio existant {number} est maintenant lié à cet assistant.",
+          "alreadyLinked": "Votre numéro Twilio était déjà lié à cet assistant.",
+          "linkedElsewhere": "Ce numéro Twilio est déjà lié à un autre assistant. Mettez-le à jour depuis Paramètres → Twilio.",
+          "assignmentFailed": "Impossible de réassigner automatiquement votre numéro Twilio. Merci de finaliser la liaison manuellement.",
+          "missingVapi": "Ajoutez votre clé Vapi pour lier automatiquement vos numéros Twilio.",
+          "importFailed": "L'import Twilio automatique a échoué. Terminez la configuration depuis Paramètres → Twilio."
+        }
       }
     }
   },

@@ -11,16 +11,11 @@ interface RealtimeProviderProps {
   url?: string;
 }
 
-export function RealtimeProvider({ children, url = process.env.NEXT_PUBLIC_REALTIME_URL }: RealtimeProviderProps) {
+function RealtimeBridge({ children, url }: { children: React.ReactNode; url: string }) {
   const prependCall = useCallsStore((state) => state.prependCall);
   const upsertCall = useCallsStore((state) => state.upsertCall);
   const upsertAssistant = useAssistantsStore((state) => state.upsertAssistant);
   const appendTranscript = useCallTranscriptsStore((state) => state.appendChunk);
-
-  if (!url) {
-    return <>{children}</>;
-  }
-
   const handler = useMemo(
     () =>
       (event: RealtimeEvent) => {
@@ -87,6 +82,13 @@ export function RealtimeProvider({ children, url = process.env.NEXT_PUBLIC_REALT
   );
 
   useRealtime({ url, onEvent: handler, autoReconnect: true });
-
   return <>{children}</>;
+}
+
+export function RealtimeProvider({ children, url = process.env.NEXT_PUBLIC_REALTIME_URL }: RealtimeProviderProps) {
+  if (!url) {
+    return <>{children}</>;
+  }
+
+  return <RealtimeBridge url={url}>{children}</RealtimeBridge>;
 }

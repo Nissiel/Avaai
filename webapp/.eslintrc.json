@@ -1,0 +1,13 @@
+{
+  "root": true,
+  "extends": ["next/core-web-vitals"],
+  "parserOptions": {
+    "tsconfigRootDir": ".",
+    "project": "./tsconfig.json"
+  },
+  "rules": {
+    "react/no-unescaped-entities": "off",
+    "no-console": "off",
+    "react-hooks/exhaustive-deps": "off"
+  }
+}

@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
+import logging
+from typing import Any, Optional
+
 from pydantic import BaseModel, Field
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from api.src.infrastructure.external.vapi_client import VapiApiError, VapiClient
+from api.src.infrastructure.vapi.client import VapiClient as PhoneNumberVapiClient
 from api.src.infrastructure.persistence.models.user import User
 from api.src.presentation.dependencies.auth import get_current_user
 from api.src.core.settings import get_settings
@@ -55,6 +59,9 @@ class UpdateAssistantRequest(BaseModel):
     metadata: dict | None = Field(None, description="Optional metadata")
 
 
+logger = logging.getLogger(__name__)
+
+
 def _client(user: User) -> VapiClient:
     """🎯 DIVINE: Create VapiClient with user's personal API key (multi-tenant)."""
     try:
@@ -64,6 +71,128 @@ def _client(user: User) -> VapiClient:
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Vapi API key not configured. Please add your Vapi key in Settings."
         ) from exc
+
+
+async def _auto_link_twilio_number(user: User, assistant_id: Optional[str]) -> Optional[dict[str, Any]]:
+    """
+    Automatically import or assign the user's Twilio number to the newly created assistant.
+
+    Strategy:
+    - Skip if credentials incomplete or assistant_id missing
+    - Reuse existing imported number when possible (assign if unlinked)
+    - Import the number via Vapi if it does not exist yet
+    - Never raise (best-effort to avoid blocking assistant creation)
+    """
+    if not assistant_id:
+        return None
+
+    if not (user.twilio_account_sid and user.twilio_auth_token and user.twilio_phone_number):
+        return None
+
+    if not user.vapi_api_key:
+        logger.info("Skipping Twilio auto-link: user %s missing Vapi key", user.id)
+        return None
+
+    try:
+        phone_client = PhoneNumberVapiClient(user_api_key=user.vapi_api_key)
+    except ValueError as exc:
+        logger.warning("Skipping Twilio auto-link for user %s: %s", user.id, exc)
+        return {
+            "status": "vapi_key_missing",
+            "message": str(exc),
+        }
+
+    try:
+        existing_numbers = await phone_client.get_phone_numbers()
+    except Exception as exc:  # noqa: BLE001 - non-fatal diagnostics only
+        logger.warning("Failed to list Vapi phone numbers for user %s: %s", user.id, exc)
+        existing_numbers = []
+
+    matching = next(
+        (phone for phone in existing_numbers if phone.get("number") == user.twilio_phone_number),
+        None,
+    )
+
+    if matching:
+        phone_id = matching.get("id")
+        current_assistant = matching.get("assistantId")
+
+        if current_assistant == assistant_id:
+            logger.info("Twilio number %s already linked to assistant %s", user.twilio_phone_number, assistant_id)
+            return {
+                "status": "already_linked",
+                "phoneId": phone_id,
+                "assistantId": assistant_id,
+            }
+
+        if current_assistant:
+            logger.info(
+                "Twilio number %s already linked to assistant %s. Skipping reassignment.",
+                user.twilio_phone_number,
+                current_assistant,
+            )
+            return {
+                "status": "linked_elsewhere",
+                "phoneId": phone_id,
+                "assistantId": current_assistant,
+            }
+
+        if phone_id:
+            try:
+                updated = await phone_client.assign_phone_number(phone_id, assistant_id)
+                logger.info(
+                    "Assigned existing Twilio number %s to assistant %s",
+                    user.twilio_phone_number,
+                    assistant_id,
+                )
+                return {
+                    "status": "assigned_existing",
+                    "phoneId": phone_id,
+                    "assistantId": assistant_id,
+                    "number": updated.get("number"),
+                }
+            except Exception as exc:  # noqa: BLE001
+                logger.warning(
+                    "Failed to assign existing Twilio number %s to assistant %s: %s",
+                    user.twilio_phone_number,
+                    assistant_id,
+                    exc,
+                )
+                return {
+                    "status": "assignment_failed",
+                    "error": str(exc),
+                }
+
+    try:
+        imported = await phone_client.import_phone_number(
+            twilio_account_sid=user.twilio_account_sid,
+            twilio_auth_token=user.twilio_auth_token,
+            phone_number=user.twilio_phone_number,
+            assistant_id=assistant_id,
+        )
+        logger.info(
+            "Imported Twilio number %s into Vapi and linked to assistant %s for user %s",
+            user.twilio_phone_number,
+            assistant_id,
+            user.id,
+        )
+        return {
+            "status": "imported",
+            "phoneId": imported.get("id"),
+            "assistantId": assistant_id,
+            "number": imported.get("number"),
+        }
+    except Exception as exc:  # noqa: BLE001
+        logger.warning(
+            "Failed to auto-import Twilio number %s for user %s: %s",
+            user.twilio_phone_number,
+            user.id,
+            exc,
+        )
+        return {
+            "status": "import_failed",
+            "error": str(exc),
+        }
 
 
 @router.get("")
@@ -131,7 +260,7 @@ async def create_assistant(
     try:
         # 🔥 DIVINE: Create assistant with webhook URL so calls appear in app!
         webhook_url = f"{settings.backend_url}/api/v1/webhooks/vapi"
-        
+
         assistant = await client.create_assistant(
             name=request.name,
             voice_provider=request.voice_provider,
@@ -162,10 +291,14 @@ async def create_assistant(
             detail=f"Failed to create assistant: {str(exc)}"
         ) from exc
     
+    # 🔥 DIVINE: Auto-link Twilio number if credentials are configured
+    twilio_link = await _auto_link_twilio_number(user, assistant.get("id"))
+
     # 🎯 DIVINE: Return format compatible with frontend expectations
     return {
         "success": True,
         "assistant": assistant,
+        "twilio_link": twilio_link,
     }
 
 

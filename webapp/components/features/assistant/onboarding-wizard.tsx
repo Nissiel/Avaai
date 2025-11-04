@@ -21,7 +21,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { VOICE_PRESETS, PROMPT_TEMPLATES } from '@/lib/vapi/client';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 import { createAssistant } from '@/lib/api/assistants';
+import { getTwilioLinkToast } from '@/lib/twilio/twilio-link-feedback';
 
 type OnboardingStep = 'connect' | 'configure' | 'activate';
 
@@ -41,6 +43,7 @@ interface OnboardingState {
 }
 
 export function AvaOnboardingWizard() {
+  const t = useTranslations('onboarding.assistant');
   const [currentStep, setCurrentStep] = React.useState<OnboardingStep>('connect');
   const [state, setState] = React.useState<OnboardingState>({
     phoneNumber: '',
@@ -102,6 +105,23 @@ export function AvaOnboardingWizard() {
     }
   };
 
+  const emitTwilioToast = React.useCallback(
+    (link?: Parameters<typeof getTwilioLinkToast>[1]) => {
+      const payload = getTwilioLinkToast(t, link);
+      if (!payload) return;
+
+      const emitter =
+        payload.variant === 'error'
+          ? toast.error
+          : payload.variant === 'success'
+          ? toast.success
+          : toast.info;
+
+      emitter(payload.title, { description: payload.description });
+    },
+    [t],
+  );
+
   const createMutation = useMutation({
     mutationFn: () => {
       const payload: any = {
@@ -120,13 +140,14 @@ export function AvaOnboardingWizard() {
     onMutate: () => {
       setState({ ...state, status: 'creating' });
     },
-    onSuccess: (assistant) => {
+    onSuccess: ({ assistant, twilioLink }) => {
       setState({
         ...state,
         assistantId: assistant.id,
         status: 'ready',
       });
       toast.success('🎉 AVA créée avec succès !');
+      emitTwilioToast(twilioLink);
     },
     onError: (error: Error) => {
       console.error('Failed to create assistant:', error);

@@ -306,6 +306,23 @@
       },
       "success": {
         "created": "🎉 העוזר '{name}' נוצר בהצלחה!"
+      },
+      "twilio": {
+        "link": {
+          "title": {
+            "ready": "Twilio number ready",
+            "action": "Twilio action required",
+            "error": "Twilio linking failed"
+          },
+          "unknownNumber": "your number",
+          "imported": "Twilio number {number} was imported and linked automatically.",
+          "assigned": "Existing Twilio number {number} is now linked to this assistant.",
+          "alreadyLinked": "Your Twilio number was already linked to this assistant.",
+          "linkedElsewhere": "This Twilio number is already linked to another assistant. Update it from Settings → Twilio.",
+          "assignmentFailed": "We could not reassign your existing Twilio number automatically. Please finish the link manually.",
+          "missingVapi": "Add your Vapi API key to auto-link your Twilio numbers.",
+          "importFailed": "Automatic Twilio import failed. Complete the setup from Settings → Twilio."
+        }
       }
     }
   },
