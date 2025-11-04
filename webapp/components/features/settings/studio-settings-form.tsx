@@ -300,6 +300,10 @@ export function StudioSettingsForm({
       console.log("✅ Studio Config Update Success:", result);
 
       // 2. 🔥 DIVINE: Sync to Vapi using helper (same proven endpoint as onboarding)
+      // Mark sync status to prevent premature success toast
+      result.vapiSyncSuccess = false;
+      result.vapiSyncError = null;
+      
       try {
         console.log("🔥 DIVINE: Using syncStudioConfigToVapi helper (proven working)");
         
@@ -310,6 +314,7 @@ export function StudioSettingsForm({
         
         if (!syncResult.success) {
           console.error("❌ Vapi Sync Failed:", syncResult.error);
+          result.vapiSyncError = syncResult.error;
           toast.error("🚨 Vapi Sync Failed", {
             description: `Error: ${syncResult.error || "Unknown error"}`,
             duration: 10000,
@@ -317,6 +322,7 @@ export function StudioSettingsForm({
         } else {
           const assistant = syncResult.assistant;
           console.log("✅ Vapi Sync Success:", assistant);
+          result.vapiSyncSuccess = true;
           
           // Determine if created or updated
           const isNewAssistant = !values.vapiAssistantId && assistant?.id;
@@ -349,6 +355,7 @@ export function StudioSettingsForm({
         }
       } catch (syncError) {
         console.warn("⚠️ Vapi sync error:", syncError);
+        result.vapiSyncError = syncError instanceof Error ? syncError.message : "Unknown error";
         // Don't fail the whole mutation if Vapi sync fails
       }
 
@@ -359,9 +366,24 @@ export function StudioSettingsForm({
       queryClient.setQueryData(["studio-config"], nextConfig);
       form.reset(nextConfig);
       onLinkedAssistantChange?.(nextConfig.vapiAssistantId ?? null);
-      toast.success("✅ Configuration saved and synced to Vapi!", {
-        description: "Your AI assistant is now up to date",
-      });
+      
+      // 🔥 DIVINE: Only show success toast if Vapi sync succeeded!
+      // If sync failed, error toast already shown in mutationFn
+      if (data.vapiSyncSuccess) {
+        // Success toast already shown in mutationFn (detailed with assistant info)
+        // No need to show generic toast here
+      } else if (data.vapiSyncError) {
+        // Vapi sync failed but DB save succeeded
+        toast.warning("⚠️ Configuration saved but not synced to Vapi", {
+          description: "Your settings are saved but Vapi assistant update failed. Check logs.",
+          duration: 8000,
+        });
+      } else {
+        // Fallback: show generic success (shouldn't happen)
+        toast.success("✅ Configuration saved", {
+          description: "Your settings have been updated",
+        });
+      }
     },
     onError: (error) => {
       toast.error(tMessages("error"), { description: error.message });
