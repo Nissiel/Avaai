@@ -24,7 +24,12 @@ import { createStudioConfigSchema, type StudioConfigInput } from "@/lib/validati
 import { Badge } from "@/components/ui/badge";
 import { backendConfig } from "@/services/backend-service";
 import { refreshAccessToken } from "@/lib/auth/session-client";
-import { syncStudioConfigToVapi } from "@/lib/api/studio-sync";
+import { updateStudioConfiguration } from "@/lib/api/studio-orchestrator";
+import type { StudioUpdateResult } from "@/lib/types/studio-update";
+import { 
+  handleStudioUpdateToasts, 
+  handleStudioUpdateError 
+} from "@/lib/toast/studio-update-toasts";
 import {
   PERSONA_PROMPTS,
   PERSONA_LABELS,
@@ -235,177 +240,29 @@ export function StudioSettingsForm({
     };
   }, [form.watch("aiModel"), form.watch("voiceId")]);
 
-  // 🔥 DIVINE: Extended type for mutation result with Vapi sync status
-  type MutationResult = {
-    success?: boolean;
-    config?: StudioConfigInput;
-    vapiSyncSuccess?: boolean;
-    vapiSyncError?: string | null;
-  };
-
-  const updateMutation = useMutation<MutationResult, Error, StudioConfigInput>({
+  // 🔥 DIVINE: Clean mutation using orchestrator
+  const updateMutation = useMutation<StudioUpdateResult, Error, StudioConfigInput>({
     mutationFn: async (values) => {
-      console.log("🚀 Studio Config Update Starting:", values);
+      // Validate input
       localizedSchema.parse(values);
-
-      // 🎯 DIVINE: Get token from localStorage
-      const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
       
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-      };
-      
-      if (token) {
-        headers.Authorization = `Bearer ${token}`;
-      }
-
-      // 1. Save to database
-      const response = await fetch("/api/config", {
-        method: "POST",
-        headers,
-        body: JSON.stringify(values),
-      });
-
-      // 🎯 DIVINE: If 401, try to refresh token automatically
-      if (response.status === 401) {
-        console.log("⚠️ Studio Config Update: 401 Unauthorized - Attempting token refresh...");
-        
-        const refreshToken = typeof window !== "undefined" ? localStorage.getItem("refresh_token") : null;
-        if (refreshToken) {
-          const newAccessToken = await refreshAccessToken(refreshToken);
-          
-          if (newAccessToken) {
-            console.log("✅ Studio Config Update: Token refreshed! Retrying...");
-            
-            // Retry the request with new token
-            const retryResponse = await fetch("/api/config", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${newAccessToken}`,
-              },
-              body: JSON.stringify(values),
-            });
-            
-            if (retryResponse.ok) {
-              const result = await retryResponse.json();
-              console.log("✅ Studio Config Update Success (after refresh):", result);
-              return result;
-            }
-          }
-        }
-        
-        throw new Error("Session expired. Please login again.");
-      }
-
-      if (!response.ok) {
-        const detail = await response.json().catch(() => ({}));
-        console.error("❌ Studio Config Update Failed:", detail);
-        throw new Error(detail.error ?? tMessages("error"));
-      }
-
-      const result: MutationResult = await response.json();
-      console.log("✅ Studio Config Update Success:", result);
-
-      // 2. 🔥 DIVINE: Sync to Vapi using helper (same proven endpoint as onboarding)
-      // Mark sync status to prevent premature success toast
-      result.vapiSyncSuccess = false;
-      result.vapiSyncError = null;
-      
-      try {
-        console.log("🔥 DIVINE: Using syncStudioConfigToVapi helper (proven working)");
-        
-        // Show syncing toast (will auto-dismiss)
-        const syncToastId = toast.loading("🔄 Syncing to Vapi...", {
-          description: "Updating your AI assistant configuration",
-        });
-        
-        const syncResult = await syncStudioConfigToVapi(
-          values,
-          values.vapiAssistantId || null
-        );
-        
-        // Dismiss loading toast
-        toast.dismiss(syncToastId);
-        
-        if (!syncResult.success) {
-          console.error("❌ Vapi Sync Failed (after retries):", syncResult.error);
-          result.vapiSyncError = syncResult.error;
-          
-          // Only show error if it's a REAL error (not transient network issue)
-          // The retry logic already handled transient errors
-          toast.error("🚨 Vapi Sync Failed", {
-            description: `Error: ${syncResult.error || "Unknown error"}`,
-            duration: 10000,
-          });
-        } else {
-          const assistant = syncResult.assistant;
-          console.log("✅ Vapi Sync Success:", assistant);
-          result.vapiSyncSuccess = true;
-          
-          // Determine if created or updated
-          const isNewAssistant = !values.vapiAssistantId && assistant?.id;
-          
-          if (isNewAssistant) {
-            toast.success("🆕 New Assistant Created!", {
-              description: `Created: ${assistant.name}`,
-              duration: 5000,
-            });
-            
-            // Update assistant ID in result
-            if (assistant.id && result.config) {
-              result.config = { ...result.config, vapiAssistantId: assistant.id };
-            }
-          } else {
-            toast.success("🔄 Assistant Updated Successfully!", {
-              description: (
-                <div className="space-y-1 text-xs">
-                  <div>✅ Voice: {assistant.voice?.provider} @ {assistant.voice?.speed || 1}x</div>
-                  <div>✅ Model: {assistant.model?.model}</div>
-                  <div>✅ System Prompt: {assistant.model?.messages?.[0]?.content?.substring(0, 50)}...</div>
-                  <div className="pt-1 text-[10px] opacity-70">
-                    ID: {assistant.id?.slice(0, 12)}...
-                  </div>
-                </div>
-              ),
-              duration: 5000,
-            });
-          }
-        }
-      } catch (syncError) {
-        console.warn("⚠️ Vapi sync error:", syncError);
-        result.vapiSyncError = syncError instanceof Error ? syncError.message : "Unknown error";
-        // Don't fail the whole mutation if Vapi sync fails
-      }
-
-      return result;
+      // Use divine orchestrator
+      return await updateStudioConfiguration(values);
     },
-    onSuccess: (data, variables) => {
-      const nextConfig = data.config ?? variables;
-      queryClient.setQueryData(["studio-config"], nextConfig);
-      form.reset(nextConfig);
-      onLinkedAssistantChange?.(nextConfig.vapiAssistantId ?? null);
-      
-      // 🔥 DIVINE: Only show success toast if Vapi sync succeeded!
-      // If sync failed, error toast already shown in mutationFn
-      if (data.vapiSyncSuccess) {
-        // Success toast already shown in mutationFn (detailed with assistant info)
-        // No need to show generic toast here
-      } else if (data.vapiSyncError) {
-        // Vapi sync failed but DB save succeeded
-        toast.warning("⚠️ Configuration saved but not synced to Vapi", {
-          description: "Your settings are saved but Vapi assistant update failed. Check logs.",
-          duration: 8000,
-        });
-      } else {
-        // Fallback: show generic success (shouldn't happen)
-        toast.success("✅ Configuration saved", {
-          description: "Your settings have been updated",
-        });
+    onSuccess: (result) => {
+      // Update React Query cache with DB result
+      const savedConfig = result.db.config;
+      if (savedConfig) {
+        queryClient.setQueryData(["studio-config"], savedConfig);
+        form.reset(savedConfig);
+        onLinkedAssistantChange?.(savedConfig.vapiAssistantId ?? null);
       }
+      
+      // Show appropriate toasts
+      handleStudioUpdateToasts(result);
     },
     onError: (error) => {
-      toast.error(tMessages("error"), { description: error.message });
+      handleStudioUpdateError(error);
     },
   });
 
