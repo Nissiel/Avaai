@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useIntegrationsStatus } from "@/lib/hooks/use-integrations-status";
+import { createAssistant } from "@/lib/api/assistants";
 import type { OnboardingValues } from "@/lib/validations/onboarding";
 
 interface AssistantStepProps {
@@ -57,58 +58,40 @@ export function AssistantStep({ form, onNext, onBack }: AssistantStepProps) {
       // Get the selected voice object
       const voice = DEFAULT_VOICES.find((v) => v.voiceId === selectedVoice) || DEFAULT_VOICES[0];
 
-      // 🎯 DIVINE: Get token from localStorage for authenticated request
-      const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
-      
-      if (!token) {
-        toast.error("Authentication required. Please login first.");
-        return;
-      }
-
-      const payload = {
+      // 🔥 DIVINE: Use centralized API call with retry logic + token refresh
+      // Note: Payload matches backend CreateAssistantRequest exactly
+      const payload: any = {
         name: assistantName,
         voice_provider: voice.provider,
         voice_id: voice.voiceId,
         first_message: t("defaults.firstMessage", { name: assistantName }),
+        voice_speed: 1.0,
         model_provider: "openai",
         model: "gpt-4o-mini",
         temperature: 0.7,
         max_tokens: 250,
+        transcriber_provider: "deepgram",
+        transcriber_model: "nova-2",
+        transcriber_language: "en",
         metadata: {
           created_from: "onboarding",
         },
       };
 
-      console.log("🚀 Creating assistant with payload:", payload);
+      console.log("🚀 Creating assistant via centralized API:", payload);
 
-      // 🎯 DIVINE: Call Python backend directly with auth
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/assistants`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-      });
+      // 🔥 DIVINE: Call through centralized function (has retry + token refresh)
+      const assistant = await createAssistant(payload);
+      console.log("✅ Assistant created successfully:", assistant);
 
-      console.log("📥 Create assistant response:", response.status);
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ detail: "Unknown error" }));
-        console.error("❌ Failed to create assistant:", error);
-        throw new Error(error.detail || "Failed to create assistant");
-      }
-
-      const result = await response.json();
-      console.log("✅ Assistant created:", result);
-
-      // Mark assistant as created
+      // Mark assistant as created in onboarding
       try {
+        const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
         await fetch("/api/user/onboarding", {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
           body: JSON.stringify({ onboarding_assistant_created: true }),
         });
@@ -120,8 +103,9 @@ export function AssistantStep({ form, onNext, onBack }: AssistantStepProps) {
       toast.success(t("success.created", { name: assistantName }));
       if (onNext) onNext();
     } catch (error) {
-      console.error("Failed to create assistant:", error);
-      toast.error(t("form.error"));
+      console.error("❌ Failed to create assistant:", error);
+      const message = error instanceof Error ? error.message : "Unknown error";
+      toast.error(message.includes("Session expired") ? message : t("form.error"));
     } finally {
       setIsCreating(false);
     }

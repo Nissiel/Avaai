@@ -20,7 +20,8 @@ class VoicePreviewPayload(BaseModel):
 def _client(user: User) -> VapiClient:
     """Create VapiClient with user's personal API key (multi-tenant)."""
     try:
-        return VapiClient(token=user.vapi_api_key)
+        # 🔥 DIVINE FIX: Correct parameter is user_api_key, not token
+        return VapiClient(user_api_key=user.vapi_api_key)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
 
