@@ -24,6 +24,9 @@ export function VapiSettingsForm() {
   const queryClient = useQueryClient();
 
   const { hasVapiKey, isLoading: statusLoading } = useVapiStatus();
+  const label = t("apiKey.label");
+  const placeholder = t("apiKey.placeholder");
+  const helpText = t("apiKey.hint");
 
   // 🔥 DIVINE: Save mutation with centralized API
   const saveMutation = useMutation({
@@ -102,11 +105,11 @@ export function VapiSettingsForm() {
         {statusLoading ? (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="w-4 h-4 animate-spin" />
-            Loading status...
+            {t("status.testing")}
           </div>
         ) : hasVapiKey ? (
           <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20 text-green-600 dark:text-green-400">
-            ✅ {t("status.configured")}
+            ✅ {t("status.connected")}
           </div>
         ) : (
           <div className="p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20 text-yellow-600 dark:text-yellow-400">
@@ -116,16 +119,16 @@ export function VapiSettingsForm() {
 
         {/* Input Field */}
         <div className="space-y-2">
-          <Label htmlFor="vapi-key">{t("form.label")}</Label>
+          <Label htmlFor="vapi-key">{label}</Label>
           <Input
             id="vapi-key"
             type="password"
-            placeholder={t("form.placeholder")}
+            placeholder={placeholder}
             value={apiKey}
             onChange={(e) => setApiKey(e.target.value)}
             disabled={isLoading}
           />
-          <p className="text-xs text-muted-foreground">{t("form.help")}</p>
+          <p className="text-xs text-muted-foreground">{helpText}</p>
         </div>
 
         {/* Actions */}

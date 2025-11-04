@@ -30,6 +30,7 @@ import {
   type AuthTokenResponse,
 } from "@/lib/auth/session-client";
 import { useSessionStore } from "@/stores/session-store";
+import { emitTokenChange } from "@/lib/hooks/use-auth-token";
 
 // ============================================================================
 // Validation Schema
@@ -157,6 +158,7 @@ export function SignupForm() {
       if (typeof window !== "undefined") {
         localStorage.setItem("access_token", data.access_token);
         localStorage.setItem("refresh_token", data.refresh_token);
+        emitTokenChange();
 
         const sessionPayload = createSessionFromTokenResponse(data);
         setSession(sessionPayload);

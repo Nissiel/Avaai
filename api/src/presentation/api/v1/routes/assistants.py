@@ -65,7 +65,7 @@ logger = logging.getLogger(__name__)
 def _client(user: User) -> VapiClient:
     """🎯 DIVINE: Create VapiClient with user's personal API key (multi-tenant)."""
     try:
-        return VapiClient(user_api_key=user.vapi_api_key)  # 🔥 DIVINE: Fixed parameter name!
+        return VapiClient(token=user.vapi_api_key)  # 🔥 DIVINE: Correct parameter name!
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,

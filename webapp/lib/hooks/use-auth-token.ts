@@ -75,6 +75,14 @@ export function useAuthToken(): string | null {
 }
 
 /**
+ * Notify all listeners that the auth token changed.
+ */
+export function emitTokenChange() {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new Event("token-change"));
+}
+
+/**
  * Helper to get token synchronously (for non-React code).
  * 
  * Use this in utility functions, API helpers, etc.

@@ -9,6 +9,7 @@ import {
   persistSession,
 } from "@/lib/auth/session-client";
 import { useSessionStore } from "@/stores/session-store";
+import { emitTokenChange } from "@/lib/hooks/use-auth-token";
 
 type SessionProviderProps = React.PropsWithChildren<{
   session?: AvaSession | null;
@@ -90,6 +91,7 @@ export function SessionProvider({ children, session }: SessionProviderProps) {
           window.localStorage.removeItem("access_token");
           window.localStorage.removeItem("refresh_token");
           window.localStorage.removeItem("remember_me");
+          emitTokenChange();
         }
         applySession(null);
       }

@@ -16,6 +16,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { clearPersistedSession } from "@/lib/auth/session-client";
+import { emitTokenChange } from "@/lib/hooks/use-auth-token";
 import { useSessionStore } from "@/stores/session-store";
 
 function initials(name?: string | null): string {
@@ -48,6 +49,7 @@ export function UserMenu() {
         window.localStorage.removeItem("refresh_token");
         window.localStorage.removeItem("remember_me");
         window.localStorage.removeItem("onboarding_completed");
+        emitTokenChange();
       }
 
       // Force redirect to login page

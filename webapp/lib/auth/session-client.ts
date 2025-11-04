@@ -1,6 +1,7 @@
 "use client";
 
 import type { Session } from "next-auth";
+import { emitTokenChange } from "@/lib/hooks/use-auth-token";
 
 export interface AuthUserPayload {
   id: string;
@@ -135,6 +136,7 @@ export async function refreshAccessToken(refreshToken: string): Promise<string |
       if (data.refresh_token) {
         window.localStorage.setItem("refresh_token", data.refresh_token);
       }
+      emitTokenChange();
     }
     
     return data.access_token;
@@ -143,4 +145,3 @@ export async function refreshAccessToken(refreshToken: string): Promise<string |
     return null;
   }
 }
-
