@@ -307,14 +307,25 @@ export function StudioSettingsForm({
       try {
         console.log("🔥 DIVINE: Using syncStudioConfigToVapi helper (proven working)");
         
+        // Show syncing toast (will auto-dismiss)
+        const syncToastId = toast.loading("🔄 Syncing to Vapi...", {
+          description: "Updating your AI assistant configuration",
+        });
+        
         const syncResult = await syncStudioConfigToVapi(
           values,
           values.vapiAssistantId || null
         );
         
+        // Dismiss loading toast
+        toast.dismiss(syncToastId);
+        
         if (!syncResult.success) {
-          console.error("❌ Vapi Sync Failed:", syncResult.error);
+          console.error("❌ Vapi Sync Failed (after retries):", syncResult.error);
           result.vapiSyncError = syncResult.error;
+          
+          // Only show error if it's a REAL error (not transient network issue)
+          // The retry logic already handled transient errors
           toast.error("🚨 Vapi Sync Failed", {
             description: `Error: ${syncResult.error || "Unknown error"}`,
             duration: 10000,

@@ -73,6 +73,33 @@ export function mapStudioConfigToAssistantPayload(config: StudioConfigInput) {
  * @param assistantId - Existing assistant ID (for update) or null (for create)
  * @returns Assistant data from Vapi
  */
+/**
+ * 🔥 DIVINE: Retry helper with exponential backoff
+ */
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  maxRetries: number = 3,
+  delayMs: number = 1000
+): Promise<T> {
+  let lastError: any;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error;
+      
+      if (attempt < maxRetries) {
+        const delay = delayMs * Math.pow(2, attempt - 1); // Exponential backoff
+        console.log(`⏳ Retry attempt ${attempt}/${maxRetries} after ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+  
+  throw lastError;
+}
+
 export async function syncStudioConfigToVapi(
   config: StudioConfigInput,
   assistantId: string | null = null
@@ -99,59 +126,61 @@ export async function syncStudioConfigToVapi(
   console.log(`🔥 ${method} ${url}`);
   
   try {
-    // Make request
-    let response = await fetch(url, {
-      method,
-      headers: getAuthHeaders(token || undefined),
-      body: JSON.stringify(payload),
-    });
-    
-    // Handle 401 - try token refresh
-    if (response.status === 401) {
-      console.log("⚠️ 401 Unauthorized - Attempting token refresh...");
+    // 🔥 DIVINE: Wrap fetch in retry logic (handles transient network errors)
+    const data = await retryWithBackoff(async () => {
+      // Make request
+      let response = await fetch(url, {
+        method,
+        headers: getAuthHeaders(token || undefined),
+        body: JSON.stringify(payload),
+      });
       
-      const refreshToken = typeof window !== "undefined" ? localStorage.getItem("refresh_token") : null;
-      if (refreshToken) {
-        const newAccessToken = await refreshAccessToken(refreshToken);
+      // Handle 401 - try token refresh
+      if (response.status === 401) {
+        console.log("⚠️ 401 Unauthorized - Attempting token refresh...");
         
-        if (newAccessToken) {
-          console.log("✅ Token refreshed! Retrying...");
-          token = newAccessToken;
+        const refreshToken = typeof window !== "undefined" ? localStorage.getItem("refresh_token") : null;
+        if (refreshToken) {
+          const newAccessToken = await refreshAccessToken(refreshToken);
           
-          // Retry with new token
-          response = await fetch(url, {
-            method,
-            headers: getAuthHeaders(token),
-            body: JSON.stringify(payload),
-          });
+          if (newAccessToken) {
+            console.log("✅ Token refreshed! Retrying...");
+            token = newAccessToken;
+            
+            // Retry with new token
+            response = await fetch(url, {
+              method,
+              headers: getAuthHeaders(token),
+              body: JSON.stringify(payload),
+            });
+          }
+        }
+        
+        // If still 401, throw
+        if (response.status === 401) {
+          throw new Error("Session expired. Please login again.");
         }
       }
       
-      // If still 401, throw
-      if (response.status === 401) {
-        throw new Error("Session expired. Please login again.");
+      // Handle error response
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.detail || errorData.error || `HTTP ${response.status}`;
+        
+        console.error("❌ Sync failed:", {
+          status: response.status,
+          error: errorMessage,
+          url,
+        });
+        
+        // Throw to trigger retry
+        throw new Error(errorMessage);
       }
-    }
-    
-    // Handle error response
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      const errorMessage = errorData.detail || errorData.error || `HTTP ${response.status}`;
       
-      console.error("❌ Sync failed:", {
-        status: response.status,
-        error: errorMessage,
-        url,
-      });
-      
-      return {
-        success: false,
-        error: errorMessage,
-      };
-    }
+      // Success! Return data
+      return await response.json();
+    }, 3, 1000); // 3 retries, 1s initial delay
     
-    // Success!
-    const data = await response.json();
     console.log("✅ Sync SUCCESS:", data);
     
     return {
@@ -160,7 +189,7 @@ export async function syncStudioConfigToVapi(
     };
     
   } catch (error: any) {
-    console.error("❌ Sync exception:", error);
+    console.error("❌ Sync exception (after all retries):", error);
     return {
       success: false,
       error: error.message || "Unknown error",
