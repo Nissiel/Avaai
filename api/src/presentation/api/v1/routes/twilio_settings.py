@@ -160,7 +160,7 @@ async def delete_twilio_settings(
     if user.vapi_api_key and user.twilio_phone_number:
         try:
             logger.info(f"🗑️ Deleting Twilio number from Vapi: {user.twilio_phone_number}")
-            vapi = VapiClient(token=user.vapi_api_key)
+            vapi = VapiClient(user_api_key=user.vapi_api_key)
             
             # Get all phone numbers to find the ID
             phone_numbers = await vapi.get_phone_numbers()
