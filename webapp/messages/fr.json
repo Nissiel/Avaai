@@ -768,5 +768,85 @@
   "userMenu": {
     "signedInAs": "Connecté en tant que",
     "profile": "Profil"
+  },
+  "settings": {
+    "vapi": {
+      "title": "Configuration Vapi",
+      "description": "Configurez votre intégration Vapi.ai pour les assistants vocaux",
+      "apiKey": {
+        "label": "Clé API Vapi",
+        "placeholder": "Entrez votre clé API Vapi",
+        "hint": "Obtenez votre clé depuis le tableau de bord vapi.ai → Paramètres → Clés API"
+      },
+      "status": {
+        "connected": "Connecté",
+        "notConfigured": "Non configuré",
+        "testing": "Test de connexion..."
+      },
+      "actions": {
+        "save": "Enregistrer la configuration",
+        "test": "Tester la connexion",
+        "delete": "Supprimer la configuration",
+        "update": "Mettre à jour la clé"
+      },
+      "success": {
+        "saved": "Configuration Vapi enregistrée avec succès",
+        "updated": "Configuration Vapi mise à jour avec succès",
+        "deleted": "Configuration Vapi supprimée",
+        "connected": "Connecté avec succès à Vapi.ai"
+      },
+      "errors": {
+        "emptyKey": "Veuillez entrer une clé API",
+        "invalidFormat": "Format de clé API invalide",
+        "saveFailed": "Échec de l'enregistrement",
+        "connectionFailed": "Échec de la connexion à Vapi.ai",
+        "deleteFailed": "Échec de la suppression"
+      }
+    },
+    "twilio": {
+      "title": "Configuration Twilio",
+      "description": "Configurez vos identifiants Twilio pour les appels téléphoniques",
+      "accountSid": {
+        "label": "Account SID",
+        "placeholder": "Entrez votre Twilio Account SID",
+        "hint": "Trouvez ceci dans votre Console Twilio"
+      },
+      "authToken": {
+        "label": "Auth Token",
+        "placeholder": "Entrez votre Twilio Auth Token",
+        "hint": "Trouvez ceci dans votre Console Twilio"
+      },
+      "phoneNumber": {
+        "label": "Numéro de téléphone",
+        "placeholder": "+33123456789",
+        "hint": "Votre numéro Twilio avec l'indicatif pays"
+      },
+      "status": {
+        "connected": "Connecté",
+        "notConfigured": "Non configuré",
+        "testing": "Test de connexion..."
+      },
+      "actions": {
+        "save": "Enregistrer les identifiants",
+        "test": "Tester la connexion",
+        "delete": "Supprimer les identifiants",
+        "update": "Mettre à jour les identifiants"
+      },
+      "success": {
+        "saved": "Identifiants Twilio enregistrés avec succès",
+        "updated": "Identifiants Twilio mis à jour avec succès",
+        "deleted": "Identifiants Twilio supprimés",
+        "connected": "Connecté avec succès à Twilio"
+      },
+      "errors": {
+        "emptyFields": "Veuillez remplir tous les champs requis",
+        "invalidAccountSid": "Format Account SID invalide",
+        "invalidAuthToken": "Format Auth Token invalide",
+        "invalidPhoneNumber": "Format de numéro invalide",
+        "saveFailed": "Échec de l'enregistrement",
+        "connectionFailed": "Échec de la connexion à Twilio",
+        "deleteFailed": "Échec de la suppression"
+      }
+    }
   }
 }

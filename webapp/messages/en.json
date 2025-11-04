@@ -771,5 +771,85 @@
   "userMenu": {
     "signedInAs": "Signed in as",
     "profile": "Profile"
+  },
+  "settings": {
+    "vapi": {
+      "title": "Vapi Configuration",
+      "description": "Configure your Vapi.ai integration for voice assistants",
+      "apiKey": {
+        "label": "Vapi API Key",
+        "placeholder": "Enter your Vapi API key",
+        "hint": "Get your key from vapi.ai dashboard → Settings → API Keys"
+      },
+      "status": {
+        "connected": "Connected",
+        "notConfigured": "Not configured",
+        "testing": "Testing connection..."
+      },
+      "actions": {
+        "save": "Save Configuration",
+        "test": "Test Connection",
+        "delete": "Remove Configuration",
+        "update": "Update Key"
+      },
+      "success": {
+        "saved": "Vapi configuration saved successfully",
+        "updated": "Vapi configuration updated successfully",
+        "deleted": "Vapi configuration removed",
+        "connected": "Successfully connected to Vapi.ai"
+      },
+      "errors": {
+        "emptyKey": "Please enter an API key",
+        "invalidFormat": "Invalid API key format",
+        "saveFailed": "Failed to save configuration",
+        "connectionFailed": "Failed to connect to Vapi.ai",
+        "deleteFailed": "Failed to remove configuration"
+      }
+    },
+    "twilio": {
+      "title": "Twilio Configuration",
+      "description": "Configure your Twilio credentials for phone calls",
+      "accountSid": {
+        "label": "Account SID",
+        "placeholder": "Enter your Twilio Account SID",
+        "hint": "Find this in your Twilio Console"
+      },
+      "authToken": {
+        "label": "Auth Token",
+        "placeholder": "Enter your Twilio Auth Token",
+        "hint": "Find this in your Twilio Console"
+      },
+      "phoneNumber": {
+        "label": "Phone Number",
+        "placeholder": "+1234567890",
+        "hint": "Your Twilio phone number with country code"
+      },
+      "status": {
+        "connected": "Connected",
+        "notConfigured": "Not configured",
+        "testing": "Testing connection..."
+      },
+      "actions": {
+        "save": "Save Credentials",
+        "test": "Test Connection",
+        "delete": "Remove Credentials",
+        "update": "Update Credentials"
+      },
+      "success": {
+        "saved": "Twilio credentials saved successfully",
+        "updated": "Twilio credentials updated successfully",
+        "deleted": "Twilio credentials removed",
+        "connected": "Successfully connected to Twilio"
+      },
+      "errors": {
+        "emptyFields": "Please fill in all required fields",
+        "invalidAccountSid": "Invalid Account SID format",
+        "invalidAuthToken": "Invalid Auth Token format",
+        "invalidPhoneNumber": "Invalid phone number format",
+        "saveFailed": "Failed to save credentials",
+        "connectionFailed": "Failed to connect to Twilio",
+        "deleteFailed": "Failed to remove credentials"
+      }
+    }
   }
 }

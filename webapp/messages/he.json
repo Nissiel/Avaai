@@ -768,5 +768,85 @@
   "userMenu": {
     "signedInAs": "מחובר כעת",
     "profile": "פרופיל"
+  },
+  "settings": {
+    "vapi": {
+      "title": "הגדרות Vapi",
+      "description": "הגדר את האינטגרציה של Vapi.ai עבור עוזרים קוליים",
+      "apiKey": {
+        "label": "מפתח API של Vapi",
+        "placeholder": "הזן את מפתח ה-API של Vapi",
+        "hint": "קבל את המפתח מלוח המחוונים של vapi.ai ← הגדרות ← מפתחות API"
+      },
+      "status": {
+        "connected": "מחובר",
+        "notConfigured": "לא מוגדר",
+        "testing": "בודק חיבור..."
+      },
+      "actions": {
+        "save": "שמור הגדרות",
+        "test": "בדוק חיבור",
+        "delete": "מחק הגדרות",
+        "update": "עדכן מפתח"
+      },
+      "success": {
+        "saved": "הגדרות Vapi נשמרו בהצלחה",
+        "updated": "הגדרות Vapi עודכנו בהצלחה",
+        "deleted": "הגדרות Vapi נמחקו",
+        "connected": "חיבור ל-Vapi.ai הצליח"
+      },
+      "errors": {
+        "emptyKey": "אנא הזן מפתח API",
+        "invalidFormat": "פורמט מפתח API לא תקין",
+        "saveFailed": "שמירה נכשלה",
+        "connectionFailed": "חיבור ל-Vapi.ai נכשל",
+        "deleteFailed": "מחיקה נכשלה"
+      }
+    },
+    "twilio": {
+      "title": "הגדרות Twilio",
+      "description": "הגדר את פרטי הכניסה של Twilio עבור שיחות טלפון",
+      "accountSid": {
+        "label": "Account SID",
+        "placeholder": "הזן את ה-Account SID של Twilio",
+        "hint": "מצא זאת בקונסולה של Twilio"
+      },
+      "authToken": {
+        "label": "Auth Token",
+        "placeholder": "הזן את ה-Auth Token של Twilio",
+        "hint": "מצא זאת בקונסולה של Twilio"
+      },
+      "phoneNumber": {
+        "label": "מספר טלפון",
+        "placeholder": "+972501234567",
+        "hint": "מספר הטלפון של Twilio עם קוד מדינה"
+      },
+      "status": {
+        "connected": "מחובר",
+        "notConfigured": "לא מוגדר",
+        "testing": "בודק חיבור..."
+      },
+      "actions": {
+        "save": "שמור פרטי כניסה",
+        "test": "בדוק חיבור",
+        "delete": "מחק פרטי כניסה",
+        "update": "עדכן פרטי כניסה"
+      },
+      "success": {
+        "saved": "פרטי הכניסה של Twilio נשמרו בהצלחה",
+        "updated": "פרטי הכניסה של Twilio עודכנו בהצלחה",
+        "deleted": "פרטי הכניסה של Twilio נמחקו",
+        "connected": "חיבור ל-Twilio הצליח"
+      },
+      "errors": {
+        "emptyFields": "אנא מלא את כל השדות הנדרשים",
+        "invalidAccountSid": "פורמט Account SID לא תקין",
+        "invalidAuthToken": "פורמט Auth Token לא תקין",
+        "invalidPhoneNumber": "פורמט מספר טלפון לא תקין",
+        "saveFailed": "שמירה נכשלה",
+        "connectionFailed": "חיבור ל-Twilio נכשל",
+        "deleteFailed": "מחיקה נכשלה"
+      }
+    }
   }
 }
