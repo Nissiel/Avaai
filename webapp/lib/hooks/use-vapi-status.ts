@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useSessionStore } from "@/stores/session-store";
+import { useAuthToken } from "@/lib/hooks/use-auth-token";
 import { refreshAccessToken } from "@/lib/auth/session-client";
 
 interface VapiSettings {
@@ -14,15 +14,12 @@ interface VapiSettings {
  * With automatic token refresh on 401 and proper cache invalidation
  */
 export function useVapiStatus() {
-  const { session } = useSessionStore((state) => ({ session: state.session }));
+  const token = useAuthToken(); // 🔥 DIVINE: localStorage as Single Source of Truth
   const queryClient = useQueryClient();
 
   const { data, isLoading, refetch } = useQuery<VapiSettings>({
-    queryKey: ["vapi-settings", session?.accessToken],
+    queryKey: ["vapi-settings"],
     queryFn: async () => {
-      // 🎯 DIVINE: Fallback to localStorage if session store empty
-      const token = session?.accessToken || (typeof window !== "undefined" ? localStorage.getItem("access_token") : null);
-      
       if (!token) {
         throw new Error("No access token");
       }
@@ -66,7 +63,7 @@ export function useVapiStatus() {
 
       return res.json();
     },
-    enabled: !!session?.accessToken || (typeof window !== "undefined" && !!localStorage.getItem("access_token")), // Fetch if token exists
+    enabled: !!token, // 🔥 DIVINE: Only run if token exists (no race condition!)
     staleTime: 0, // 🔥 DIVINE: Always fresh, credentials change frequently
     gcTime: 1000 * 60, // Keep in cache 1 minute only (renamed from cacheTime in React Query v5)
   });

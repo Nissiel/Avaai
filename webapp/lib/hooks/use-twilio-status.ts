@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useSessionStore } from "@/lib/stores/session-store";
+import { useAuthToken } from "@/lib/hooks/use-auth-token";
 
 interface TwilioStatusResponse {
   has_twilio_credentials: boolean;
@@ -8,17 +8,17 @@ interface TwilioStatusResponse {
 }
 
 export function useTwilioStatus() {
-  const session = useSessionStore((state) => state.session);
+  const token = useAuthToken(); // 🔥 DIVINE: localStorage as Single Source of Truth
   const queryClient = useQueryClient();
 
   const { data, isLoading, refetch, error } = useQuery<TwilioStatusResponse>({
-    queryKey: ["twilio-settings", session?.accessToken],
+    queryKey: ["twilio-settings"],
     queryFn: async () => {
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/api/v1/twilio-settings`,
         {
           headers: {
-            Authorization: `Bearer ${session?.accessToken}`,
+            Authorization: `Bearer ${token}`,
           },
         }
       );
@@ -29,7 +29,7 @@ export function useTwilioStatus() {
 
       return response.json();
     },
-    enabled: !!session?.accessToken,
+    enabled: !!token, // 🔥 DIVINE: Only run if token exists (no race condition!)
     staleTime: 0, // 🔥 DIVINE: Always fresh, credentials change frequently
     gcTime: 1000 * 60, // Keep in cache 1 minute only (renamed from cacheTime in React Query v5)
   });

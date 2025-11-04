@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useSessionStore } from "@/lib/stores/session-store";
+import { useAuthToken } from "@/lib/hooks/use-auth-token";
 
 interface IntegrationsStatus {
   vapi: {
@@ -18,18 +18,18 @@ interface IntegrationsStatus {
  * Cached for onboarding performance
  */
 export function useIntegrationsStatus() {
-  const session = useSessionStore((state) => state.session);
+  const token = useAuthToken(); // 🔥 DIVINE: localStorage as Single Source of Truth
   const queryClient = useQueryClient();
 
   const { data, isLoading, refetch } = useQuery<IntegrationsStatus>({
-    queryKey: ["integrations-status", session?.accessToken],
+    queryKey: ["integrations-status"],
     queryFn: async () => {
       const [vapiResponse, twilioResponse] = await Promise.all([
         fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/vapi-settings`, {
-          headers: { Authorization: `Bearer ${session?.accessToken}` },
+          headers: { Authorization: `Bearer ${token}` },
         }),
         fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/twilio-settings`, {
-          headers: { Authorization: `Bearer ${session?.accessToken}` },
+          headers: { Authorization: `Bearer ${token}` },
         }),
       ]);
 
@@ -50,7 +50,7 @@ export function useIntegrationsStatus() {
         },
       };
     },
-    enabled: !!session?.accessToken,
+    enabled: !!token, // 🔥 DIVINE: Only run if token exists (no race condition!)
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 

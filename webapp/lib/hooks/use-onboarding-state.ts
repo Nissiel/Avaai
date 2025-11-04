@@ -1,6 +1,6 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useSessionStore } from "@/lib/stores/session-store";
+import { useAuthToken } from "@/lib/hooks/use-auth-token";
 
 export interface OnboardingStep {
   id: string;
@@ -48,7 +48,7 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
 export function useOnboardingState() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const session = useSessionStore((state) => state.session);
+  const token = useAuthToken(); // 🔥 DIVINE: localStorage as Single Source of Truth
 
   // Get current step from URL or default to 1
   const stepParam = searchParams?.get("step");
@@ -90,7 +90,7 @@ export function useOnboardingState() {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${session?.accessToken}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           [`onboarding_${stepId}_skipped`]: true,
@@ -109,7 +109,7 @@ export function useOnboardingState() {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${session?.accessToken}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           onboarding_completed: true,
