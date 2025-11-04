@@ -142,11 +142,49 @@ async def delete_twilio_settings(
     """
     Delete user's Twilio credentials.
     
-    Removes all Twilio configuration from the user's profile.
+    🔥 DIVINE: Complete cleanup - removes BOTH:
+    1. Credentials from database
+    2. Phone number from Vapi (so it can be re-imported later)
+    
+    This ensures users can re-add their Twilio number without conflicts.
     """
+    import logging
+    from api.src.infrastructure.vapi.client import VapiClient
+    
+    logger = logging.getLogger(__name__)
+    
     # 🔥 DIVINE: Merge user into current session to ensure deletes are tracked
     user = await db.merge(current_user)
     
+    # Step 1: Delete from Vapi FIRST (if user has Vapi key and phone number)
+    if user.vapi_api_key and user.twilio_phone_number:
+        try:
+            logger.info(f"🗑️ Deleting Twilio number from Vapi: {user.twilio_phone_number}")
+            vapi = VapiClient(token=user.vapi_api_key)
+            
+            # Get all phone numbers to find the ID
+            phone_numbers = await vapi.get_phone_numbers()
+            
+            # Find the phone number that matches
+            phone_to_delete = None
+            for phone in phone_numbers:
+                if phone.get("number") == user.twilio_phone_number:
+                    phone_to_delete = phone
+                    break
+            
+            if phone_to_delete:
+                phone_id = phone_to_delete.get("id")
+                await vapi.delete_phone_number(phone_id)
+                logger.info(f"✅ Deleted phone number from Vapi: {phone_id}")
+            else:
+                logger.warning(f"⚠️ Phone number {user.twilio_phone_number} not found in Vapi (already deleted?)")
+                
+        except Exception as e:
+            # Don't fail the whole operation if Vapi delete fails
+            # User can still delete credentials from DB
+            logger.error(f"❌ Failed to delete from Vapi (non-fatal): {e}")
+    
+    # Step 2: Delete from database
     user.twilio_account_sid = None
     user.twilio_auth_token = None
     user.twilio_phone_number = None

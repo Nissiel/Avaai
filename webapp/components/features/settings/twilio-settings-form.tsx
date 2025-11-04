@@ -16,7 +16,7 @@ export function TwilioSettingsForm() {
   const session = useSessionStore((state) => state.session);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { hasTwilioCredentials, accountSidPreview, phoneNumber, refetch } = useTwilioStatus();
+  const { hasTwilioCredentials, accountSidPreview, phoneNumber, refetch, invalidate } = useTwilioStatus();
 
   const returnTo = searchParams?.get("returnTo");
   
@@ -177,6 +177,9 @@ export function TwilioSettingsForm() {
         throw new Error("Failed to delete Twilio credentials");
       }
 
+      // 🔥 DIVINE: Invalidate cache immediately to prevent stale data
+      invalidate();
+      
       toast.success(t("success.credentialsDeleted"));
       setTwilioPhoneNumber("");
       refetch();

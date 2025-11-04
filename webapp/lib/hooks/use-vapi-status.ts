@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSessionStore } from "@/stores/session-store";
 import { refreshAccessToken } from "@/lib/auth/session-client";
 
@@ -11,10 +11,11 @@ interface VapiSettings {
 
 /**
  * 🎯 DIVINE: Hook to check if user has configured their Vapi API key
- * With automatic token refresh on 401
+ * With automatic token refresh on 401 and proper cache invalidation
  */
 export function useVapiStatus() {
   const { session } = useSessionStore((state) => ({ session: state.session }));
+  const queryClient = useQueryClient();
 
   const { data, isLoading, refetch } = useQuery<VapiSettings>({
     queryKey: ["vapi-settings", session?.accessToken],
@@ -66,13 +67,21 @@ export function useVapiStatus() {
       return res.json();
     },
     enabled: !!session?.accessToken || (typeof window !== "undefined" && !!localStorage.getItem("access_token")), // Fetch if token exists
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    staleTime: 0, // 🔥 DIVINE: Always fresh, credentials change frequently
+    gcTime: 1000 * 60, // Keep in cache 1 minute only (renamed from cacheTime in React Query v5)
   });
+
+  // 🔥 DIVINE: Helper to invalidate cache after mutations
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ["vapi-settings"] });
+    queryClient.removeQueries({ queryKey: ["vapi-settings"] }); // Force removal
+  };
 
   return {
     hasVapiKey: data?.has_vapi_key ?? false,
     vapiKeyPreview: data?.vapi_api_key_preview,
     isLoading,
     refetch,
+    invalidate, // 🔥 DIVINE: Expose invalidate for DELETE operations
   };
 }

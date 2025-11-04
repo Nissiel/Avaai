@@ -1,21 +1,25 @@
 /**
- * Divine Auth Helper - Get token from Zustand OR localStorage
- * Fixes: "Unable to save at the moment" errors when Zustand state is lost
+ * 🔥 DIVINE Auth Helper - localStorage as Single Source of Truth
+ * 
+ * ARCHITECTURE:
+ * - localStorage = Source of Truth (persisted, reliable)
+ * - Zustand = Reactive Cache (UI only, can be empty after refresh)
+ * 
+ * NEVER read from Zustand for API calls - it may be empty!
+ * ALWAYS read from localStorage - it's stable across page reloads.
+ * 
+ * Fixes: "Unable to save at the moment" errors caused by race conditions
+ * between Zustand hydration and API calls.
  */
 
-import { useSessionStore } from "@/lib/stores/session-store";
-
 export function getAuthToken(): string | undefined {
-  // Try Zustand store first
-  const session = useSessionStore.getState().session;
-  let token = session?.accessToken;
+  if (typeof window === "undefined") return undefined;
   
-  // Fallback: localStorage (survives page reloads)
-  if (!token && typeof window !== "undefined") {
-    token = localStorage.getItem("access_token") || undefined;
-  }
+  // 🎯 DIVINE: ALWAYS read from localStorage (single source of truth)
+  // Zustand may be empty after page refresh while bootstrapping
+  const token = localStorage.getItem("access_token");
   
-  return token;
+  return token || undefined;
 }
 
 export function getAuthHeaders(): HeadersInit {

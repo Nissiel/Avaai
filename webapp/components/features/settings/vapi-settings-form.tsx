@@ -26,6 +26,7 @@ import { GlassCard } from "@/components/ui/glass-card";
 import { toast } from "sonner";
 import { useSessionStore } from "@/stores/session-store";
 import { refreshAccessToken } from "@/lib/auth/session-client";
+import { useVapiStatus } from "@/lib/hooks/use-vapi-status";
 
 interface VapiSettings {
   has_vapi_key: boolean;
@@ -36,6 +37,7 @@ export function VapiSettingsForm() {
   const t = useTranslations("settingsPage.vapi");
   const locale = useLocale();
   const { session } = useSessionStore((state) => ({ session: state.session }));
+  const { hasVapiKey, vapiKeyPreview, invalidate } = useVapiStatus(); // 🔥 DIVINE: Use hook for cache management
   const router = useRouter();
   const searchParams = useSearchParams();
   
@@ -235,6 +237,9 @@ export function VapiSettingsForm() {
       });
 
       if (res.ok) {
+        // 🔥 DIVINE: Invalidate cache immediately to prevent stale data
+        invalidate();
+        
         toast.success(t("success.deleted"), {
           description: t("success.deletedDesc"),
         });
