@@ -11,6 +11,7 @@
 
 import * as React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useMutation } from '@tanstack/react-query';
 import { Check, Phone, Sparkles, Rocket, ArrowRight, ArrowLeft } from 'lucide-react';
 import { GlassCard } from '@/components/ui/glass-card';
 import { FuturisticButton } from '@/components/ui/futuristic-button';
@@ -20,6 +21,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { VOICE_PRESETS, PROMPT_TEMPLATES } from '@/lib/vapi/client';
 import { toast } from 'sonner';
+import { createAssistant } from '@/lib/api/assistants';
 
 type OnboardingStep = 'connect' | 'configure' | 'activate';
 
@@ -100,40 +102,41 @@ export function AvaOnboardingWizard() {
     }
   };
 
-  const handleCreateAssistant = async () => {
-    setState({ ...state, status: 'creating' });
-
-    try {
-      // 🎯 DIVINE: Call Python backend with user's Vapi key (multi-tenant)
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/assistants`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: state.name,
-          voice: state.voice,
-          personality: state.personality,
-          instructions: state.instructions,
-          phoneNumber: state.phoneNumber,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        setState({
-          ...state,
-          assistantId: data.assistant.id,
-          status: 'ready',
-        });
-        toast.success('🎉 AVA créée avec succès !');
-      } else {
-        throw new Error(data.error || 'Failed to create assistant');
+  const createMutation = useMutation({
+    mutationFn: () => {
+      const payload: any = {
+        name: state.name,
+        voice: state.voice,
+        instructions: state.instructions,
+        firstMessage: "Bonjour ! Je suis AVA, votre assistante vocale. Comment puis-je vous aider aujourd'hui?",
+      };
+      
+      if (state.phoneNumber) {
+        payload.phoneNumber = state.phoneNumber;
       }
-    } catch (error: any) {
+      
+      return createAssistant(payload);
+    },
+    onMutate: () => {
+      setState({ ...state, status: 'creating' });
+    },
+    onSuccess: (assistant) => {
+      setState({
+        ...state,
+        assistantId: assistant.id,
+        status: 'ready',
+      });
+      toast.success('🎉 AVA créée avec succès !');
+    },
+    onError: (error: Error) => {
       console.error('Failed to create assistant:', error);
       setState({ ...state, status: 'error' });
       toast.error('Erreur: ' + error.message);
-    }
+    },
+  });
+
+  const handleCreateAssistant = () => {
+    createMutation.mutate();
   };
 
   return (

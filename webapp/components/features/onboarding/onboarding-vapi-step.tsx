@@ -3,11 +3,12 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { motion } from "framer-motion";
+import { useMutation } from "@tanstack/react-query";
 import { Mic, ExternalLink, Settings, SkipForward, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { useSessionStore } from "@/lib/stores/session-store";
 import { useIntegrationsStatus } from "@/lib/hooks/use-integrations-status";
+import { saveVapiSettings } from "@/lib/api/vapi-settings";
 
 interface OnboardingVapiStepProps {
   onNext: () => void;
@@ -17,12 +18,28 @@ interface OnboardingVapiStepProps {
 export function OnboardingVapiStep({ onNext, onSkip }: OnboardingVapiStepProps) {
   const t = useTranslations("onboarding.vapi");
   const router = useRouter();
-  const session = useSessionStore((state) => state.session);
   const { vapi, invalidate } = useIntegrationsStatus();
 
   const [vapiKey, setVapiKey] = useState("");
   const [showKey, setShowKey] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
+
+  const saveMutation = useMutation({
+    mutationFn: (key: string) => saveVapiSettings(key),
+    onSuccess: () => {
+      toast.success(t("success.saved", { defaultValue: "Clé Vapi sauvegardée!" }));
+      invalidate();
+      
+      // Wait for success message then advance
+      setTimeout(() => {
+        onNext();
+      }, 800);
+    },
+    onError: (error: Error) => {
+      toast.error(t("errors.saveFailed", { defaultValue: "Échec de la sauvegarde" }), {
+        description: error.message,
+      });
+    },
+  });
 
   // If already configured, auto-advance
   if (vapi.configured) {
@@ -51,9 +68,8 @@ export function OnboardingVapiStep({ onNext, onSkip }: OnboardingVapiStepProps) 
     );
   }
 
-  const handleInlineSave = async () => {
-    // 🎯 DIVINE: Validation minimale - longueur uniquement
-    // Le backend vérifiera la validité réelle via l'API Vapi
+  const handleInlineSave = () => {
+    // Validation minimale - longueur uniquement
     if (!vapiKey || vapiKey.trim().length === 0) {
       toast.error(t("errors.emptyKey", { defaultValue: "Veuillez entrer une clé API" }));
       return;
@@ -66,59 +82,7 @@ export function OnboardingVapiStep({ onNext, onSkip }: OnboardingVapiStepProps) 
       return;
     }
 
-    setIsSaving(true);
-
-    try {
-      // 🔐 DIVINE: Check for authentication token
-      if (!session?.accessToken) {
-        console.error("❌ No access token available");
-        toast.error("Authentification requise", {
-          description: "Veuillez vous reconnecter",
-        });
-        return;
-      }
-
-      console.log("🔄 Saving Vapi key to backend...");
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/vapi-settings`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.accessToken}`,
-          },
-          body: JSON.stringify({ vapi_api_key: vapiKey }),
-        }
-      );
-
-      if (!response.ok) {
-        // 🌟 DIVINE: Extract and show actual backend error
-        const errorData = await response.json().catch(() => ({ detail: "Unknown error" }));
-        const errorMessage = errorData.detail || `HTTP ${response.status}`;
-        console.error("❌ Backend error:", { status: response.status, errorData });
-        
-        toast.error("Impossible de sauvegarder la clé Vapi", {
-          description: errorMessage,
-        });
-        return;
-      }
-
-      console.log("✅ Vapi key saved successfully");
-      toast.success(t("success.saved"));
-      invalidate();
-      
-      // Wait a bit for the success message
-      setTimeout(() => {
-        onNext();
-      }, 800);
-    } catch (error) {
-      console.error("❌ Error saving Vapi key:", error);
-      toast.error(t("errors.saveFailed"), {
-        description: error instanceof Error ? error.message : "Erreur inconnue",
-      });
-    } finally {
-      setIsSaving(false);
-    }
+    saveMutation.mutate(vapiKey.trim());
   };
 
   const handleGoToSettings = () => {
@@ -197,10 +161,10 @@ export function OnboardingVapiStep({ onNext, onSkip }: OnboardingVapiStepProps) 
 
             <button
               onClick={handleInlineSave}
-              disabled={isSaving || !vapiKey}
+              disabled={saveMutation.isPending || !vapiKey}
               className="w-full mt-4 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-medium rounded-xl hover:from-purple-600 hover:to-pink-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-purple-500/25"
             >
-              {isSaving ? t("option1.saving") : t("option1.cta")}
+              {saveMutation.isPending ? t("option1.saving", { defaultValue: "Enregistrement..." }) : t("option1.cta", { defaultValue: "Activer Vapi" })}
             </button>
           </div>
         </div>
