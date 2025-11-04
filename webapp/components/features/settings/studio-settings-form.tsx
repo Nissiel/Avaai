@@ -353,7 +353,7 @@ export function StudioSettingsForm({
             });
             
             // Update assistant ID in result
-            if (assistant.id) {
+            if (assistant.id && result.config) {
               result.config = { ...result.config, vapiAssistantId: assistant.id };
             }
           } else {
