@@ -42,18 +42,20 @@ export function useIntegrationsStatus() {
         })),
       ]);
 
+      // 🔥 DIVINE: Safe access with optional chaining
       return {
         vapi: {
-          configured: vapiData.has_vapi_key,
+          configured: vapiData?.has_vapi_key ?? false,
         },
         twilio: {
-          configured: twilioResponse.settings.configured,
-          phoneNumber: twilioResponse.settings.phone_number,
+          configured: twilioResponse?.settings?.configured ?? false,
+          phoneNumber: twilioResponse?.settings?.phone_number,
         },
       };
     },
     enabled: !!token, // 🔥 DIVINE: Only run if token exists (no race condition!)
     staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 1, // 🔥 DIVINE: Only 1 retry to avoid long waits
   });
 
   const invalidate = () => {
