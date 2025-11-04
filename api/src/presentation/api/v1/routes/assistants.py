@@ -58,7 +58,7 @@ class UpdateAssistantRequest(BaseModel):
 def _client(user: User) -> VapiClient:
     """🎯 DIVINE: Create VapiClient with user's personal API key (multi-tenant)."""
     try:
-        return VapiClient(token=user.vapi_api_key)
+        return VapiClient(user_api_key=user.vapi_api_key)  # 🔥 DIVINE: Fixed parameter name!
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -183,28 +183,61 @@ async def update_assistant(
     client = _client(user)
     
     try:
-        # Build update payload - only include fields that were provided
+        # 🔥 DIVINE: Build COMPLETE update payload - ALL fields!
         update_data = {}
+        
+        # Basic fields
         if request.name is not None:
             update_data["name"] = request.name
+        if request.first_message is not None:
+            update_data["firstMessage"] = request.first_message
+        
+        # 🔥 DIVINE: System prompt (custom AI instructions)
+        if request.system_prompt is not None:
+            update_data["model"] = update_data.get("model", {})
+            update_data["model"]["messages"] = [
+                {"role": "system", "content": request.system_prompt}
+            ]
+        
+        # Voice configuration
         if request.voice_provider is not None and request.voice_id is not None:
             update_data["voice"] = {
                 "provider": request.voice_provider,
                 "voiceId": request.voice_id,
             }
-        if request.first_message is not None:
-            update_data["firstMessage"] = request.first_message
+            # 🔥 DIVINE: Voice speed
+            if request.voice_speed is not None:
+                update_data["voice"]["speed"] = request.voice_speed
+        elif request.voice_speed is not None:
+            # Update only voice speed
+            update_data["voice"] = {"speed": request.voice_speed}
+        
+        # Model configuration
         if request.model is not None:
-            update_data["model"] = {
-                "provider": request.model_provider or "openai",
-                "model": request.model,
-            }
+            update_data["model"] = update_data.get("model", {})
+            update_data["model"]["provider"] = request.model_provider or "openai"
+            update_data["model"]["model"] = request.model
+            
             if request.temperature is not None:
                 update_data["model"]["temperature"] = request.temperature
             if request.max_tokens is not None:
                 update_data["model"]["maxTokens"] = request.max_tokens
+        
+        # 🔥 DIVINE: Transcriber configuration (speech-to-text)
+        if request.transcriber_provider is not None:
+            update_data["transcriber"] = {
+                "provider": request.transcriber_provider,
+                "model": request.transcriber_model or "nova-2",
+                "language": request.transcriber_language or "fr",
+            }
+        
+        # Metadata
         if request.metadata is not None:
             update_data["metadata"] = request.metadata
+        
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"🔄 Updating assistant {assistant_id} with: {list(update_data.keys())}")
         
         assistant = await client.update_assistant(assistant_id, update_data)
     except VapiApiError as exc:

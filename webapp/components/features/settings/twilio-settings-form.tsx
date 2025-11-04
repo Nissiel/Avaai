@@ -84,6 +84,10 @@ export function TwilioSettingsForm() {
       }
 
       console.log("✅ Twilio credentials saved successfully");
+      
+      // 🔥 DIVINE: Invalidate cache immediately!
+      await invalidate();
+      
       toast.success(t("success.credentialsSaved"));
       
       // 🔥 DIVINE: Auto-import orchestration!

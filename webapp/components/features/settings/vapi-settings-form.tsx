@@ -172,6 +172,10 @@ export function VapiSettingsForm() {
             if (retryRes.ok) {
               const data = await retryRes.json();
               console.log("✅ Vapi API key saved successfully (after refresh):", data);
+              
+              // 🔥 DIVINE: Invalidate React Query cache to refresh everywhere!
+              await invalidate();
+              
               toast.success(t("success.saved"), {
                 description: t("success.savedDesc"),
               });
@@ -195,6 +199,10 @@ export function VapiSettingsForm() {
       if (res.ok) {
         const data = await res.json();
         console.log("✅ Vapi API key saved successfully:", data);
+        
+        // 🔥 DIVINE: Invalidate React Query cache to refresh everywhere!
+        await invalidate();
+        
         toast.success(t("success.saved"), {
           description: t("success.savedDesc"),
         });
