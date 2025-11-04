@@ -103,11 +103,6 @@ export function VapiStep({ form, onNext }: VapiStepProps) {
             <p className="text-sm text-green-700 dark:text-green-300 mt-1">
               {t("alreadyConfigured.description")}
             </p>
-            {integrations?.vapi?.keyPreview && (
-              <p className="text-xs text-green-600 dark:text-green-400 mt-2 font-mono">
-                {integrations.vapi.keyPreview}
-              </p>
-            )}
           </div>
         </div>
         <div className="flex justify-end">
