@@ -1,52 +1,46 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuthToken } from "@/lib/hooks/use-auth-token";
+import { getVapiSettings } from "@/lib/api/vapi-settings";
+import { getTwilioSettings } from "@/lib/api/twilio-settings";
 
 interface IntegrationsStatus {
   vapi: {
     configured: boolean;
-    keyPreview?: string;
   };
   twilio: {
     configured: boolean;
-    accountSidPreview?: string;
     phoneNumber?: string;
   };
 }
 
 /**
- * Hook to check status of all integrations (Vapi + Twilio)
- * Cached for onboarding performance
+ * 🔥 DIVINE: Hook to check status of all integrations (Vapi + Twilio)
+ * Uses centralized APIs with retry + token refresh built-in
  */
 export function useIntegrationsStatus() {
-  const token = useAuthToken(); // 🔥 DIVINE: localStorage as Single Source of Truth
+  const token = useAuthToken();
   const queryClient = useQueryClient();
 
   const { data, isLoading, refetch } = useQuery<IntegrationsStatus>({
     queryKey: ["integrations-status"],
     queryFn: async () => {
-      const [vapiResponse, twilioResponse] = await Promise.all([
-        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/vapi-settings`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/twilio-settings`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-      ]);
+      if (!token) {
+        throw new Error("No access token");
+      }
 
-      const [vapiData, twilioData] = await Promise.all([
-        vapiResponse.json(),
-        twilioResponse.json(),
+      // 🔥 DIVINE: Use centralized APIs (parallel execution, automatic retry)
+      const [vapiResponse, twilioResponse] = await Promise.all([
+        getVapiSettings().catch(() => ({ settings: { configured: false, api_key_set: false } })),
+        getTwilioSettings().catch(() => ({ settings: { configured: false, account_sid_set: false, auth_token_set: false, phone_number: undefined } })),
       ]);
 
       return {
         vapi: {
-          configured: vapiData.has_vapi_key || false,
-          keyPreview: vapiData.vapi_key_preview,
+          configured: vapiResponse.settings.configured,
         },
         twilio: {
-          configured: twilioData.has_twilio_credentials || false,
-          accountSidPreview: twilioData.account_sid_preview,
-          phoneNumber: twilioData.phone_number,
+          configured: twilioResponse.settings.configured,
+          phoneNumber: twilioResponse.settings.phone_number,
         },
       };
     },
@@ -61,6 +55,7 @@ export function useIntegrationsStatus() {
   return {
     vapi: data?.vapi || { configured: false },
     twilio: data?.twilio || { configured: false },
+    integrations: data, // 🔥 DIVINE: Expose full data for flexibility
     isLoading,
     refetch,
     invalidate,
