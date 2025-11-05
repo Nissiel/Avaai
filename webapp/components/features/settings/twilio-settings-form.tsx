@@ -16,6 +16,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Loader2, Phone, Trash2 } from "lucide-react";
 import { saveTwilioSettings, deleteTwilioSettings, type SaveTwilioSettingsPayload } from "@/lib/api/twilio-settings";
 import { useTwilioStatus } from "@/lib/hooks/use-twilio-status";
+import { autoImportTwilioNumber } from "@/lib/api/twilio-auto-import";
 
 export function TwilioSettingsForm() {
   const t = useTranslations("settings.twilio");
@@ -24,27 +25,16 @@ export function TwilioSettingsForm() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const queryClient = useQueryClient();
 
-  const { hasTwilioCredentials, phoneNumber: currentPhone, isLoading: statusLoading } = useTwilioStatus();
+  const {
+    hasTwilioCredentials,
+    phoneNumber: currentPhone,
+    accountSidPreview,
+    isLoading: statusLoading,
+  } = useTwilioStatus();
 
   // 🔥 DIVINE: Save mutation with centralized API
   const saveMutation = useMutation({
     mutationFn: (payload: SaveTwilioSettingsPayload) => saveTwilioSettings(payload),
-    onSuccess: () => {
-      toast.success(t("success.saved"), {
-        description: t("success.savedDesc"),
-      });
-      setAccountSid("");
-      setAuthToken("");
-      setPhoneNumber("");
-      // Invalidate all related queries
-      queryClient.invalidateQueries({ queryKey: ["twilio-settings"] });
-      queryClient.invalidateQueries({ queryKey: ["integrations-status"] });
-    },
-    onError: (error: Error) => {
-      toast.error(t("errors.saveFailed"), {
-        description: error.message,
-      });
-    },
   });
 
   // 🔥 DIVINE: Delete mutation with centralized API
@@ -63,17 +53,51 @@ export function TwilioSettingsForm() {
     },
   });
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!accountSid.trim() || !authToken.trim()) {
       toast.error(t("errors.emptyFields"));
       return;
     }
 
-    saveMutation.mutate({
-      account_sid: accountSid,
-      auth_token: authToken,
-      phone_number: phoneNumber || undefined,
-    });
+    const payload: SaveTwilioSettingsPayload = {
+      account_sid: accountSid.trim(),
+      auth_token: authToken.trim(),
+      phone_number: phoneNumber.trim() || undefined,
+    };
+
+    try {
+      await saveMutation.mutateAsync(payload);
+      toast.success(t("success.saved"), { description: t("success.savedDesc") });
+
+      setAccountSid("");
+      setAuthToken("");
+      setPhoneNumber("");
+
+      queryClient.invalidateQueries({ queryKey: ["twilio-settings"] });
+      queryClient.invalidateQueries({ queryKey: ["integrations-status"] });
+
+      if (payload.phone_number) {
+        const result = await autoImportTwilioNumber(
+          payload.account_sid,
+          payload.auth_token,
+          payload.phone_number,
+        );
+
+        if (result.imported) {
+          toast.success(result.message, {
+            description: result.description,
+          });
+        } else if (result.success) {
+          toast.info(result.message.replace(/\n+/g, " "));
+        } else {
+          toast.error(result.message);
+        }
+      }
+    } catch (error) {
+      toast.error(t("errors.saveFailed"), {
+        description: error instanceof Error ? error.message : String(error),
+      });
+    }
   };
 
   const handleDelete = () => {
@@ -103,6 +127,9 @@ export function TwilioSettingsForm() {
         ) : hasTwilioCredentials ? (
           <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20 text-green-600 dark:text-green-400">
             ✅ {t("status.connected")}
+            {accountSidPreview && (
+              <div className="text-xs mt-1 font-mono">SID: {accountSidPreview}</div>
+            )}
             {currentPhone && <div className="text-sm mt-1">Phone: {currentPhone}</div>}
           </div>
         ) : (

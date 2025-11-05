@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+
 import { useAuthToken } from "@/lib/hooks/use-auth-token";
 import { getVapiSettings } from "@/lib/api/vapi-settings";
 import { getTwilioSettings } from "@/lib/api/twilio-settings";
@@ -6,10 +7,12 @@ import { getTwilioSettings } from "@/lib/api/twilio-settings";
 interface IntegrationsStatus {
   vapi: {
     configured: boolean;
+    keyPreview?: string | null;
   };
   twilio: {
     configured: boolean;
     phoneNumber?: string;
+    accountSidPreview?: string | null;
   };
 }
 
@@ -29,27 +32,20 @@ export function useIntegrationsStatus() {
       }
 
       // 🔥 DIVINE: Use centralized APIs (parallel execution, automatic retry)
-      const [vapiData, twilioResponse] = await Promise.all([
+      const [vapiData, twilioData] = await Promise.all([
         getVapiSettings().catch(() => ({ has_vapi_key: false, vapi_api_key_preview: null })),
-        getTwilioSettings().catch(() => ({ 
-          success: false, 
-          settings: { 
-            configured: false, 
-            account_sid_set: false, 
-            auth_token_set: false, 
-            phone_number: undefined 
-          } 
-        })),
+        getTwilioSettings().catch(() => null),
       ]);
 
-      // 🔥 DIVINE: Safe access with optional chaining
       return {
         vapi: {
           configured: vapiData?.has_vapi_key ?? false,
+          keyPreview: vapiData?.vapi_api_key_preview ?? null,
         },
         twilio: {
-          configured: twilioResponse?.settings?.configured ?? false,
-          phoneNumber: twilioResponse?.settings?.phone_number,
+          configured: twilioData?.configured ?? false,
+          phoneNumber: twilioData?.phoneNumber ?? undefined,
+          accountSidPreview: twilioData?.accountSidPreview ?? null,
         },
       };
     },
@@ -63,9 +59,9 @@ export function useIntegrationsStatus() {
   };
 
   return {
-    vapi: data?.vapi || { configured: false },
-    twilio: data?.twilio || { configured: false },
-    integrations: data, // 🔥 DIVINE: Expose full data for flexibility
+    vapi: data?.vapi ?? { configured: false },
+    twilio: data?.twilio ?? { configured: false },
+    integrations: data,
     isLoading,
     refetch,
     invalidate,

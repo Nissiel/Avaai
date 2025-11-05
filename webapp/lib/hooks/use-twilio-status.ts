@@ -33,9 +33,11 @@ export function useTwilioStatus() {
   };
 
   return {
-    hasTwilioCredentials: data?.settings.configured ?? false,
-    accountSidSet: data?.settings.account_sid_set ?? false,
-    phoneNumber: data?.settings.phone_number,
+    hasTwilioCredentials: data?.configured ?? false,
+    accountSidSet: data?.configured ?? false,
+    accountSidPreview: data?.accountSidPreview ?? undefined,
+    phoneNumber: data?.phoneNumber ?? undefined,
+    settings: data,
     isLoading,
     refetch,
     invalidate, // 🔥 DIVINE: Expose invalidate for DELETE operations

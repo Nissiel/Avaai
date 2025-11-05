@@ -5,13 +5,15 @@
  * Handles US number creation via Vapi and Twilio number import.
  */
 
+import { getAuthHeaders } from "@/lib/api/auth-helper";
+
 const BACKEND_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ??
   process.env.APP_BACKEND_URL ??
   process.env.NEXT_PUBLIC_APP_BACKEND_URL ??
   "http://localhost:8000";
 
-const JSON_HEADERS = {
+const PUBLIC_JSON_HEADERS = {
   "Content-Type": "application/json",
 };
 
@@ -56,7 +58,7 @@ export async function createUSNumber(
   try {
     const response = await fetch(`${BACKEND_BASE_URL}/api/v1/phone-numbers/create-us`, {
       method: "POST",
-      headers: JSON_HEADERS,
+      headers: getAuthHeaders(),
       body: JSON.stringify({
         assistant_id: assistantId,
         org_id: orgId,
@@ -103,12 +105,12 @@ export async function importTwilioNumber(
   try {
     const response = await fetch(`${BACKEND_BASE_URL}/api/v1/phone-numbers/import-twilio`, {
       method: "POST",
-      headers: JSON_HEADERS,
+      headers: getAuthHeaders(),
       body: JSON.stringify({
         twilio_account_sid: twilioAccountSid,
         twilio_auth_token: twilioAuthToken,
         phone_number: phoneNumber,
-        assistant_id: assistantId,
+        assistant_id: assistantId ?? undefined,
         org_id: orgId,
       }),
     });
@@ -146,7 +148,7 @@ export async function verifyTwilioCredentials(
   try {
     const response = await fetch(`${BACKEND_BASE_URL}/api/v1/phone-numbers/twilio/verify`, {
       method: "POST",
-      headers: JSON_HEADERS,
+      headers: PUBLIC_JSON_HEADERS,
       body: JSON.stringify({
         account_sid: accountSid,
         auth_token: authToken,
@@ -181,7 +183,7 @@ export async function getPhoneNumbers(orgId: string): Promise<any[]> {
       `${BACKEND_BASE_URL}/api/v1/phone-numbers/my-numbers?org_id=${orgId}`,
       {
         method: "GET",
-        headers: JSON_HEADERS,
+        headers: getAuthHeaders(),
       }
     );
 

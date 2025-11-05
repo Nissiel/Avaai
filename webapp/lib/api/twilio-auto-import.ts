@@ -1,11 +1,11 @@
 /**
  * 🔥 DIVINE CODEX: Twilio Auto-Import Orchestration
- * 
+ *
  * Frontend orchestrates multi-step flows (UX responsibility)
  * Backend handles data operations (data responsibility)
- * 
+ *
  * This module provides intelligent auto-import after Twilio credentials are saved.
- * 
+ *
  * Flow:
  * 1. User saves Twilio credentials
  * 2. Frontend checks prerequisites (Vapi key, assistant, phone number)
@@ -55,12 +55,12 @@ export interface AutoImportResult {
 
 /**
  * 🎯 DIVINE: Check if auto-import is possible
- * 
+ *
  * Checks all prerequisites without making any changes:
  * - User has Vapi API key configured
  * - User has at least one assistant
  * - Phone number is provided
- * 
+ *
  * @returns Prerequisites status with helpful messages
  */
 export async function checkAutoImportPrerequisites(
@@ -103,17 +103,17 @@ export async function checkAutoImportPrerequisites(
 
 /**
  * 🔥 DIVINE: Auto-import Twilio number into Vapi
- * 
+ *
  * Intelligently handles the complete import flow:
  * 1. Checks prerequisites
  * 2. If all good → Auto-imports
  * 3. If missing → Returns helpful guidance
- * 
+ *
  * @param twilioAccountSid - Twilio Account SID
  * @param twilioAuthToken - Twilio Auth Token
  * @param phoneNumber - Phone number to import (E.164 format)
  * @returns Result with success status and helpful message
- * 
+ *
  * @example
  * ```ts
  * const result = await autoImportTwilioNumber(
@@ -121,7 +121,7 @@ export async function checkAutoImportPrerequisites(
  *   "token",
  *   "+33612345678"
  * );
- * 
+ *
  * if (result.imported) {
  *   toast.success(result.message);
  * } else {
@@ -177,7 +177,7 @@ export async function autoImportTwilioNumber(
           twilio_account_sid: twilioAccountSid,
           twilio_auth_token: twilioAuthToken,
           phone_number: phoneNumber,
-          assistant_id: prereqs.assistantId,
+          assistant_id: prereqs.assistantId ?? undefined,
           org_id: "default", // TODO: Get from user context
         }),
       }
@@ -197,7 +197,7 @@ export async function autoImportTwilioNumber(
     // 🔥 DIVINE: Better feedback for auto-linked numbers
     let message = data.message || "✅ Number imported successfully! Ready to receive calls.";
     let description = undefined;
-    
+
     if (data.auto_linked) {
       message = "✅ Number imported and automatically linked!";
       description = "Your number is ready to receive calls";
@@ -229,7 +229,7 @@ export async function autoImportTwilioNumber(
 
 /**
  * 🎯 DIVINE: Get user-friendly guidance based on missing prerequisites
- * 
+ *
  * Provides actionable next steps for users.
  */
 export function getAutoImportGuidance(prereqs: AutoImportPrerequisites): {

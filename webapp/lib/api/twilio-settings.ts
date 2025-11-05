@@ -6,20 +6,18 @@
 import { getAuthHeaders } from "./auth-helper";
 import { refreshAccessToken } from "@/lib/auth/session-client";
 
-function getBackendUrl(): string {
-  return process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-}
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
-export interface TwilioSettings {
-  configured: boolean;
-  account_sid_set: boolean;
-  auth_token_set: boolean;
-  phone_number?: string;
+interface RawTwilioSettingsResponse {
+  has_twilio_credentials: boolean;
+  account_sid_preview?: string | null;
+  phone_number?: string | null;
 }
 
 export interface TwilioSettingsResponse {
-  success: boolean;
-  settings: TwilioSettings;
+  configured: boolean;
+  accountSidPreview?: string | null;
+  phoneNumber?: string | null;
 }
 
 export interface SaveTwilioSettingsPayload {
@@ -28,137 +26,129 @@ export interface SaveTwilioSettingsPayload {
   phone_number?: string;
 }
 
-/**
- * Get current Twilio settings
- */
-export async function getTwilioSettings(): Promise<TwilioSettingsResponse> {
-  const response = await fetch(`${getBackendUrl()}/api/v1/twilio-settings`, {
-    method: "GET",
-    headers: getAuthHeaders(),
-  });
+function normalizeTwilioSettings(payload: RawTwilioSettingsResponse): TwilioSettingsResponse {
+  return {
+    configured: Boolean(payload?.has_twilio_credentials),
+    accountSidPreview: payload?.account_sid_preview ?? null,
+    phoneNumber: payload?.phone_number ?? null,
+  };
+}
 
-  // 🔥 DIVINE: Auto token refresh on 401
+async function handleMaybeRefresh<T>(
+  request: () => Promise<Response>,
+  retry: (newAccessToken: string) => Promise<Response>,
+  transform?: (payload: RawTwilioSettingsResponse | undefined) => T,
+): Promise<T> {
+  const response = await request();
+
   if (response.status === 401) {
     console.log("⚠️ 401 Unauthorized - Attempting token refresh...");
-    
-    const refreshToken = localStorage.getItem("refresh_token");
-    if (refreshToken) {
-      const newAccessToken = await refreshAccessToken(refreshToken);
-      
-      if (newAccessToken) {
-        console.log("✅ Token refreshed! Retrying getTwilioSettings...");
-        
-        const retryResponse = await fetch(`${getBackendUrl()}/api/v1/twilio-settings`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${newAccessToken}`,
-          },
-        });
-        
-        if (retryResponse.ok) {
-          return await retryResponse.json();
+
+    if (typeof window !== "undefined") {
+      const refreshToken = window.localStorage.getItem("refresh_token");
+      if (refreshToken) {
+        const newAccessToken = await refreshAccessToken(refreshToken);
+        if (newAccessToken) {
+          console.log("✅ Token refreshed! Retrying Twilio request...");
+          const retryResponse = await retry(newAccessToken);
+          if (retryResponse.ok) {
+            if (retryResponse.status === 204) {
+              return transform ? transform(undefined) : (undefined as T);
+            }
+            const data = (await retryResponse.json()) as RawTwilioSettingsResponse;
+            if (transform) {
+              return transform(data);
+            }
+            return data as unknown as T;
+          }
         }
       }
     }
-    
+
     throw new Error("Session expired. Please login again.");
   }
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ detail: "Failed to fetch Twilio settings" }));
-    throw new Error(error.detail || "Failed to fetch Twilio settings");
+    const error = await response.json().catch(() => ({ detail: "Twilio settings request failed" }));
+    throw new Error(error.detail || "Twilio settings request failed");
   }
 
-  return await response.json();
+  if (response.status === 204) {
+    return transform ? transform(undefined) : (undefined as T);
+  }
+
+  const data = (await response.json()) as RawTwilioSettingsResponse;
+  if (transform) {
+    return transform(data);
+  }
+
+  return data as unknown as T;
+}
+
+/**
+ * Get current Twilio settings
+ */
+export async function getTwilioSettings(): Promise<TwilioSettingsResponse> {
+  return handleMaybeRefresh(
+    () =>
+      fetch(`${API_URL}/api/v1/twilio-settings`, {
+        method: "GET",
+        headers: getAuthHeaders(),
+      }),
+    (token) =>
+      fetch(`${API_URL}/api/v1/twilio-settings`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      }),
+    normalizeTwilioSettings,
+  );
 }
 
 /**
  * Save Twilio credentials
  */
 export async function saveTwilioSettings(payload: SaveTwilioSettingsPayload): Promise<TwilioSettingsResponse> {
-  const response = await fetch(`${getBackendUrl()}/api/v1/twilio-settings`, {
-    method: "POST",
-    headers: getAuthHeaders(),
-    body: JSON.stringify(payload),
-  });
-
-  // 🔥 DIVINE: Auto token refresh on 401
-  if (response.status === 401) {
-    console.log("⚠️ 401 Unauthorized - Attempting token refresh...");
-    
-    const refreshToken = localStorage.getItem("refresh_token");
-    if (refreshToken) {
-      const newAccessToken = await refreshAccessToken(refreshToken);
-      
-      if (newAccessToken) {
-        console.log("✅ Token refreshed! Retrying saveTwilioSettings...");
-        
-        const retryResponse = await fetch(`${getBackendUrl()}/api/v1/twilio-settings`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${newAccessToken}`,
-          },
-          body: JSON.stringify(payload),
-        });
-        
-        if (retryResponse.ok) {
-          return await retryResponse.json();
-        }
-      }
-    }
-    
-    throw new Error("Session expired. Please login again.");
-  }
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ detail: "Failed to save Twilio settings" }));
-    throw new Error(error.detail || "Failed to save Twilio settings");
-  }
-
-  return await response.json();
+  return handleMaybeRefresh(
+    () =>
+      fetch(`${API_URL}/api/v1/twilio-settings`, {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload),
+      }),
+    (token) =>
+      fetch(`${API_URL}/api/v1/twilio-settings`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      }),
+    normalizeTwilioSettings,
+  );
 }
 
 /**
  * Delete Twilio credentials
  */
 export async function deleteTwilioSettings(): Promise<void> {
-  const response = await fetch(`${getBackendUrl()}/api/v1/twilio-settings`, {
-    method: "DELETE",
-    headers: getAuthHeaders(),
-  });
-
-  // 🔥 DIVINE: Auto token refresh on 401
-  if (response.status === 401) {
-    console.log("⚠️ 401 Unauthorized - Attempting token refresh...");
-    
-    const refreshToken = localStorage.getItem("refresh_token");
-    if (refreshToken) {
-      const newAccessToken = await refreshAccessToken(refreshToken);
-      
-      if (newAccessToken) {
-        console.log("✅ Token refreshed! Retrying deleteTwilioSettings...");
-        
-        const retryResponse = await fetch(`${getBackendUrl()}/api/v1/twilio-settings`, {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${newAccessToken}`,
-          },
-        });
-        
-        if (retryResponse.ok) {
-          return;
-        }
-      }
-    }
-    
-    throw new Error("Session expired. Please login again.");
-  }
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ detail: "Failed to delete Twilio settings" }));
-    throw new Error(error.detail || "Failed to delete Twilio settings");
-  }
+  await handleMaybeRefresh<void>(
+    () =>
+      fetch(`${API_URL}/api/v1/twilio-settings`, {
+        method: "DELETE",
+        headers: getAuthHeaders(),
+      }),
+    (token) =>
+      fetch(`${API_URL}/api/v1/twilio-settings`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      }),
+    () => undefined,
+  );
 }

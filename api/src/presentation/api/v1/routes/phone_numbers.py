@@ -1,7 +1,7 @@
 """Phone numbers API routes for Vapi and Twilio integration."""
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional
 import logging
 
@@ -37,8 +37,19 @@ class ImportTwilioRequest(BaseModel):
     phone_number: str = Field(
         ..., description="E.164 format (+33612345678 or +972501234567)"
     )
-    assistant_id: str = Field(..., description="AVA assistant UUID (REQUIRED)")
+    assistant_id: Optional[str] = Field(
+        default=None,
+        description="AVA assistant UUID. Leave empty to auto-link to the first assistant.",
+    )
     org_id: str = Field(..., description="Organization ID")
+
+    @field_validator("assistant_id", mode="before")
+    @classmethod
+    def normalize_assistant_id(cls, value: Optional[str]) -> Optional[str]:
+        if isinstance(value, str):
+            stripped = value.strip()
+            return stripped or None
+        return value
 
 
 class VerifyTwilioRequest(BaseModel):
@@ -73,9 +84,9 @@ async def create_us_number(
 ):
     """
     Create a free US phone number via Vapi.
-    
+
     ⚠️ LIMITATION: Only US numbers, max 10 free per account.
-    
+
     Returns:
         {
             "success": True,
@@ -145,11 +156,11 @@ async def import_twilio_number(
 ):
     """
     Import an existing Twilio number into Vapi.
-    
+
     ✅ SOLUTION pour France, Israël, et tous pays hors US.
-    
+
     🔥 DIVINE CODEX: Configuration COMPLÈTE et AUTOMATIQUE!
-    
+
     Workflow:
     1. Vérifie que le numéro existe dans Twilio
     2. 🔥 DIVINE: Auto-liaison intelligente à l'assistant si pas fourni
@@ -157,7 +168,7 @@ async def import_twilio_number(
     4. Vapi configure automatiquement le webhook Twilio → Vapi
     5. 🆕 Configure automatiquement le webhook Vapi → Backend
     6. Sauvegarde dans notre DB
-    
+
     Returns:
         {
             "success": True,
@@ -172,14 +183,14 @@ async def import_twilio_number(
         # 🔥 DIVINE: Auto-liaison intelligente si pas d'assistant_id fourni
         assistant_id = request.assistant_id
         auto_linked = False
-        
+
         if not assistant_id:
             logger.info("⚠️ Pas d'assistant_id fourni, recherche du premier assistant...")
             vapi = _get_vapi_client(user)
-            
+
             try:
                 assistants = await vapi.list_assistants()
-                
+
                 if not assistants or len(assistants) == 0:
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
@@ -188,7 +199,7 @@ async def import_twilio_number(
                             "Créez votre assistant depuis Settings → AVA Profile."
                         )
                     )
-                
+
                 assistant_id = assistants[0]["id"]
                 auto_linked = True
                 logger.info(f"✅ Lié automatiquement à l'assistant: {assistant_id}")
@@ -198,7 +209,7 @@ async def import_twilio_number(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Impossible de récupérer vos assistants. Vérifiez votre clé API Vapi."
                 )
-        
+
         # 1. Verify Twilio number exists
         twilio = TwilioClient(request.twilio_account_sid, request.twilio_auth_token)
 
@@ -232,16 +243,16 @@ async def import_twilio_number(
             phone_number=request.phone_number,
             assistant_id=assistant_id,  # 🔥 DIVINE: Toujours défini maintenant!
         )
-        
+
         logger.info(f"✅ Numéro {request.phone_number} importé dans Vapi: {imported.get('id')}")
         if auto_linked:
             logger.info(f"🔗 Lié automatiquement à l'assistant: {assistant_id}")
-        
+
         # 3. 🔥 DIVINE: Configure Vapi webhook → Backend AUTOMATIQUEMENT
         # Vapi webhooks are configured per-assistant, not globally
         webhook_configured = False
         webhook_url = f"{settings.backend_url}/api/v1/webhooks/vapi"
-        
+
         try:
             # Update the assistant to send webhooks to our backend
             webhook_result = await vapi.update_assistant_webhook(
@@ -300,7 +311,7 @@ async def import_twilio_number(
 async def verify_twilio_credentials(request: VerifyTwilioRequest):
     """
     Verify Twilio credentials and check if phone number exists.
-    
+
     Returns:
         {
             "valid": True,
@@ -323,7 +334,7 @@ async def verify_twilio_credentials(request: VerifyTwilioRequest):
             }
 
         phone_obj = numbers[0]
-        
+
         # Extract country code from E.164 number (e.g., +33 → FR, +972 → IL, +1 → US)
         country_code = getattr(phone_obj, 'iso_country', None)
         if not country_code:
@@ -352,9 +363,9 @@ async def verify_twilio_credentials(request: VerifyTwilioRequest):
 async def get_my_numbers(org_id: str):
     """
     Get all phone numbers for an organization.
-    
+
     TODO: Implement database query
-    
+
     Returns:
         [
             {

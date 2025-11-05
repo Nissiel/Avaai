@@ -11,6 +11,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useIntegrationsStatus } from "@/lib/hooks/use-integrations-status";
+import { saveVapiSettings } from "@/lib/api/vapi-settings";
 import type { OnboardingValues } from "@/lib/validations/onboarding";
 
 interface VapiStepProps {
@@ -38,22 +39,15 @@ export function VapiStep({ form, onNext }: VapiStepProps) {
 
     setIsSaving(true);
     try {
-      const response = await fetch("/api/vapi-settings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ api_key: vapiKey }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || "Failed to save Vapi key");
-      }
-
+      await saveVapiSettings(vapiKey.trim());
       toast.success(t("step1.success"));
+      integrations.invalidate?.();
       if (onNext) onNext();
     } catch (error) {
       console.error("Failed to save Vapi key:", error);
-      toast.error(t("step1.errors.save"));
+      toast.error(
+        error instanceof Error ? error.message : t("step1.errors.save"),
+      );
     } finally {
       setIsSaving(false);
     }
@@ -65,17 +59,28 @@ export function VapiStep({ form, onNext }: VapiStepProps) {
 
   const handleSkip = async () => {
     try {
-      // Mark as skipped in backend
-      await fetch("/api/user/onboarding", {
+      const response = await fetch("/api/user/onboarding", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ onboarding_vapi_skipped: true }),
       });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.detail || "Failed to update onboarding status");
+      }
+
       toast.info(t("step3.skipped"));
+      integrations.invalidate?.();
       if (onNext) onNext();
     } catch (error) {
       console.error("Failed to mark Vapi as skipped:", error);
-      // Continue anyway
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : t("step3.error", { defaultValue: "Unable to skip for now." }),
+      );
       if (onNext) onNext();
     }
   };

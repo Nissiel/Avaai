@@ -29,17 +29,28 @@ export function TwilioStep({ form, onNext }: TwilioStepProps) {
 
   const handleSkip = async () => {
     try {
-      // Mark as skipped in backend
-      await fetch("/api/user/onboarding", {
+      const response = await fetch("/api/user/onboarding", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ onboarding_twilio_skipped: true }),
       });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.detail || "Failed to update onboarding status");
+      }
+
       toast.info(t("skip.message"));
+      integrations.invalidate?.();
       if (onNext) onNext();
     } catch (error) {
       console.error("Failed to mark Twilio as skipped:", error);
-      // Continue anyway
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : t("skip.error", { defaultValue: "Unable to skip for now." }),
+      );
       if (onNext) onNext();
     }
   };
