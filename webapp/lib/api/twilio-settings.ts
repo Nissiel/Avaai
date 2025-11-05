@@ -26,11 +26,19 @@ export interface SaveTwilioSettingsPayload {
   phone_number?: string;
 }
 
-function normalizeTwilioSettings(payload: RawTwilioSettingsResponse): TwilioSettingsResponse {
+function normalizeTwilioSettings(payload?: RawTwilioSettingsResponse): TwilioSettingsResponse {
+  if (!payload) {
+    return {
+      configured: false,
+      accountSidPreview: null,
+      phoneNumber: null,
+    };
+  }
+
   return {
-    configured: Boolean(payload?.has_twilio_credentials),
-    accountSidPreview: payload?.account_sid_preview ?? null,
-    phoneNumber: payload?.phone_number ?? null,
+    configured: Boolean(payload.has_twilio_credentials),
+    accountSidPreview: payload.account_sid_preview ?? null,
+    phoneNumber: payload.phone_number ?? null,
   };
 }
 
