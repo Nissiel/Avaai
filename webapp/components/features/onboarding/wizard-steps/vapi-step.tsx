@@ -81,7 +81,7 @@ export function VapiStep({ form, onNext }: VapiStepProps) {
           ? error.message
           : t("step3.error", { defaultValue: "Unable to skip for now." }),
       );
-      if (onNext) onNext();
+      return;
     }
   };
 

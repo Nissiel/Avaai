@@ -21,15 +21,13 @@ export function useTwilioStatus() {
       return await getTwilioSettings();
     },
     enabled: !!token, // 🔥 DIVINE: Only run if token exists (no race condition!)
-    retry: 2, // 🔥 DIVINE: Max 2 retries to avoid infinite loading
-    staleTime: 0, // 🔥 DIVINE: Always fresh, credentials change frequently
-    gcTime: 1000 * 60, // Keep in cache 1 minute only
+    retry: 1, // 🔥 DIVINE: Limit retries to reduce perceived lag
+    staleTime: 10_000,
   });
 
   // 🔥 DIVINE: Helper to invalidate cache after mutations
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ["twilio-settings"] });
-    queryClient.removeQueries({ queryKey: ["twilio-settings"] }); // Force removal
   };
 
   return {

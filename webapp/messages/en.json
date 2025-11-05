@@ -309,23 +309,6 @@
       },
       "success": {
         "created": "🎉 Assistant '{name}' created successfully!"
-      },
-      "twilio": {
-        "link": {
-          "title": {
-            "ready": "Twilio number ready",
-            "action": "Twilio action required",
-            "error": "Twilio linking failed"
-          },
-          "unknownNumber": "your number",
-          "imported": "Twilio number {number} was imported and linked automatically.",
-          "assigned": "Existing Twilio number {number} is now linked to this assistant.",
-          "alreadyLinked": "Your Twilio number was already linked to this assistant.",
-          "linkedElsewhere": "This Twilio number is already linked to another assistant. Update it from Settings → Twilio.",
-          "assignmentFailed": "We could not reassign your existing Twilio number automatically. Please finish the link manually.",
-          "missingVapi": "Add your Vapi API key to auto-link your Twilio numbers.",
-          "importFailed": "Automatic Twilio import failed. Complete the setup from Settings → Twilio."
-        }
       }
     }
   },
@@ -826,22 +809,6 @@
     "twilio": {
       "title": "Twilio Configuration",
       "description": "Configure your Twilio credentials for phone calls",
-      "form": {
-        "accountSid": {
-          "label": "Account SID",
-          "placeholder": "Enter your Twilio Account SID",
-          "help": "Find this in your Twilio Console"
-        },
-        "authToken": {
-          "label": "Auth Token",
-          "placeholder": "Enter your Twilio Auth Token"
-        },
-        "phoneNumber": {
-          "label": "Phone Number",
-          "placeholder": "+1234567890",
-          "help": "Your Twilio phone number with country code"
-        }
-      },
       "accountSid": {
         "label": "Account SID",
         "placeholder": "Enter your Twilio Account SID",

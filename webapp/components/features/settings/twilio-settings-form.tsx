@@ -18,6 +18,21 @@ import { saveTwilioSettings, deleteTwilioSettings, type SaveTwilioSettingsPayloa
 import { useTwilioStatus } from "@/lib/hooks/use-twilio-status";
 import { autoImportTwilioNumber } from "@/lib/api/twilio-auto-import";
 
+const E164_REGEX = /^\+[1-9]\d{7,14}$/;
+
+function normalizePhoneNumberInput(raw: string): string {
+  if (!raw) return "";
+  let normalized = raw.trim();
+  normalized = normalized.replace(/[\s().-]/g, "");
+  if (normalized.startsWith("00")) {
+    normalized = `+${normalized.slice(2)}`;
+  }
+  if (!normalized.startsWith("+") && /^\d+$/.test(normalized)) {
+    normalized = `+${normalized}`;
+  }
+  return normalized;
+}
+
 export function TwilioSettingsForm() {
   const t = useTranslations("settings.twilio");
   const [accountSid, setAccountSid] = useState("");
@@ -59,10 +74,20 @@ export function TwilioSettingsForm() {
       return;
     }
 
+    const normalizedPhone = normalizePhoneNumberInput(phoneNumber);
+    if (phoneNumber.trim() && !E164_REGEX.test(normalizedPhone)) {
+      toast.error(t("errors.invalidPhone"), {
+        description: t("errors.invalidPhoneDesc", {
+          defaultValue: "Use the international format, e.g. +33123456789.",
+        }),
+      });
+      return;
+    }
+
     const payload: SaveTwilioSettingsPayload = {
       account_sid: accountSid.trim(),
       auth_token: authToken.trim(),
-      phone_number: phoneNumber.trim() || undefined,
+      phone_number: normalizedPhone || undefined,
     };
 
     try {
@@ -77,6 +102,10 @@ export function TwilioSettingsForm() {
       queryClient.invalidateQueries({ queryKey: ["integrations-status"] });
 
       if (payload.phone_number) {
+        toast.info(t("import.start"), {
+          description: t("import.startDesc", { defaultValue: "Importing your phone number via Vapi..." }),
+        });
+
         const result = await autoImportTwilioNumber(
           payload.account_sid,
           payload.auth_token,
@@ -88,7 +117,13 @@ export function TwilioSettingsForm() {
             description: result.description,
           });
         } else if (result.success) {
-          toast.info(result.message.replace(/\n+/g, " "));
+          const guidance =
+            result.missingPrerequisites && result.missingPrerequisites.length > 0
+              ? result.missingPrerequisites.join(", ")
+              : result.message.replace(/\n+/g, " ");
+          toast.info(guidance, {
+            description: t("import.guidance", { defaultValue: "Complete the missing step and retry the import." }),
+          });
         } else {
           toast.error(result.message);
         }

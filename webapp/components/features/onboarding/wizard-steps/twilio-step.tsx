@@ -51,7 +51,7 @@ export function TwilioStep({ form, onNext }: TwilioStepProps) {
           ? error.message
           : t("skip.error", { defaultValue: "Unable to skip for now." }),
       );
-      if (onNext) onNext();
+      return;
     }
   };
 

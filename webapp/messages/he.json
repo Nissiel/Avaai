@@ -306,23 +306,6 @@
       },
       "success": {
         "created": "🎉 העוזר '{name}' נוצר בהצלחה!"
-      },
-      "twilio": {
-        "link": {
-          "title": {
-            "ready": "Twilio number ready",
-            "action": "Twilio action required",
-            "error": "Twilio linking failed"
-          },
-          "unknownNumber": "your number",
-          "imported": "Twilio number {number} was imported and linked automatically.",
-          "assigned": "Existing Twilio number {number} is now linked to this assistant.",
-          "alreadyLinked": "Your Twilio number was already linked to this assistant.",
-          "linkedElsewhere": "This Twilio number is already linked to another assistant. Update it from Settings → Twilio.",
-          "assignmentFailed": "We could not reassign your existing Twilio number automatically. Please finish the link manually.",
-          "missingVapi": "Add your Vapi API key to auto-link your Twilio numbers.",
-          "importFailed": "Automatic Twilio import failed. Complete the setup from Settings → Twilio."
-        }
       }
     }
   },
@@ -373,9 +356,9 @@
       "title": "שיחות אחרונות",
       "loading": "טוען...",
       "empty": "אין שיחות עדיין",
-    "unknownNumber": "מספר לא ידוע",
-    "unknownDuration": "משך לא זמין",
-    "unknownTime": "שעה לא זמינה",
+      "unknownNumber": "מספר לא ידוע",
+      "unknownDuration": "משך לא זמין",
+      "unknownTime": "שעה לא זמינה",
       "noTranscript": "אין תמלול זמין",
       "viewContact": "פתח את כרטיס איש הקשר עבור {name}",
       "view": "צפה",
@@ -823,22 +806,6 @@
     "twilio": {
       "title": "הגדרות Twilio",
       "description": "הגדר את פרטי הכניסה של Twilio עבור שיחות טלפון",
-      "form": {
-        "accountSid": {
-          "label": "Account SID",
-          "placeholder": "הזן את ה-Account SID של Twilio",
-          "help": "נמצא בקונסולה של Twilio"
-        },
-        "authToken": {
-          "label": "Auth Token",
-          "placeholder": "הזן את ה-Auth Token של Twilio"
-        },
-        "phoneNumber": {
-          "label": "מספר טלפון",
-          "placeholder": "+972501234567",
-          "help": "מספר Twilio כולל קידומת מדינה"
-        }
-      },
       "accountSid": {
         "label": "Account SID",
         "placeholder": "הזן את ה-Account SID של Twilio",
