@@ -18,23 +18,21 @@ interface IntegrationsStatus {
 
 /**
  * 🔥 DIVINE: Hook to check status of all integrations (Vapi + Twilio)
- * Uses centralized APIs with retry + token refresh built-in
  */
 export function useIntegrationsStatus() {
   const token = useAuthToken();
   const queryClient = useQueryClient();
 
-  const { data, isLoading, refetch } = useQuery<IntegrationsStatus>({
+  const query = useQuery<IntegrationsStatus>({
     queryKey: ["integrations-status"],
     queryFn: async () => {
       if (!token) {
         throw new Error("No access token");
       }
 
-      // 🔥 DIVINE: Use centralized APIs (parallel execution, automatic retry)
       const [vapiData, twilioData] = await Promise.all([
-        getVapiSettings().catch(() => ({ has_vapi_key: false, vapi_api_key_preview: null })),
-        getTwilioSettings().catch(() => null),
+        getVapiSettings(),
+        getTwilioSettings(),
       ]);
 
       return {
@@ -49,9 +47,9 @@ export function useIntegrationsStatus() {
         },
       };
     },
-    enabled: !!token, // 🔥 DIVINE: Only run if token exists (no race condition!)
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    retry: 1, // 🔥 DIVINE: Only 1 retry to avoid long waits
+    enabled: !!token,
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
   });
 
   const invalidate = () => {
@@ -59,11 +57,13 @@ export function useIntegrationsStatus() {
   };
 
   return {
-    vapi: data?.vapi ?? { configured: false },
-    twilio: data?.twilio ?? { configured: false },
-    integrations: data,
-    isLoading,
-    refetch,
+    vapi: query.data?.vapi ?? { configured: false },
+    twilio: query.data?.twilio ?? { configured: false },
+    integrations: query.data,
+    isLoading: query.isLoading,
+    isError: query.isError,
+    error: query.error,
+    refetch: query.refetch,
     invalidate,
   };
 }

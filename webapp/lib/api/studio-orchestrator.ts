@@ -25,6 +25,8 @@ import type { StudioConfig } from "@/services/config-service";
 export async function saveStudioConfigToDb(
   values: Partial<StudioConfig>
 ): Promise<DbSaveResult> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 20_000);
   try {
     // Get token from localStorage
     let token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
@@ -42,6 +44,7 @@ export async function saveStudioConfigToDb(
       method: "POST",
       headers,
       body: JSON.stringify(values),
+      signal: controller.signal,
     });
 
     // Handle 401 - try token refresh
@@ -63,6 +66,7 @@ export async function saveStudioConfigToDb(
               Authorization: `Bearer ${newAccessToken}`,
             },
             body: JSON.stringify(values),
+            signal: controller.signal,
           });
         }
       }
@@ -94,13 +98,17 @@ export async function saveStudioConfigToDb(
       success: true,
       config: data.config,
     };
-
   } catch (error: any) {
     console.error("❌ DB Save Exception:", error);
     return {
       success: false,
-      error: error.message || "Failed to save configuration",
+      error:
+        error.name === "AbortError"
+          ? "Save timed out. Please check your connection and try again."
+          : error.message || "Failed to save configuration",
     };
+  } finally {
+    clearTimeout(timeout);
   }
 }
 
@@ -114,7 +122,8 @@ export async function saveStudioConfigToDb(
  * @returns Combined result with both DB and Vapi status
  */
 export async function updateStudioConfiguration(
-  values: Partial<StudioConfig>
+  values: Partial<StudioConfig>,
+  options?: { skipVapiSync?: boolean }
 ): Promise<StudioUpdateResult> {
   console.log("🚀 Studio Config Update Starting:", values);
 
@@ -128,6 +137,18 @@ export async function updateStudioConfiguration(
       vapi: {
         success: false,
         error: "Skipped due to DB save failure",
+      },
+    };
+  }
+
+  if (options?.skipVapiSync) {
+    console.log("⚠️ Vapi sync skipped (not configured)");
+    return {
+      db: dbResult,
+      vapi: {
+        success: false,
+        skipped: true,
+        error: "Vapi sync skipped because Vapi API key is not configured.",
       },
     };
   }

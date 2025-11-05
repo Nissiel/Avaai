@@ -23,6 +23,7 @@ export type VapiSyncResult = {
   success: boolean;
   assistant?: any;
   error?: string;
+  skipped?: boolean;
 };
 
 /**
@@ -41,6 +42,7 @@ export enum UpdateStatus {
   DB_ONLY = "db_only",           // Saved to DB but not synced to Vapi
   FULLY_SYNCED = "fully_synced", // Both DB and Vapi succeeded
   FAILED = "failed",              // DB save failed
+  VAPI_SKIPPED = "vapi_skipped",  // Vapi sync intentionally skipped
 }
 
 /**
@@ -49,6 +51,10 @@ export enum UpdateStatus {
 export function getUpdateStatus(result: StudioUpdateResult): UpdateStatus {
   if (!result.db.success) {
     return UpdateStatus.FAILED;
+  }
+
+  if (result.vapi.skipped) {
+    return UpdateStatus.VAPI_SKIPPED;
   }
 
   if (result.vapi.success) {

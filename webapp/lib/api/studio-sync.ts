@@ -125,15 +125,26 @@ export async function syncStudioConfigToVapi(
 
   console.log(`🔥 ${method} ${url}`);
 
+  const requestWithTimeout = async (authToken?: string) => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 20_000);
+    try {
+      return await fetch(url, {
+        method,
+        headers: getAuthHeaders(authToken),
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  };
+
   try {
     // 🔥 DIVINE: Wrap fetch in retry logic (handles transient network errors)
     const data = await retryWithBackoff(async () => {
       // Make request
-      let response = await fetch(url, {
-        method,
-        headers: getAuthHeaders(token || undefined),
-        body: JSON.stringify(payload),
-      });
+      let response = await requestWithTimeout(token || undefined);
 
       // Handle 401 - try token refresh
       if (response.status === 401) {
@@ -148,11 +159,7 @@ export async function syncStudioConfigToVapi(
             token = newAccessToken;
 
             // Retry with new token
-            response = await fetch(url, {
-              method,
-              headers: getAuthHeaders(token),
-              body: JSON.stringify(payload),
-            });
+            response = await requestWithTimeout(token);
           }
         }
 
@@ -192,7 +199,10 @@ export async function syncStudioConfigToVapi(
     console.error("❌ Sync exception (after all retries):", error);
     return {
       success: false,
-      error: error.message || "Unknown error",
+      error:
+        error?.name === "AbortError"
+          ? "Sync timed out. We'll keep your settings and you can retry in a moment."
+          : error?.message || "Unknown error",
     };
   }
 }

@@ -12,13 +12,14 @@ Events processed:
 3. transcript.update → Stream real-time updates (future)
 """
 
-from fastapi import APIRouter, Request, HTTPException, Header
+from fastapi import APIRouter, Request, HTTPException, Header, status
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Dict
 import hmac
 import hashlib
 import json
 from sqlalchemy import select
+from urllib.parse import parse_qs
 
 from api.src.infrastructure.email import get_email_service
 from api.src.core.settings import get_settings
@@ -26,6 +27,7 @@ from api.src.infrastructure.database.session import get_session
 from api.src.infrastructure.persistence.models.call import CallRecord
 from api.src.infrastructure.persistence.models.user import User
 from api.src.infrastructure.persistence.models.tenant import Tenant
+from twilio.request_validator import RequestValidator
 
 router = APIRouter(prefix="/webhooks", tags=["webhooks"])
 
@@ -343,3 +345,144 @@ def format_transcript(transcript_data: list) -> str:
         lines.append(f"{speaker}: {message}")
 
     return "\n\n".join(lines)
+
+
+def _normalize_phone(number: Optional[str]) -> Optional[str]:
+    if not number:
+        return None
+    number = number.strip()
+    if not number:
+        return None
+    if number.startswith("00"):
+        number = f"+{number[2:]}"
+    if not number.startswith("+") and number.replace("+", "").lstrip("-").isdigit():
+        number = f"+{number}"
+    return number
+
+
+def _parse_twilio_timestamp(value: Optional[str]) -> datetime:
+    if not value:
+        return datetime.utcnow()
+    try:
+        return datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        # Twilio often sends RFC 2822 format
+        try:
+            from email.utils import parsedate_to_datetime
+
+            return parsedate_to_datetime(value)
+        except Exception:
+            return datetime.utcnow()
+
+
+def _map_twilio_status(status_value: Optional[str]) -> str:
+    status_map = {
+        "queued": "queued",
+        "ringing": "ringing",
+        "in-progress": "in-progress",
+        "completed": "completed",
+        "busy": "busy",
+        "failed": "failed",
+        "no-answer": "no-answer",
+        "canceled": "canceled",
+    }
+    return status_map.get((status_value or "").lower(), "unknown")
+
+
+@router.post("/twilio/status")
+async def twilio_status_webhook(request: Request):
+    """
+    Twilio call status webhook.
+
+    Updates CallRecord entries in real-time when Twilio sends status callbacks.
+    """
+    settings = get_settings()
+    raw_body = await request.body()
+    payload = parse_qs(raw_body.decode())
+    form_data: Dict[str, str] = {k: v[0] if isinstance(v, list) else v for k, v in payload.items()}
+
+    call_sid = form_data.get("CallSid")
+    if not call_sid:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Missing CallSid")
+
+    # Signature validation
+    signature = request.headers.get("X-Twilio-Signature")
+    if settings.twilio_auth_token:
+        if not signature:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing Twilio signature")
+        validator = RequestValidator(settings.twilio_auth_token)
+        if not validator.validate(str(request.url), form_data, signature):
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid Twilio signature")
+
+    twilio_status = _map_twilio_status(form_data.get("CallStatus"))
+    timestamp = _parse_twilio_timestamp(form_data.get("Timestamp") or form_data.get("CallTimestamp"))
+    from_number = _normalize_phone(form_data.get("From"))
+    to_number = _normalize_phone(form_data.get("To") or form_data.get("Called"))
+    duration_value = form_data.get("CallDuration") or form_data.get("DialCallDuration")
+
+    async for db in get_session():
+        record = await db.get(CallRecord, call_sid)
+
+        if not record:
+            # Find associated user/tenant based on destination number
+            result = None
+            if to_number:
+                result = await db.execute(select(User).where(User.twilio_phone_number == to_number))
+            user = result.scalar_one_or_none() if result else None
+
+            tenant = None
+            if user:
+                tenant_query = await db.execute(select(Tenant).limit(1))
+                tenant = tenant_query.scalar_one_or_none()
+
+            # Fallback: use first available tenant/user like legacy logic
+            if not tenant:
+                fallback_user = await db.execute(select(User).limit(1))
+                user = fallback_user.scalar_one_or_none()
+                tenant_query = await db.execute(select(Tenant).limit(1))
+                tenant = tenant_query.scalar_one_or_none()
+
+            if not tenant:
+                raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="No tenant configured")
+
+            record = CallRecord(
+                id=call_sid,
+                assistant_id=form_data.get("CalledViaSid") or "twilio-status",
+                tenant_id=tenant.id,
+                customer_number=from_number,
+                status=twilio_status,
+                started_at=timestamp,
+                ended_at=timestamp if twilio_status in {"completed", "failed", "busy", "no-answer", "canceled"} else None,
+                duration_seconds=int(duration_value) if duration_value and duration_value.isdigit() else None,
+                meta={
+                    "twilio": form_data,
+                    "twilio_call_sid": call_sid,
+                    "direction": form_data.get("Direction"),
+                },
+            )
+            db.add(record)
+        else:
+            record.status = twilio_status
+            record.customer_number = record.customer_number or from_number
+            if twilio_status in {"completed", "failed", "busy", "no-answer", "canceled"}:
+                record.ended_at = timestamp
+            if not record.started_at or twilio_status in {"in-progress", "ringing"}:
+                record.started_at = record.started_at or timestamp
+            if duration_value and duration_value.isdigit():
+                record.duration_seconds = int(duration_value)
+            twilio_meta = record.meta.get("twilio_status_history", []) if record.meta else []
+            twilio_meta.append({
+                "status": twilio_status,
+                "timestamp": timestamp.isoformat(),
+            })
+            record.meta = {
+                **(record.meta or {}),
+                "twilio": form_data,
+                "twilio_status_history": twilio_meta,
+                "twilio_call_sid": call_sid,
+            }
+
+        await db.commit()
+        break
+
+    return {"status": "ok", "callSid": call_sid, "callStatus": twilio_status}

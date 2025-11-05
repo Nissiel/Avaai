@@ -32,7 +32,9 @@ export function handleStudioUpdateToasts(result: StudioUpdateResult): void {
     case UpdateStatus.DB_ONLY:
       // Saved to DB but Vapi sync failed
       toast.warning("⚠️ Configuration saved locally", {
-        description: "Settings saved to database, but Vapi sync failed. Your assistant may not reflect these changes yet.",
+        description:
+          result.vapi.error ??
+          "Settings saved to database, but Vapi sync failed. Your assistant may not reflect these changes yet.",
         duration: 8000,
       });
       
@@ -40,6 +42,15 @@ export function handleStudioUpdateToasts(result: StudioUpdateResult): void {
       if (result.vapi.error) {
         console.error("Vapi sync error:", result.vapi.error);
       }
+      break;
+
+    case UpdateStatus.VAPI_SKIPPED:
+      toast.info("💾 Settings saved", {
+        description:
+          result.vapi.error ??
+          "We skipped Vapi sync because your Vapi API key isn't configured yet. Configure it in Settings → Vapi to enable sync.",
+        duration: 6000,
+      });
       break;
       
     case UpdateStatus.FULLY_SYNCED:

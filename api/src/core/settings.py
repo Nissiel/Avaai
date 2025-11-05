@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     vapi_base_url: str = "https://api.vapi.ai"
     vapi_api_key: Optional[str] = None
     jwt_secret_key: str = "CHANGE_ME_IN_PRODUCTION_USE_ENV_VAR"
+    twilio_auth_token: Optional[str] = None
 
     # Email settings (Resend)
     resend_api_key: Optional[str] = None
