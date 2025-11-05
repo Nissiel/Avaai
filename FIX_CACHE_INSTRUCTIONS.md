@@ -85,7 +85,7 @@ Je verrai exactement ce qui se passe!
 ✅ Get Studio config → 200 OK avec config complète
 ```
 
-**Le backend fonctionne à 100%!**  
+**Le backend fonctionne à 100%!**
 Le problème est uniquement frontend (cache browser).
 
 ---

@@ -15,7 +15,7 @@ router = APIRouter(prefix="/vapi-settings", tags=["Vapi Settings"])
 
 class UpdateVapiKeyRequest(BaseModel):
     """Request body for updating user's Vapi API key."""
-    
+
     vapi_api_key: str = Field(
         ...,
         min_length=10,
@@ -26,7 +26,7 @@ class UpdateVapiKeyRequest(BaseModel):
 
 class VapiSettingsResponse(BaseModel):
     """Response with Vapi configuration status."""
-    
+
     has_vapi_key: bool = Field(description="Whether user has configured their Vapi API key")
     vapi_api_key_preview: str | None = Field(
         default=None,
@@ -40,17 +40,17 @@ async def get_vapi_settings(
 ) -> VapiSettingsResponse:
     """
     Get user's Vapi configuration status.
-    
+
     Returns whether the user has configured their Vapi API key,
     with a preview of the first 8 characters for verification.
     """
     has_key = bool(user.vapi_api_key)
     preview = None
-    
+
     if has_key and user.vapi_api_key:
         # Show first 8 chars for verification (e.g., "sk_live_")
         preview = user.vapi_api_key[:8] + "..." if len(user.vapi_api_key) > 8 else "***"
-    
+
     return VapiSettingsResponse(
         has_vapi_key=has_key,
         vapi_api_key_preview=preview,
@@ -65,18 +65,18 @@ async def update_vapi_key(
 ) -> VapiSettingsResponse:
     """
     Update user's personal Vapi.ai API key.
-    
+
     This allows each user to use their own Vapi account,
     enabling infinite scalability without shared key limits.
-    
+
     Get your Vapi API key at: https://vapi.ai/dashboard
     """
     # 🔥 DIVINE: Merge user into current session to ensure updates are tracked
     user = await session.merge(current_user)
-    
+
     # Update user's Vapi key
     user.vapi_api_key = request.vapi_api_key
-    
+
     try:
         await session.commit()
         await session.refresh(user)
@@ -86,10 +86,10 @@ async def update_vapi_key(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to save Vapi API key: {str(exc)}"
         ) from exc
-    
+
     # 🔥 DIVINE: Return proper response format
     preview = user.vapi_api_key[:8] + "..." if len(user.vapi_api_key) > 8 else "***"
-    
+
     return VapiSettingsResponse(
         has_vapi_key=True,
         vapi_api_key_preview=preview,
@@ -103,14 +103,14 @@ async def delete_vapi_key(
 ) -> VapiSettingsResponse:
     """
     Remove user's Vapi API key.
-    
+
     This will disable Vapi features until a new key is configured.
     """
     # 🔥 DIVINE: Merge user into current session to ensure deletes are tracked
     user = await session.merge(current_user)
-    
+
     user.vapi_api_key = None
-    
+
     try:
         await session.commit()
         await session.refresh(user)
@@ -120,7 +120,7 @@ async def delete_vapi_key(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to delete Vapi API key: {str(exc)}"
         ) from exc
-    
+
     # 🔥 DIVINE: Return proper response format
     return VapiSettingsResponse(
         has_vapi_key=False,

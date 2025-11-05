@@ -33,7 +33,7 @@
    curl -X POST https://ava-api-production.onrender.com/api/v1/auth/signup \
      -H "Content-Type: application/json" \
      -d '{"email":"test@example.com","password":"Test123!","full_name":"Test User"}'
-   
+
    # Test login
    curl -X POST https://ava-api-production.onrender.com/api/v1/auth/login \
      -H "Content-Type: application/json" \
@@ -305,7 +305,7 @@ async def analytics_overview():
     cached = cache.get("analytics:overview")
     if cached:
         return json.loads(cached)
-    
+
     # ... fetch data ...
     cache.setex("analytics:overview", 300, json.dumps(data))
     return data

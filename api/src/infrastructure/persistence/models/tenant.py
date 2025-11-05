@@ -29,7 +29,7 @@ from .base import Base
 class Tenant(Base):
     """
     LEGACY tenant model - kept for DB schema compatibility.
-    
+
     ⚠️ In current architecture: user.id = tenant_id (1:1 mapping)
     ⚠️ No active operations - this table exists but is not used
     """

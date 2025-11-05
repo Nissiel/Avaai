@@ -1,6 +1,6 @@
 /**
  * 🔥 DIVINE TYPES - Studio Configuration Update
- * 
+ *
  * Clean, explicit types for studio configuration updates.
  * Separates concerns: DB persistence vs Vapi synchronization.
  */
@@ -50,10 +50,10 @@ export function getUpdateStatus(result: StudioUpdateResult): UpdateStatus {
   if (!result.db.success) {
     return UpdateStatus.FAILED;
   }
-  
+
   if (result.vapi.success) {
     return UpdateStatus.FULLY_SYNCED;
   }
-  
+
   return UpdateStatus.DB_ONLY;
 }

@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
 
     // ✨ DIVINE: Set httpOnly cookies for security + middleware auth
     const nextResponse = NextResponse.json(data);
-    
+
     // Set access token (7 days)
     nextResponse.cookies.set('access_token', data.access_token, {
       httpOnly: true,
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
       maxAge: 7 * 24 * 60 * 60, // 7 days
       path: '/',
     });
-    
+
     // Set refresh token (30 days)
     nextResponse.cookies.set('refresh_token', data.refresh_token, {
       httpOnly: true,
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
       maxAge: 30 * 24 * 60 * 60, // 30 days
       path: '/',
     });
-    
+
     return nextResponse;
   } catch (error) {
     console.error("Login proxy error:", error);

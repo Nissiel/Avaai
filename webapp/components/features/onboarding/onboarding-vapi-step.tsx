@@ -29,11 +29,11 @@ export function OnboardingVapiStep({ onNext, onSkip }: OnboardingVapiStepProps) 
     onSuccess: () => {
       toast.success(t("success.saved", { defaultValue: "Clé Vapi sauvegardée!" }));
       invalidate();
-      
+
       // 🔥 DIVINE: Invalidate ALL caches so dashboard can refetch with new key
       queryClient.invalidateQueries({ queryKey: ["assistants"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-      
+
       // Wait for success message then advance
       setTimeout(() => {
         onNext();

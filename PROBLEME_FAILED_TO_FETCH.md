@@ -184,11 +184,11 @@ export function loadPersistedSession(): AvaSession | null {
     // Try localStorage first
     const raw = window.localStorage.getItem(SESSION_STORAGE_KEY);
     if (raw) return JSON.parse(raw) as AvaSession;
-    
+
     // Fallback to sessionStorage
     const sessionRaw = window.sessionStorage.getItem(SESSION_STORAGE_KEY);
     if (sessionRaw) return JSON.parse(sessionRaw) as AvaSession;
-    
+
     return null;
   } catch (error) {
     console.warn("Failed to read persisted session", error);
@@ -212,7 +212,7 @@ export function persistSession(session: AvaSession | null) {
     }
 
     const serialized = JSON.stringify(session);
-    
+
     // Check size (localStorage limit: ~5-10MB)
     if (serialized.length > 5 * 1024 * 1024) { // 5MB
       console.error("Session data too large:", serialized.length);

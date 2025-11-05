@@ -36,7 +36,7 @@ vapi_api_key: Mapped[Optional[str]] = mapped_column(
 def __init__(self, user_api_key: Optional[str] = None):
     """Initialize with user's API key or fallback to global key"""
     self.api_key = user_api_key or settings.vapi_api_key
-    
+
     if not self.api_key:
         raise ValueError(
             "Vapi API key required. User must configure their Vapi.ai API key "

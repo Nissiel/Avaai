@@ -75,14 +75,14 @@ function isValidPhone(value: string): boolean {
  */
 function calculatePasswordStrength(password: string): { score: number; label: string; color: string } {
   let score = 0;
-  
+
   if (password.length >= 8) score++;
   if (password.length >= 12) score++;
   if (/[A-Z]/.test(password)) score++;
   if (/[a-z]/.test(password)) score++;
   if (/[0-9]/.test(password)) score++;
   if (/[^A-Za-z0-9]/.test(password)) score++;
-  
+
   if (score <= 2) return { score, label: "Faible", color: "text-red-500" };
   if (score <= 4) return { score, label: "Moyen", color: "text-orange-500" };
   return { score, label: "Fort", color: "text-green-500" };
@@ -185,7 +185,7 @@ export function SignupForm() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-        
+
         {/* ===== NAME FIELD ===== */}
         <FormField
           control={form.control}
@@ -229,8 +229,8 @@ export function SignupForm() {
                 <div className="relative">
                   <Mail className={cn(
                     "absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 transition-colors",
-                    field.value && field.value.includes("@") 
-                      ? "text-green-500" 
+                    field.value && field.value.includes("@")
+                      ? "text-green-500"
                       : "text-muted-foreground"
                   )} />
                   <Input
@@ -325,7 +325,7 @@ export function SignupForm() {
               {field.value && (
                 <div className="flex items-center gap-2 mt-2">
                   <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
-                    <div 
+                    <div
                       className={cn(
                         "h-full transition-all duration-300",
                         passwordStrength.score <= 2 ? "bg-red-500 w-1/3" : "",
@@ -360,8 +360,8 @@ export function SignupForm() {
                 <div className="relative">
                   <Lock className={cn(
                     "absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 transition-colors",
-                    field.value && field.value === form.watch("password") 
-                      ? "text-green-500" 
+                    field.value && field.value === form.watch("password")
+                      ? "text-green-500"
                       : "text-muted-foreground"
                   )} />
                   <Input
@@ -403,16 +403,16 @@ export function SignupForm() {
               <div className="space-y-1 leading-none">
                 <FormLabel className="text-sm font-normal cursor-pointer">
                   J'accepte les{" "}
-                  <Link 
-                    href="/terms" 
+                  <Link
+                    href="/terms"
                     className="text-brand-600 hover:text-brand-700 font-medium underline"
                     target="_blank"
                   >
                     conditions d'utilisation
                   </Link>
                   {" "}et la{" "}
-                  <Link 
-                    href="/privacy" 
+                  <Link
+                    href="/privacy"
                     className="text-brand-600 hover:text-brand-700 font-medium underline"
                     target="_blank"
                   >
@@ -510,7 +510,7 @@ export function SignupForm() {
             </svg>
             Google
           </Button>
-          
+
           <Button
             type="button"
             variant="outline"
@@ -518,10 +518,10 @@ export function SignupForm() {
             className="h-11 border-2 hover:bg-muted/50 transition-all duration-200"
           >
             <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24" fill="none">
-              <rect x="3" y="3" width="8" height="8" fill="#F25022"/>
-              <rect x="13" y="3" width="8" height="8" fill="#7FBA00"/>
-              <rect x="3" y="13" width="8" height="8" fill="#00A4EF"/>
-              <rect x="13" y="13" width="8" height="8" fill="#FFB900"/>
+              <rect x="3" y="3" width="8" height="8" fill="#F25022" />
+              <rect x="13" y="3" width="8" height="8" fill="#7FBA00" />
+              <rect x="3" y="13" width="8" height="8" fill="#00A4EF" />
+              <rect x="13" y="13" width="8" height="8" fill="#FFB900" />
             </svg>
             Outlook
           </Button>
@@ -530,7 +530,7 @@ export function SignupForm() {
         {/* ===== FOOTER - ALREADY HAVE ACCOUNT ===== */}
         <div className="text-center text-sm text-muted-foreground mt-6">
           Vous avez déjà un compte ?{" "}
-          <Link 
+          <Link
             href={`/${locale}/login`}
             className="text-brand-600 hover:text-brand-700 font-medium hover:underline transition-colors"
           >

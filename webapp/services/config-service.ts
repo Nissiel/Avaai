@@ -15,30 +15,30 @@ export interface StudioConfig {
   businessHours: string;
   fallbackEmail: string;
   summaryEmail: string;
-  
+
   // SMTP (deprecated but kept for backward compatibility)
   smtpServer: string;
   smtpPort: string;
   smtpUsername: string;
   smtpPassword: string;
-  
+
   // AI Performance (NEW)
   aiModel: string;
   aiTemperature: number;
   aiMaxTokens: number;
-  
+
   // Voice Settings (NEW)
   voiceProvider: string;
   voiceId: string;
   voiceSpeed: number;
-  
+
   // Conversation Behavior (NEW)
   systemPrompt: string;
   firstMessage: string;
   askForName: boolean;
   askForEmail: boolean;
   askForPhone: boolean;
-  
+
   // Vapi Integration (NEW)
   vapiAssistantId: string | null;
 }
@@ -49,15 +49,15 @@ const CONFIG_ENDPOINT = `${backendConfig.baseUrl}/api/v1/studio/config`;
 
 export async function fetchStudioConfig(token?: string): Promise<StudioConfig> {
   console.log("🔥 Fetching studio config from:", CONFIG_ENDPOINT);
-  
+
   const headers: HeadersInit = {
     "Content-Type": "application/json",
   };
-  
+
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
   }
-  
+
   const response = await fetch(CONFIG_ENDPOINT, {
     method: "GET",
     headers,
@@ -81,11 +81,11 @@ export async function updateStudioConfig(payload: StudioConfigUpdate, token?: st
   const headers: HeadersInit = {
     "Content-Type": "application/json",
   };
-  
+
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
   }
-  
+
   const response = await fetch(CONFIG_ENDPOINT, {
     method: "PATCH",
     headers,

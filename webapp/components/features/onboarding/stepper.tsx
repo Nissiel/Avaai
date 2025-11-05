@@ -28,7 +28,7 @@ export function OnboardingStepper({ steps, current, onStepClick }: OnboardingSte
         const isActive = index === current;
         const isCompleted = index < current;
         const isClickable = !!onStepClick; // Clickable if handler provided
-        
+
         return (
           <li
             key={step.id}
@@ -45,8 +45,8 @@ export function OnboardingStepper({ steps, current, onStepClick }: OnboardingSte
                 isCompleted
                   ? "border-brand-500 bg-brand-500 text-white"
                   : isActive
-                  ? "border-brand-500 text-brand-600"
-                  : "border-border text-muted-foreground",
+                    ? "border-brand-500 text-brand-600"
+                    : "border-border text-muted-foreground",
               )}
             >
               {index + 1}

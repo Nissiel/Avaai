@@ -1,20 +1,20 @@
 /**
  * 🔥 DIVINE: Centralized Auth Token Hook
- * 
+ *
  * PROBLEM SOLVED:
  * - All hooks were reading from Zustand (useSessionStore)
  * - Zustand can be empty after page refresh → Race condition
  * - Causes: Infinite loops, failed requests, "backend disconnect"
- * 
+ *
  * SOLUTION:
  * - Single hook that ALWAYS reads from localStorage
  * - localStorage = Single Source of Truth (persists across reloads)
  * - No more race conditions!
- * 
+ *
  * USAGE:
  * ```ts
  * const token = useAuthToken();
- * 
+ *
  * const { data } = useQuery({
  *   queryKey: ["my-data"],
  *   queryFn: async () => {
@@ -32,13 +32,13 @@ import { useEffect, useState } from "react";
 
 /**
  * Hook that returns the authentication token from localStorage.
- * 
+ *
  * This hook:
  * - Reads from localStorage (reliable, persisted)
  * - Re-renders on storage changes
  * - Works across page reloads
  * - Never has race conditions
- * 
+ *
  * @returns Authentication token or null
  */
 export function useAuthToken(): string | null {
@@ -84,7 +84,7 @@ export function emitTokenChange() {
 
 /**
  * Helper to get token synchronously (for non-React code).
- * 
+ *
  * Use this in utility functions, API helpers, etc.
  */
 export function getAuthTokenSync(): string | null {

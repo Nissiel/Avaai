@@ -1,6 +1,6 @@
 # 🔒 RÉSUMÉ SÉCURITÉ - Base de données Multi-Tenant
 
-## ✅ TL;DR: **SÉCURISÉ POUR L'ONBOARDING** 
+## ✅ TL;DR: **SÉCURISÉ POUR L'ONBOARDING**
 
 **Score**: 75/100 (90/100 après chiffrement)
 
@@ -63,8 +63,8 @@ ava_profiles.tenant_id → CASCADE → Supprime profil
 -- Risque: Numéros orphelins si user supprimé
 
 -- ✅ Fix:
-ALTER TABLE phone_numbers 
-    ADD CONSTRAINT fk_phone_numbers_org 
+ALTER TABLE phone_numbers
+    ADD CONSTRAINT fk_phone_numbers_org
     FOREIGN KEY (org_id) REFERENCES users(id) ON DELETE CASCADE;
 ```
 
@@ -208,8 +208,8 @@ alembic revision -m "add_foreign_key_phone_numbers"
 # Dans le fichier de migration:
 def upgrade():
     op.execute("""
-        ALTER TABLE phone_numbers 
-        ADD CONSTRAINT fk_phone_numbers_org 
+        ALTER TABLE phone_numbers
+        ADD CONSTRAINT fk_phone_numbers_org
         FOREIGN KEY (org_id) REFERENCES users(id) ON DELETE CASCADE
     """)
 

@@ -16,7 +16,7 @@ router = APIRouter(prefix="/twilio", tags=["Twilio"])
 
 def _client() -> TwilioClient:
     """Create Twilio client from environment credentials.
-    
+
     TODO: Move to user-specific credentials (user.twilio_account_sid, user.twilio_auth_token)
     for true multi-tenant support.
     """
@@ -30,8 +30,8 @@ def _client() -> TwilioClient:
 @router.get("/numbers")
 async def list_numbers(user: User = Depends(get_current_user)) -> dict[str, object]:
     """List Twilio phone numbers.
-    
-    Currently uses global credentials. 
+
+    Currently uses global credentials.
     TODO: Use user.twilio_account_sid and user.twilio_auth_token for user-specific numbers.
     """
     client = _client()

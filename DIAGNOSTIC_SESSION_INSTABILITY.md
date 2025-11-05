@@ -23,12 +23,12 @@ import { useSessionStore } from "@/lib/stores/session-store";
 export function getAuthToken(): string | undefined {
   const session = useSessionStore.getState().session;  // ❌ getState() peut être vide
   let token = session?.accessToken;
-  
+
   // Fallback: localStorage
   if (!token && typeof window !== "undefined") {
     token = localStorage.getItem("access_token") || undefined;
   }
-  
+
   return token;
 }
 ```
@@ -59,7 +59,7 @@ export function getAuthToken(): string | undefined {
 
 ### PRINCIPE: Single Source of Truth
 
-**localStorage = Source de vérité**  
+**localStorage = Source de vérité**
 **Zustand = Cache réactif pour UI**
 
 ### ARCHITECTURE FIXÉE:
@@ -87,11 +87,11 @@ Page Refresh → SessionProvider.bootstrap()
 export function getAuthToken(): string | undefined {
   const session = useSessionStore.getState().session;  // ❌ Race condition
   let token = session?.accessToken;
-  
+
   if (!token && typeof window !== "undefined") {
     token = localStorage.getItem("access_token") || undefined;
   }
-  
+
   return token;
 }
 ```
@@ -100,10 +100,10 @@ export function getAuthToken(): string | undefined {
 ```typescript
 export function getAuthToken(): string | undefined {
   if (typeof window === "undefined") return undefined;
-  
+
   // ALWAYS read from localStorage (single source of truth)
   const token = localStorage.getItem("access_token");
-  
+
   // If no token, try refresh
   if (!token) {
     const refreshToken = localStorage.getItem("refresh_token");
@@ -112,21 +112,21 @@ export function getAuthToken(): string | undefined {
       console.warn("No access token but refresh token exists - should refresh");
     }
   }
-  
+
   return token || undefined;
 }
 
 export function getAuthHeaders(): HeadersInit {
   const token = getAuthToken();
-  
+
   const headers: HeadersInit = {
     "Content-Type": "application/json",
   };
-  
+
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
   }
-  
+
   return headers;
 }
 ```
@@ -195,9 +195,9 @@ headers: getAuthHeaders()  // ✅ Mais getAuthHeaders() utilise Zustand!
 ## 🎨 DIVINE PRINCIPLE APPLIQUÉ
 
 > **"Single Source of Truth"**
-> 
+>
 > Ne JAMAIS avoir deux sources de vérité pour la même donnée.
-> 
+>
 > localStorage = Source (persisté, fiable)
 > Zustand = Cache (réactif, UI only)
 

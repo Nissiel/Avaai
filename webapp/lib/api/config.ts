@@ -25,7 +25,7 @@ export async function getStudioConfig(): Promise<StudioConfig> {
 
 export async function updateStudioConfigClient(payload: StudioConfigUpdate): Promise<StudioConfig> {
   console.log("🔄 updateStudioConfigClient:", payload);
-  
+
   const response = await fetch(`/api/studio/config`, {
     method: "PATCH",
     headers: getAuthHeaders(),
@@ -35,8 +35,8 @@ export async function updateStudioConfigClient(payload: StudioConfigUpdate): Pro
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({ detail: "Unknown error" }));
     const errorMessage = errorData.detail || `HTTP ${response.status}`;
-    console.error("❌ updateStudioConfigClient failed:", { 
-      status: response.status, 
+    console.error("❌ updateStudioConfigClient failed:", {
+      status: response.status,
       errorData,
       payload,
     });

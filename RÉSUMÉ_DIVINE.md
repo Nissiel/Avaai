@@ -20,9 +20,9 @@ Tu as demandé une webapp avec :
 ```tsx
 - Titre géant avec gradient animé
   "Votre secrétaire IA qui ne dort jamais"
-  
+
 - Value proposition ultra-claire
-  "Ava répond à vos appels, qualifie vos leads 
+  "Ava répond à vos appels, qualifie vos leads
    et gère vos rendez-vous. Prêt en 3 minutes."
 
 - 2 CTA impossibles à rater
@@ -79,7 +79,7 @@ Logo Ava | Features | Pricing | FAQ | Login | [Signup CTA]
 
 🏷️ Badges de réassurance
    ⚡ Setup instantané
-   ✨ Gratuit 7 jours  
+   ✨ Gratuit 7 jours
    🛡️ Données sécurisées
 
 📝 Formulaire glassmorphism
@@ -126,7 +126,7 @@ Logo Ava | Features | Pricing | FAQ | Login | [Signup CTA]
 ### Palette Divine
 ```css
 Primary (Electric Blue)  : #4B9BF5 - Trust, Technology
-Secondary (Purple)       : #9945FF - Innovation, Premium  
+Secondary (Purple)       : #9945FF - Innovation, Premium
 Accent (Cyan)           : #06B6D4 - Clarity, Modern
 Background (Deep Space) : #0F172A - Elegance, Focus
 ```
@@ -410,7 +410,7 @@ Cette version de Ava.ai n'est pas juste "jolie".
 
 Elle est **stratégiquement designée** pour :
 1. **Capter l'attention** en < 5 secondes
-2. **Construire la confiance** en < 30 secondes  
+2. **Construire la confiance** en < 30 secondes
 3. **Convertir le visiteur** en < 2 minutes
 4. **Créer l'enthousiasme** pour revenir
 

@@ -20,7 +20,7 @@ Redirige automatiquement vers `/en` (Anglais par défaut)
 ```
 ✨ Votre secrétaire IA qui ne dort jamais
 
-Ava répond à vos appels, qualifie vos leads 
+Ava répond à vos appels, qualifie vos leads
 et gère vos rendez-vous. Prêt en 3 minutes.
 
 [Commencer gratuitement →]  [Se connecter →]
@@ -284,7 +284,7 @@ www.avaai.vercel.app/en
 ## 🔥 Pitch Deck (30 secondes)
 
 ```
-"Imagine avoir une secrétaire qui répond à 
+"Imagine avoir une secrétaire qui répond à
 tous vos appels, 24/7, sans jamais se fatiguer.
 
 Ava est votre réceptionniste IA. Elle :
@@ -347,7 +347,7 @@ une secrétaire IA qui travaille 24/7."
 
 ### 3. Demo Interactive (10s)
 ```
-"Regardez : Ava détecte l'intention, programme 
+"Regardez : Ava détecte l'intention, programme
 automatiquement le rendez-vous, envoie les rappels."
 ```
 
@@ -396,11 +396,11 @@ Cette version MVP est conçue pour :
 3. **Collecter feedback** rapidement
 4. **Itérer** based on data
 
-**Remember** : Le feedback négatif est le plus valuable ! 
+**Remember** : Le feedback négatif est le plus valuable !
 
 Chaque critique = Une opportunité d'amélioration.
 
 ---
 
-**Built with 💙 for early believers**  
+**Built with 💙 for early believers**
 *You're part of something special* ✨

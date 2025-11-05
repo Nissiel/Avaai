@@ -36,7 +36,7 @@ class Tenant(Base):
 ```python
 # ❌ TOUS importaient Base depuis tenant.py:
 api/src/infrastructure/persistence/models/user.py:         from .tenant import Base
-api/src/infrastructure/persistence/models/studio_config.py: from .tenant import Base  
+api/src/infrastructure/persistence/models/studio_config.py: from .tenant import Base
 api/src/infrastructure/persistence/models/call.py:         from .tenant import Base
 api/src/infrastructure/persistence/models/phone_number.py: from .tenant import Base
 api/src/infrastructure/persistence/models/ava_profile.py:  from .tenant import Base, Tenant
@@ -67,7 +67,7 @@ from sqlalchemy.orm import declarative_base
 Base = declarative_base()
 ```
 
-**Bénéfice**: 
+**Bénéfice**:
 - ✅ Base dans son propre module (Single Responsibility)
 - ✅ Import clair: `from .base import Base`
 - ✅ Séparation des préoccupations
@@ -112,11 +112,11 @@ from .base import Base  # ✅ Import from dedicated module
 class Tenant(Base):
     """
     LEGACY tenant model - kept for DB schema compatibility.
-    
+
     ⚠️ In current architecture: user.id = tenant_id (1:1 mapping)
     ⚠️ No active operations - this table exists but is not used
     """
-    
+
     def __repr__(self) -> str:
         return f"Tenant(id={self.id}, name={self.name}) [LEGACY]"  # ✅ Marqué LEGACY
 ```
@@ -164,7 +164,7 @@ from .base import Base
 ✅ Import Clarity:
   - from .base import Base (conceptuellement correct)
   - from .tenant import Tenant (seulement si besoin)
-  
+
 ✅ Code Quality:
   - +12 lignes (nouveau base.py)
   - +12 lignes de documentation (tenant.py)
@@ -216,7 +216,7 @@ base.py (Base definition)
    ├── call.py
    ├── phone_number.py
    └── ava_profile.py
-   
+
 tenant.py (Tenant model) ← imports Base from base.py
    ↑
    │ imports Tenant (RARE - only if needed)
@@ -290,7 +290,7 @@ tenant.py (Tenant model) ← imports Base from base.py
 ```bash
 $ get_errors
 ✅ base.py: No errors found
-✅ tenant.py: No errors found  
+✅ tenant.py: No errors found
 ✅ __init__.py: No errors found
 ✅ All models: No errors found
 ```

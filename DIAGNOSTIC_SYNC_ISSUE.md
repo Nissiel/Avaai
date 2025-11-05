@@ -116,7 +116,7 @@ docker-compose up -d backend
    ```bash
    # Get your auth token from browser localStorage
    TOKEN="your_access_token_here"
-   
+
    curl -X POST http://localhost:8000/api/v1/studio/sync-vapi \
      -H "Authorization: Bearer $TOKEN" \
      -H "Content-Type: application/json"

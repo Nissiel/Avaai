@@ -41,7 +41,7 @@ Vapi API: ??? (échec silencieux ou paramètres manquants) ❌
 - ❌ Routes différentes, comportements différents
 
 **DIVINE CODEX Principe:**
-> **"DRY - Don't Repeat Yourself"**  
+> **"DRY - Don't Repeat Yourself"**
 > Si un endpoint MARCHE, RÉUTILISE-LE partout!
 
 ---
@@ -57,19 +57,19 @@ Vapi API: ??? (échec silencieux ou paramètres manquants) ❌
 ```python
 class CreateAssistantRequest(BaseModel):
     """Request body for creating a new assistant."""
-    
+
     name: str = Field(...)
     voice_provider: str = Field(...)
     voice_id: str = Field(...)
     first_message: str = Field(...)
-    
+
     # 🔥 NOUVEAUX PARAMÈTRES DIVINS:
     system_prompt: str | None = Field(default=None)  # ✅ Le plus important!
     voice_speed: float = Field(default=1.0, ge=0.5, le=2.0)
     transcriber_provider: str = Field(default="deepgram")
     transcriber_model: str = Field(default="nova-2")
     transcriber_language: str = Field(default="fr")
-    
+
     # Existants:
     model_provider: str = Field(default="openai")
     model: str = Field(default="gpt-3.5-turbo")
@@ -155,7 +155,7 @@ const assistantPayload = {
 
 // 🎯 Use correct endpoint (same as onboarding!)
 const method = values.vapiAssistantId ? "PATCH" : "POST";
-const url = values.vapiAssistantId 
+const url = values.vapiAssistantId
   ? `${backendConfig.baseUrl}/api/v1/assistants/${values.vapiAssistantId}`
   : `${backendConfig.baseUrl}/api/v1/assistants`;
 
@@ -358,7 +358,7 @@ cd api && uvicorn main:app --reload
 # Terminal 2: Frontend
 cd webapp && npm run dev
 
-# Browser: 
+# Browser:
 # - http://localhost:3000/settings/assistant
 # - Remplir form + Save
 # - Vérifier console logs
@@ -406,17 +406,17 @@ git push origin main
 5. ~~Push sans tester~~
 
 ### DIVINE CODEX Quote
-> **"Le meilleur code est celui qu'on n'écrit pas,**  
+> **"Le meilleur code est celui qu'on n'écrit pas,**
 > **Le second meilleur est celui qu'on réutilise."**
 
 ---
 
-**Status:** Backend ✅ DONE | Frontend 🔄 IN PROGRESS  
-**Estimate:** 15 min to complete  
-**Impact:** HIGH - Unbloque feature majeure  
+**Status:** Backend ✅ DONE | Frontend 🔄 IN PROGRESS
+**Estimate:** 15 min to complete
+**Impact:** HIGH - Unbloque feature majeure
 **Quality:** DIVINE LEVEL 5 🌟
 
 ---
 
-**Date:** 31 Oct 2025  
+**Date:** 31 Oct 2025
 **DIVINE CODEX:** APPLIED DEEPLY ✨

@@ -92,14 +92,14 @@ import { useQueryClient } from "@tanstack/react-query";
 
 export function TwilioSettingsForm() {
   const queryClient = useQueryClient();
-  
+
   const handleDelete = async () => {
     // ... existing delete code ...
-    
+
     // 🔥 DIVINE: Invalider le cache immédiatement
     queryClient.invalidateQueries({ queryKey: ["twilio-settings"] });
     queryClient.removeQueries({ queryKey: ["twilio-settings"] });  // Force removal
-    
+
     toast.success(t("success.credentialsDeleted"));
   };
 }
@@ -117,14 +117,14 @@ export function logout() {
   localStorage.removeItem("access_token");
   localStorage.removeItem("refresh_token");
   localStorage.removeItem(SESSION_STORAGE_KEY);
-  
+
   // 🔥 DIVINE: Clear ALL React Query cache
   const queryClient = useQueryClient();
   queryClient.clear();  // Nuclear option - clear everything
-  
+
   // Clear session
   useSessionStore.getState().setSession(null);
-  
+
   // Redirect to login
   window.location.href = "/login";
 }
@@ -212,7 +212,7 @@ async def get_current_user_profile(user: User = Depends(get_current_user)):
 ## 🎨 DIVINE PRINCIPLE APPLIQUÉ
 
 > **"Cache Invalidation is one of the two hard things in Computer Science"**
-> 
+>
 > - Phil Karlton
 
 **Solution DIVINE:**

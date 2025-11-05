@@ -35,10 +35,10 @@ Failed to fetch
 4. **Ajoute cette variable d'environnement :**
    ```
    Key: ALLOWED_ORIGINS
-   
+
    Value: https://avaai.vercel.app,https://avaai-git-main-nissiel-thomas-projects.vercel.app,https://avaai-*.vercel.app
    ```
-   
+
    ⚠️ **Important** : Pas d'espaces, juste des virgules entre les URLs !
 
 5. **Sauvegarde**
@@ -60,13 +60,13 @@ Failed to fetch
 2. **Ajoute cette variable :**
    ```
    Key: NEXT_PUBLIC_API_URL
-   
+
    Value: https://ava-api-production.onrender.com
    ```
 
 3. **Sélectionne tous les environments**
    - ☑️ Production
-   - ☑️ Preview  
+   - ☑️ Preview
    - ☑️ Development
 
 4. **Sauvegarde**
@@ -122,7 +122,7 @@ Access-Control-Allow-Methods: *
    - Email : test@example.com
    - Mot de passe : TestPass123!
 3. Click "Créer mon compte"
-4. **Attendu :** 
+4. **Attendu :**
    - ✅ Pas de "Failed to fetch"
    - ✅ Redirect vers dashboard
    - ✅ Message de succès

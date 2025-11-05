@@ -19,7 +19,7 @@ function humanize(segment: string): string {
 export function Breadcrumbs() {
   const pathname = usePathname();
   const segments = pathname.split("/").filter(Boolean);
-  
+
   // Extract locale from pathname (first segment)
   const locale = segments[0] || "en";
   const dashboardHref = `/${locale}/dashboard`;
@@ -34,12 +34,12 @@ export function Breadcrumbs() {
 
   const crumbs = segments.map((segment, index) => {
     let href = "/" + segments.slice(0, index + 1).join("/");
-    
+
     // Fix: "onboarding" should link to "onboarding/welcome" instead of "onboarding"
     if (segment === "onboarding" && index === segments.length - 1) {
       href = href + "/welcome";
     }
-    
+
     const label = humanize(segment || "dashboard");
     const isLast = index === segments.length - 1;
     return { href, label, isLast };

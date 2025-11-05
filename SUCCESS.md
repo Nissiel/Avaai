@@ -55,7 +55,7 @@ Puis dans ton navigateur, teste:
    - ✅ Se connecter
    - ✅ Voir le dashboard
 
-4. **Langues:** 
+4. **Langues:**
    - `https://TON_URL_VERCEL/fr` (Français)
    - `https://TON_URL_VERCEL/he` (Hebrew)
 
@@ -166,7 +166,7 @@ J'ai créé 3 guides pour toi:
 ### "CORS Error" dans browser console
 → Configure FRONTEND_URL dans Render (voir étape 3)
 
-### "500 Internal Server Error" 
+### "500 Internal Server Error"
 → Check logs Render: https://dashboard.render.com
 
 ### Pages ne chargent pas
@@ -181,7 +181,7 @@ J'ai créé 3 guides pour toi:
 
 **Stack complète déployée:**
 - ✅ Backend API (FastAPI sur Render)
-- ✅ Frontend Web (Next.js sur Vercel)  
+- ✅ Frontend Web (Next.js sur Vercel)
 - ✅ Database (PostgreSQL sur Supabase)
 - ✅ Authentication (JWT tokens)
 - ✅ Internationalization (EN, FR, HE)

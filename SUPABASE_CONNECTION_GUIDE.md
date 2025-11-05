@@ -88,7 +88,7 @@ postgresql+asyncpg://postgres.zymlhofsintkycruwznc:Bichon55!!??@db.zymlhofsintky
 ```
 
 **ATTENTION:** Change **DEUX choses:**
-1. ❌ `aws-1-eu-west-1.pooler.supabase.com` 
+1. ❌ `aws-1-eu-west-1.pooler.supabase.com`
 2. ✅ `db.zymlhofsintkycruwznc.supabase.co`
 
 Le port reste `5432`!

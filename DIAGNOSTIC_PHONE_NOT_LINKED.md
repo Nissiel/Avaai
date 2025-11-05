@@ -74,10 +74,10 @@ async def import_phone_number(
         "twilioAccountSid": twilio_account_sid,
         "twilioAuthToken": twilio_auth_token,
     }
-    
+
     if assistant_id:
         payload["assistantId"] = assistant_id  # ✅ Seulement si fourni!
-    
+
     # ...
 ```
 
@@ -162,19 +162,19 @@ async def import_twilio_number(
 ):
     """
     Import Twilio number into Vapi avec auto-liaison intelligente.
-    
+
     🔥 DIVINE: Si pas d'assistant_id fourni, lie automatiquement au premier assistant.
     """
     vapi = _get_vapi_client(user)
-    
+
     # 🔥 DIVINE: Auto-liaison intelligente si pas d'assistant_id
     assistant_id = request.assistant_id
     auto_linked = False
-    
+
     if not assistant_id:
         logger.info("⚠️ Pas d'assistant_id fourni, recherche du premier assistant...")
         assistants = await vapi.list_assistants()
-        
+
         if not assistants or len(assistants) == 0:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -183,20 +183,20 @@ async def import_twilio_number(
                     "Créez votre assistant depuis Settings → AVA Profile."
                 )
             )
-        
+
         assistant_id = assistants[0]["id"]
         auto_linked = True
         logger.info(f"✅ Lié automatiquement à l'assistant: {assistant_id}")
-    
+
     # ... rest of import logic ...
-    
+
     imported = await vapi.import_phone_number(
         twilio_account_sid=request.twilio_account_sid,
         twilio_auth_token=request.twilio_auth_token,
         phone_number=request.phone_number,
         assistant_id=assistant_id,  # ✅ Toujours défini maintenant!
     )
-    
+
     return {
         "success": True,
         "phone": imported,
@@ -298,7 +298,7 @@ User: "WTF?! Ça marche pas!" 😡
 ```
 User: *Crée assistant*
 User: *Sauvegarde Twilio*
-System: "✅ Numéro importé et lié automatiquement!" 
+System: "✅ Numéro importé et lié automatiquement!"
 System: "Votre numéro est prêt à recevoir des appels" 🎉
 User: *Appelle le numéro*
 Ava: "Bonjour! Comment puis-je vous aider?" ✅
@@ -323,7 +323,7 @@ git push origin main
 
 ---
 
-**DATE:** 2025-11-04  
-**STATUS:** READY TO IMPLEMENT 🔥  
-**PRIORITY:** P0 - CRITIQUE  
+**DATE:** 2025-11-04
+**STATUS:** READY TO IMPLEMENT 🔥
+**PRIORITY:** P0 - CRITIQUE
 **QUALITY:** DIVINE LEVEL 5 🌟

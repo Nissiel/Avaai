@@ -51,7 +51,7 @@ class CreateAssistantRequest(BaseModel):
     name: str
     email: str  # Un seul email!
     # ... rest
-    
+
 # Dans la création:
 assistant = await client.create_assistant(
     name=request.name,
@@ -116,6 +116,6 @@ git push origin main
 
 ---
 
-**DATE:** 2025-11-04  
-**PRIORITY:** P1 - UX Improvement  
+**DATE:** 2025-11-04
+**PRIORITY:** P1 - UX Improvement
 **IMPACT:** Moins de frustration, onboarding plus rapide

@@ -123,7 +123,7 @@ api/src/infrastructure/persistence/models/__init__.py
    # Modifier config
    PATCH /api/v1/studio/config
    {"voiceSpeed": 1.5}
-   
+
    # Redémarrer backend
    # Relire config
    GET /api/v1/studio/config

@@ -26,9 +26,9 @@ import { backendConfig } from "@/services/backend-service";
 import { refreshAccessToken } from "@/lib/auth/session-client";
 import { updateStudioConfiguration } from "@/lib/api/studio-orchestrator";
 import type { StudioUpdateResult } from "@/lib/types/studio-update";
-import { 
-  handleStudioUpdateToasts, 
-  handleStudioUpdateError 
+import {
+  handleStudioUpdateToasts,
+  handleStudioUpdateError
 } from "@/lib/toast/studio-update-toasts";
 import {
   PERSONA_PROMPTS,
@@ -108,11 +108,11 @@ export function StudioSettingsForm({
     queryFn: async () => {
       // 🎯 DIVINE: Get token from localStorage for authenticated request
       const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
-      
+
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
       };
-      
+
       if (token) {
         headers.Authorization = `Bearer ${token}`;
       }
@@ -124,14 +124,14 @@ export function StudioSettingsForm({
       // 🎯 DIVINE: If 401, try to refresh token automatically
       if (response.status === 401) {
         console.log("⚠️ Studio Config: 401 Unauthorized - Attempting token refresh...");
-        
+
         const refreshToken = typeof window !== "undefined" ? localStorage.getItem("refresh_token") : null;
         if (refreshToken) {
           const newAccessToken = await refreshAccessToken(refreshToken);
-          
+
           if (newAccessToken) {
             console.log("✅ Studio Config: Token refreshed! Retrying...");
-            
+
             // Retry the request with new token
             const retryResponse = await fetch("/api/config", {
               headers: {
@@ -139,13 +139,13 @@ export function StudioSettingsForm({
                 Authorization: `Bearer ${newAccessToken}`,
               },
             });
-            
+
             if (retryResponse.ok) {
               return retryResponse.json();
             }
           }
         }
-        
+
         throw new Error("Session expired. Please login again.");
       }
 
@@ -245,7 +245,7 @@ export function StudioSettingsForm({
     mutationFn: async (values) => {
       // Validate input
       localizedSchema.parse(values);
-      
+
       // Use divine orchestrator
       return await updateStudioConfiguration(values);
     },
@@ -257,7 +257,7 @@ export function StudioSettingsForm({
         form.reset(savedConfig);
         onLinkedAssistantChange?.(savedConfig.vapiAssistantId ?? null);
       }
-      
+
       // Show appropriate toasts
       handleStudioUpdateToasts(result);
     },
@@ -753,7 +753,7 @@ export function StudioSettingsForm({
                                       <span>Henri - Homme, naturel, professionnel</span>
                                     </div>
                                   </SelectItem>
-                                  
+
                                   <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">🇫🇷 ElevenLabs Français</div>
                                   <SelectItem value="XB0fDUnXU5powFXDhCwa">
                                     <div className="flex items-center gap-2">
@@ -939,7 +939,7 @@ export function StudioSettingsForm({
                 </AccordionTrigger>
                 <AccordionContent className="px-5 pb-5">
                   <div className="space-y-6 pt-3">
-                    
+
                     {/* 🔥 DIVINE: SYSTEM PROMPT - MAKE IT OBVIOUS */}
                     <div className="rounded-xl border-2 border-amber-300 dark:border-amber-700 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950 dark:to-orange-950 p-6 space-y-4">
                       <div className="flex items-start gap-3">
@@ -966,10 +966,10 @@ export function StudioSettingsForm({
                               AI Instructions (Be VERY specific)
                             </FormLabel>
                             <FormControl>
-                              <Textarea 
-                                {...field} 
+                              <Textarea
+                                {...field}
                                 rows={18}
-                                disabled={isDisabled} 
+                                disabled={isDisabled}
                                 placeholder="Tu es [name], [role] de [company]...&#10;&#10;🎯 MISSION:&#10;1. [What to do]&#10;2. [How to behave]&#10;&#10;✨ TONE: [professional/warm/energetic]&#10;&#10;⚠️ IMPORTANT: [Critical instructions]"
                                 className="resize-y min-h-[400px] font-mono text-sm leading-relaxed"
                               />
@@ -1203,9 +1203,9 @@ export function StudioSettingsForm({
                 </div>
 
                 {/* Big Save Button */}
-                <Button 
-                  type="submit" 
-                  size="lg" 
+                <Button
+                  type="submit"
+                  size="lg"
                   className="w-full h-14 text-lg font-semibold"
                   disabled={updateMutation.isPending}
                 >

@@ -9,34 +9,34 @@ from pathlib import Path
 
 def check_environment():
     """Check environment configuration"""
-    
+
     print("🔥 DIVINE CODEX - Environment Check")
     print("=" * 60)
-    
+
     # Check local .env
     env_path = Path(__file__).parent.parent / "api" / ".env"
-    
+
     if not env_path.exists():
         print(f"❌ .env file not found at: {env_path}")
         return False
-    
+
     print(f"✅ Found .env file")
     print()
-    
+
     # Read and parse .env
     with open(env_path, 'r') as f:
         env_content = f.read()
-    
+
     # Check DATABASE_URL
     print("📋 Current Configuration:")
     print()
-    
+
     if 'AVA_API_DATABASE_URL' in env_content:
         for line in env_content.split('\n'):
             if line.startswith('AVA_API_DATABASE_URL'):
                 db_url = line.split('=', 1)[1] if '=' in line else ''
                 print(f"DATABASE_URL: {db_url}")
-                
+
                 if 'localhost' in db_url:
                     print("⚠️  Using LOCAL PostgreSQL (localhost)")
                     print("   This requires PostgreSQL to be running on your machine")
@@ -50,7 +50,7 @@ def check_environment():
                 else:
                     print("❓ Unknown database type")
                     print()
-    
+
     # Recommendations
     print("=" * 60)
     print("💡 RECOMMENDATIONS:")
@@ -74,7 +74,7 @@ def check_environment():
     print("  DATABASE_URL, SUPABASE_URL, SUPABASE_ANON_KEY set on Render")
     print()
     print("=" * 60)
-    
+
     return True
 
 if __name__ == "__main__":

@@ -13,15 +13,15 @@ export function Hero({ locale }: HeroProps) {
   const t = useTranslations("marketing");
   const signupHref = `/${locale}/signup` as const;
   const loginHref = `/${locale}/login` as const;
-  
+
   return (
     <section className="relative min-h-[90vh] overflow-hidden bg-gradient-to-b from-background via-background to-primary/5">
       {/* Ambient background effects */}
       <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:50px_50px]" />
       <div className="absolute left-1/2 top-0 -z-10 h-[600px] w-[600px] -translate-x-1/2 rounded-full bg-primary/20 blur-[120px]" />
-      
+
       <div className="relative mx-auto flex min-h-[90vh] w-full max-w-7xl flex-col items-center justify-center px-6 py-20 text-center">
-        
+
         {/* Badge */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -72,7 +72,7 @@ export function Hero({ locale }: HeroProps) {
             >
               {/* Glow effect */}
               <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-primary via-secondary to-accent opacity-75 blur-lg transition duration-500 group-hover:opacity-100 group-hover:blur-xl" />
-              
+
               {/* Button */}
               <div className="relative flex items-center gap-3 rounded-2xl bg-gradient-to-r from-primary via-secondary to-accent px-12 py-5 text-lg font-bold text-white shadow-2xl transition-all duration-300">
                 <Sparkles className="h-5 w-5 transition-transform duration-300 group-hover:rotate-12" />

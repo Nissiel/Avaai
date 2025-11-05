@@ -16,7 +16,7 @@ type SetupStatus = {
 export function SetupReminderBanner() {
   const [dismissed, setDismissed] = useState(false);
   const locale = useLocale();
-  
+
   const { hasVapiKey, isLoading: vapiLoading } = useVapiStatus();
   const { hasTwilioCredentials, isLoading: twilioLoading } = useTwilioStatus();
 

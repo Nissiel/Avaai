@@ -42,7 +42,7 @@ else
     echo ""
     echo "❌ Pooler connection failed. Try direct connection test..."
     echo ""
-    
+
     python3 << 'PYTHON2'
 import asyncio
 import asyncpg

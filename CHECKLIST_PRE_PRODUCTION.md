@@ -172,14 +172,14 @@ Routes confirmées:
 useEffect(() => {
   const interval = setInterval(async () => {
     if (!form.formState.isDirty) return;
-    
+
     // 1. Profile data
     await fetch("/api/v1/user/profile", { method: "PATCH", ... });
-    
+
     // 2. Studio config (Ava, Telephony, Integrations, Plan)
     await fetch("/api/v1/studio/config", { method: "PATCH", ... });
   }, 10000); // Every 10 seconds
-  
+
   return () => clearInterval(interval);
 }, []);
 ```
@@ -206,7 +206,7 @@ useEffect(() => {
 }
 ```
 
-**Action**: 
+**Action**:
 - [ ] Vérifier si endpoint existe
 - [ ] Si non, créer dans `tenant_profile.py` ou nouveau fichier `user_profile.py`
 
@@ -235,7 +235,7 @@ useEffect(() => {
 }
 ```
 
-**Status actuel**: 
+**Status actuel**:
 - ✅ Endpoint existe dans `studio_config.py` (ligne ~45)
 - ⚠️ **MAIS** stocke en mémoire (_config_state), pas en DB!
 
@@ -275,7 +275,7 @@ async def complete_onboarding(
 - [x] Vapi API Key: ⚠️ **NON CHIFFRÉ** dans `user.vapi_api_key`
   - **Action**: Implémenter chiffrement Fernet
   - Ajouter colonne `vapi_api_key_preview`
-  
+
 - [x] Twilio Auth Token: ⚠️ **NON CHIFFRÉ** dans `user.twilio_auth_token`
   - **Action**: Implémenter chiffrement Fernet
   - Colonne `account_sid` peut rester en clair (pas sensible)
@@ -363,7 +363,7 @@ SELECT id, email, vapi_api_key, onboarding_completed FROM users;
 SELECT user_id, account_sid, phone_number FROM twilio_credentials;
 
 # Check onboarding flags (if table exists)
-SELECT user_id, onboarding_vapi_skipped, onboarding_twilio_skipped 
+SELECT user_id, onboarding_vapi_skipped, onboarding_twilio_skipped
 FROM user_onboarding;
 ```
 

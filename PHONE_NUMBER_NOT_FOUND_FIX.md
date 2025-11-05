@@ -28,7 +28,7 @@ L'auto-import a peut-être échoué silencieusement car il manquait un **prerequ
    ✅ Vapi Settings doit afficher:
       - API Key: ••••••• (masqué mais sauvegardé)
       - Status: ✅ Configured
-   
+
    ❌ Si "Not configured":
       - Click "Add Vapi API Key"
       - Entre ta clé depuis https://dashboard.vapi.ai/account
@@ -38,7 +38,7 @@ L'auto-import a peut-être échoué silencieusement car il manquait un **prerequ
 2. **Va sur `/dashboard/assistants`** (ou `/settings/assistants`)
    ```
    ✅ Tu dois avoir AU MOINS 1 assistant créé
-   
+
    ❌ Si liste vide:
       - Click "Create Assistant"
       - Choisis un template ou crée custom
@@ -63,7 +63,7 @@ L'auto-import a peut-être échoué silencieusement car il manquait un **prerequ
       1. "Credentials saved successfully"
       2. "Configuring phone number..."
       3. "✅ Number imported successfully! Ready to receive calls."
-   
+
    ⚠️ ÉCHEC:
       "To complete setup, please: 1. Add Vapi API key..."
       → Retour Étape 1!
@@ -247,6 +247,6 @@ Après avoir suivi ce guide:
 
 ---
 
-**DATE:** 2025-11-04  
-**STATUS:** PRODUCTION READY ✅  
+**DATE:** 2025-11-04
+**STATUS:** PRODUCTION READY ✅
 **QUALITY:** DIVINE LEVEL 5 🎨

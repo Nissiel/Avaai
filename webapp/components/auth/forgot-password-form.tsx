@@ -49,7 +49,7 @@ export function ForgotPasswordForm() {
           required
         />
       </div>
-      
+
       <Button type="submit" className="w-full" disabled={isLoading}>
         {isLoading ? "Envoi..." : "Réinitialiser le mot de passe"}
       </Button>

@@ -61,23 +61,23 @@ async def update_onboarding_flags(
 ):
     """
     Update onboarding flags for the current user
-    
+
     This endpoint allows tracking which onboarding steps were skipped
     or completed by the user.
     """
     # Update only the fields that were provided
     if payload.onboarding_vapi_skipped is not None:
         current_user.onboarding_vapi_skipped = payload.onboarding_vapi_skipped
-    
+
     if payload.onboarding_twilio_skipped is not None:
         current_user.onboarding_twilio_skipped = payload.onboarding_twilio_skipped
-    
+
     if payload.onboarding_assistant_created is not None:
         current_user.onboarding_assistant_created = payload.onboarding_assistant_created
-    
+
     await db.commit()
     await db.refresh(current_user)
-    
+
     return OnboardingResponse(
         onboarding_vapi_skipped=current_user.onboarding_vapi_skipped or False,
         onboarding_twilio_skipped=current_user.onboarding_twilio_skipped or False,
@@ -107,28 +107,28 @@ async def update_user_profile(
 ):
     """
     Update user profile information during onboarding
-    
+
     This endpoint saves profile data from the Welcome step:
     - name: User's full name
     - locale: Language preference (en, fr, he)
     - organization_name, industry, company_size: Optional business info
-    
+
     Note: organization_name, industry, company_size are not stored in User model yet,
     but accepted for future use. Currently only name and locale are persisted.
     """
     # Update only the fields that were provided and exist in User model
     if payload.name is not None:
         current_user.name = payload.name
-    
+
     if payload.locale is not None:
         current_user.locale = payload.locale
-    
+
     # TODO: Store organization_name, industry, company_size when Organization model is implemented
     # For now, these fields are accepted but not persisted
-    
+
     await db.commit()
     await db.refresh(current_user)
-    
+
     return UserProfileResponse(
         id=current_user.id,
         email=current_user.email,
@@ -146,7 +146,7 @@ async def complete_onboarding(
 ):
     """
     Mark onboarding as completed for the current user
-    
+
     This endpoint is called when user clicks "Complete Setup" on the final step.
     Sets onboarding_completed = True and returns redirect URL.
     """
@@ -156,14 +156,14 @@ async def complete_onboarding(
             onboarding_completed=True,
             redirect_url="/dashboard",
         )
-    
+
     # Mark onboarding as complete
     current_user.onboarding_completed = True
     current_user.onboarding_step = 9  # Final step
-    
+
     await db.commit()
     await db.refresh(current_user)
-    
+
     return CompleteOnboardingResponse(
         success=True,
         onboarding_completed=True,

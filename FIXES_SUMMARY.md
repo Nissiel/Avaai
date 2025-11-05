@@ -64,7 +64,7 @@ async def delete_twilio_settings(...):
         phone_numbers = await vapi.get_phone_numbers()
         # Find and delete matching number
         await vapi.delete_phone_number(phone_id)
-    
+
     # 2. Delete from database
     user.twilio_account_sid = None
     await db.commit()

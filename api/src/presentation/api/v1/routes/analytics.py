@@ -112,15 +112,15 @@ async def send_call_transcript_email(
 ) -> dict[str, str]:
     """
     Send call transcript via email to the user.
-    
+
     Args:
         call_id: The ID of the call to send
         user: Current authenticated user
         session: Database session
-        
+
     Returns:
         Success message with email ID
-        
+
     Raises:
         HTTPException: If call not found or email fails
     """
@@ -131,13 +131,13 @@ async def send_call_transcript_email(
         .where(CallRecord.tenant_id == user.id)
     )
     call = result.scalar_one_or_none()
-    
+
     if not call:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Call {call_id} not found"
         )
-    
+
     # Parse transcript into lines
     transcript_lines = []
     if call.transcript:
@@ -153,7 +153,7 @@ async def send_call_transcript_email(
                     'speaker': 'User',
                     'text': line[5:].strip()
                 })
-    
+
     # Build HTML email
     html_content = f"""
 <!DOCTYPE html>
@@ -198,7 +198,7 @@ async def send_call_transcript_email(
                 </h2>
                 <div style="display: flex; flex-direction: column; gap: 20px;">
 """
-    
+
     # Add transcript messages
     for msg in transcript_lines:
         if msg['speaker'] == 'AI':
@@ -225,7 +225,7 @@ async def send_call_transcript_email(
                         </div>
                     </div>
 """
-    
+
     html_content += """
                 </div>
             </div>
@@ -240,26 +240,26 @@ async def send_call_transcript_email(
 </body>
 </html>
 """
-    
+
     # Send email
     try:
         email_service = get_email_service()
-        
+
         # Use verified email for testing (Resend sandbox restriction)
         recipient_email = "nissieltb@gmail.com"  # TODO: Get from current.user when auth is wired
-        
+
         result = await email_service.send_email(
             to=recipient_email,
             subject=f"📞 Call Transcript - {call.customer_number or call_id[:8]}",
             html=html_content
         )
-        
+
         return {
             "status": "success",
             "message": f"Transcript sent to {recipient_email}",
             "email_id": result.get('id', 'unknown')
         }
-        
+
     except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

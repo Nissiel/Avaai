@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
     // Extract token from Authorization header
     const authHeader = request.headers.get("authorization");
     const token = authHeader?.replace("Bearer ", "");
-    
+
     const config = await fetchStudioConfig(token);
     return NextResponse.json(config);
   } catch (error) {
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     // Extract token from Authorization header
     const authHeader = request.headers.get("authorization");
     const token = authHeader?.replace("Bearer ", "");
-    
+
     const payload = await request.json();
     const parsed = studioConfigUpdateSchema.safeParse(payload);
 

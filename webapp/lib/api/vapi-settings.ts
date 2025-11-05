@@ -27,14 +27,14 @@ export async function getVapiSettings(): Promise<VapiSettings> {
   // 🔥 DIVINE: Auto token refresh on 401
   if (response.status === 401) {
     console.log("⚠️ 401 Unauthorized - Attempting token refresh...");
-    
+
     const refreshToken = localStorage.getItem("refresh_token");
     if (refreshToken) {
       const newAccessToken = await refreshAccessToken(refreshToken);
-      
+
       if (newAccessToken) {
         console.log("✅ Token refreshed! Retrying getVapiSettings...");
-        
+
         const retryResponse = await fetch(`${getBackendUrl()}/api/v1/vapi-settings`, {
           method: "GET",
           headers: {
@@ -42,13 +42,13 @@ export async function getVapiSettings(): Promise<VapiSettings> {
             Authorization: `Bearer ${newAccessToken}`,
           },
         });
-        
+
         if (retryResponse.ok) {
           return await retryResponse.json();
         }
       }
     }
-    
+
     throw new Error("Session expired. Please login again.");
   }
 
@@ -73,14 +73,14 @@ export async function saveVapiSettings(apiKey: string): Promise<VapiSettings> {
   // 🔥 DIVINE: Auto token refresh on 401
   if (response.status === 401) {
     console.log("⚠️ 401 Unauthorized - Attempting token refresh...");
-    
+
     const refreshToken = localStorage.getItem("refresh_token");
     if (refreshToken) {
       const newAccessToken = await refreshAccessToken(refreshToken);
-      
+
       if (newAccessToken) {
         console.log("✅ Token refreshed! Retrying saveVapiSettings...");
-        
+
         const retryResponse = await fetch(`${getBackendUrl()}/api/v1/vapi-settings`, {
           method: "POST",
           headers: {
@@ -89,13 +89,13 @@ export async function saveVapiSettings(apiKey: string): Promise<VapiSettings> {
           },
           body: JSON.stringify({ vapi_api_key: apiKey }),
         });
-        
+
         if (retryResponse.ok) {
           return await retryResponse.json();
         }
       }
     }
-    
+
     throw new Error("Session expired. Please login again.");
   }
 
@@ -119,14 +119,14 @@ export async function deleteVapiSettings(): Promise<void> {
   // 🔥 DIVINE: Auto token refresh on 401
   if (response.status === 401) {
     console.log("⚠️ 401 Unauthorized - Attempting token refresh...");
-    
+
     const refreshToken = localStorage.getItem("refresh_token");
     if (refreshToken) {
       const newAccessToken = await refreshAccessToken(refreshToken);
-      
+
       if (newAccessToken) {
         console.log("✅ Token refreshed! Retrying deleteVapiSettings...");
-        
+
         const retryResponse = await fetch(`${getBackendUrl()}/api/v1/vapi-settings`, {
           method: "DELETE",
           headers: {
@@ -134,13 +134,13 @@ export async function deleteVapiSettings(): Promise<void> {
             Authorization: `Bearer ${newAccessToken}`,
           },
         });
-        
+
         if (retryResponse.ok) {
           return;
         }
       }
     }
-    
+
     throw new Error("Session expired. Please login again.");
   }
 

@@ -55,14 +55,14 @@ export function VapiSetupModal({ isOpen, onClose, onSuccess }: VapiSetupModalPro
     onSuccess: async () => {
       setStep("success");
       await refetch();
-      
+
       // 🔥 DIVINE: Invalidate ALL related caches so dashboard refetches with new key
       queryClient.invalidateQueries({ queryKey: ["assistants"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       queryClient.invalidateQueries({ queryKey: ["integrations-status"] });
-      
+
       onSuccess?.();
-      
+
       setTimeout(() => {
         onClose();
         setStep("choice");

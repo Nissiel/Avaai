@@ -5,7 +5,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 /**
  * GET /api/studio/config - Get studio configuration
  * PATCH /api/studio/config - Update studio configuration
- * 
+ *
  * 🎯 DIVINE: Proxy to avoid CORS issues
  */
 export async function GET(request: NextRequest) {
@@ -73,7 +73,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json();
-    
+
     console.log("🔄 [PATCH /api/studio/config] Proxying to backend:", {
       url: `${API_URL}/api/v1/studio/config`,
       payload: body,

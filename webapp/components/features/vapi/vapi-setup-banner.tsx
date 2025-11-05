@@ -20,7 +20,7 @@ export function VapiSetupBanner({ onDismiss, showModal = false }: VapiSetupBanne
   const router = useRouter();
   const params = useParams();
   const locale = params.locale as string;
-  
+
   const [isModalOpen, setIsModalOpen] = useState(showModal);
   const [isDismissed, setIsDismissed] = useState(false);
 
@@ -49,7 +49,7 @@ export function VapiSetupBanner({ onDismiss, showModal = false }: VapiSetupBanne
         >
           <GlassCard className="relative overflow-hidden border-orange-500/20 bg-gradient-to-r from-orange-500/10 to-yellow-500/10 p-6">
             <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-orange-500/10 blur-3xl" />
-            
+
             <div className="relative flex items-start gap-4">
               <div className="rounded-full bg-orange-500/20 p-2">
                 <AlertCircle className="h-5 w-5 text-orange-500" />

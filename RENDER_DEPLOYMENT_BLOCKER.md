@@ -8,7 +8,7 @@
 $ curl https://ava-api-production.onrender.com/docs
 {"detail":"Not Found"}
 
-$ curl https://ava-api-production.onrender.com/health  
+$ curl https://ava-api-production.onrender.com/health
 {"detail":"Not Found"}
 
 $ curl https://ava-api-production.onrender.com/api/v1/assistants
@@ -121,7 +121,7 @@ curl https://ava-api-production.onrender.com/api/v1/assistants
 # Health ✅
 {"status":"healthy","timestamp":"2025-10-31T..."}
 
-# Docs ✅  
+# Docs ✅
 <!DOCTYPE html>
 <html>
 <head><title>FastAPI</title></head>
@@ -259,11 +259,11 @@ Once Render responds correctly:
    ```bash
    # Get a real auth token from login
    TOKEN="eyJhbGc..."
-   
+
    # Test analytics (was 403, should be 200)
    curl -H "Authorization: Bearer $TOKEN" \
      https://ava-api-production.onrender.com/api/v1/analytics/overview
-   
+
    # Should return:
    {"overview":{...},"calls":[...],"topics":[...]}
    ```
@@ -290,5 +290,5 @@ Once Render responds correctly:
 
 ---
 
-*"Perfect code is useless if it's not deployed."*  
+*"Perfect code is useless if it's not deployed."*
 — DIVINE CODEX, Production Wisdom

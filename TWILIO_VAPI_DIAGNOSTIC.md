@@ -76,7 +76,7 @@ curl -X GET https://api.vapi.ai/assistant \
 # Test depuis ton backend
 curl https://ava-api-production.onrender.com/api/v1/twilio-settings \
   -H "Authorization: Bearer USER_ACCESS_TOKEN"
-  
+
 # Doit retourner:
 {
   "has_twilio_credentials": true,
@@ -90,7 +90,7 @@ curl https://ava-api-production.onrender.com/api/v1/twilio-settings \
 ```bash
 curl https://ava-api-production.onrender.com/api/v1/assistants \
   -H "Authorization: Bearer USER_ACCESS_TOKEN"
-  
+
 # Doit retourner au moins 1 assistant:
 {
   "success": true,
@@ -106,7 +106,7 @@ curl https://ava-api-production.onrender.com/api/v1/assistants \
 # Via ton backend
 curl https://ava-api-production.onrender.com/api/v1/phone-numbers \
   -H "Authorization: Bearer USER_ACCESS_TOKEN"
-  
+
 # Si vide = numéro PAS importé (cause la plus probable!)
 ```
 

@@ -16,7 +16,7 @@ export function VapiSetupBanner() {
   const t = useTranslations("vapiSetup");
   const router = useRouter();
   const pathname = usePathname();
-  
+
   const { hasVapiKey } = useVapiStatus();
   const [isDismissed, setIsDismissed] = useState(true);
 
@@ -66,7 +66,7 @@ export function VapiSetupBanner() {
           <GlassCard className="relative overflow-hidden border-orange-500/20 bg-gradient-to-br from-orange-500/10 to-yellow-500/10 p-4 shadow-lg backdrop-blur-xl">
             <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-orange-500/20 blur-3xl" />
             <div className="absolute -bottom-10 -left-10 h-32 w-32 rounded-full bg-yellow-500/20 blur-3xl" />
-            
+
             <div className="relative flex items-start gap-4">
               <div className="rounded-xl bg-orange-500/20 p-2.5">
                 <AlertCircle className="h-5 w-5 text-orange-500" />
@@ -79,8 +79,8 @@ export function VapiSetupBanner() {
                       {t("title", { defaultValue: "⚠️ Vapi Integration Required" })}
                     </h3>
                     <p className="text-xs text-muted-foreground">
-                      {t("description", { 
-                        defaultValue: "Configure your Vapi.ai API key to unlock AI voice assistants and phone features." 
+                      {t("description", {
+                        defaultValue: "Configure your Vapi.ai API key to unlock AI voice assistants and phone features."
                       })}
                     </p>
                   </div>

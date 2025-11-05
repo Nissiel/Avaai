@@ -25,9 +25,9 @@ def create_app() -> FastAPI:
     print("🚀 AVA API STARTING...", flush=True)
     print("=" * 80, flush=True)
     sys.stdout.flush()
-    
+
     configure_middleware(app)
-    
+
     print("=" * 80, flush=True)
     print("✅ MIDDLEWARE CONFIGURED", flush=True)
     print("=" * 80, flush=True)

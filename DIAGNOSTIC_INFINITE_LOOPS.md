@@ -18,7 +18,7 @@ const token = session?.accessToken;
 
 const { data } = useQuery({
   queryKey: ["data", token], // ⚠️ Token peut changer = query restart
-  queryFn: () => fetch(url, { 
+  queryFn: () => fetch(url, {
     headers: { Authorization: `Bearer ${token}` } // ⚠️ Token peut être undefined
   }),
   enabled: !!token, // ⚠️ Race condition après refresh!
@@ -284,13 +284,13 @@ git push origin main
 
 ## 🎨 MANTRA DIVINE
 
-> **"Le meilleur code est celui qui ne cause pas de loops infinis."**  
-> **"localStorage over Zustand for auth = No race conditions."**  
+> **"Le meilleur code est celui qui ne cause pas de loops infinis."**
+> **"localStorage over Zustand for auth = No race conditions."**
 > **"Single Source of Truth = Single Point of Failure eliminated."**
 
 ---
 
-**DATE:** 2025-11-04  
-**STATUS:** READY TO DEPLOY 🚀  
-**QUALITY:** DIVINE LEVEL 5 🌟  
+**DATE:** 2025-11-04
+**STATUS:** READY TO DEPLOY 🚀
+**QUALITY:** DIVINE LEVEL 5 🌟
 **PRIORITY:** CRITICAL - P0 🔥

@@ -5,7 +5,6 @@ import type {
   AssistantResponse,
   AssistantSummary,
   CreateAssistantPayload,
-  TwilioLinkResult,
   UpdateAssistantPayload,
 } from "@/lib/dto";
 import { getAuthHeaders } from "./auth-helper";
@@ -51,14 +50,14 @@ export async function listAssistants(): Promise<AssistantsResult> {
     // 🎯 DIVINE: If 401, try to refresh token automatically
     if (response.status === 401) {
       console.log("⚠️ 401 Unauthorized - Attempting token refresh...");
-      
+
       const refreshToken = localStorage.getItem("refresh_token");
       if (refreshToken) {
         const newAccessToken = await refreshAccessToken(refreshToken);
-        
+
         if (newAccessToken) {
           console.log("✅ Token refreshed! Retrying listAssistants...");
-          
+
           // Retry the request with new token
           const retryResponse = await fetch(`${getBackendUrl()}/api/v1/assistants`, {
             method: "GET",
@@ -67,7 +66,7 @@ export async function listAssistants(): Promise<AssistantsResult> {
               Authorization: `Bearer ${newAccessToken}`,
             },
           });
-          
+
           if (retryResponse.ok) {
             const payload = await retryResponse.json() as AssistantListApiPayload;
             return {
@@ -77,7 +76,7 @@ export async function listAssistants(): Promise<AssistantsResult> {
           }
         }
       }
-      
+
       // If we get here, refresh failed
       console.error("❌ Token refresh failed - redirecting to login");
       return {
@@ -171,12 +170,7 @@ export async function listAssistants(): Promise<AssistantsResult> {
   }
 }
 
-export interface CreateAssistantResult {
-  assistant: AssistantSummary;
-  twilioLink?: TwilioLinkResult | null;
-}
-
-export async function createAssistant(payload: CreateAssistantPayload): Promise<CreateAssistantResult> {
+export async function createAssistant(payload: CreateAssistantPayload) {
   // 🎯 DIVINE: Call Python backend with user's Vapi key (multi-tenant)
   const response = await fetch(`${getBackendUrl()}/api/v1/assistants`, {
     method: "POST",
@@ -187,14 +181,14 @@ export async function createAssistant(payload: CreateAssistantPayload): Promise<
   // 🎯 DIVINE: If 401, try to refresh token automatically
   if (response.status === 401) {
     console.log("⚠️ 401 Unauthorized - Attempting token refresh...");
-    
+
     const refreshToken = localStorage.getItem("refresh_token");
     if (refreshToken) {
       const newAccessToken = await refreshAccessToken(refreshToken);
-      
+
       if (newAccessToken) {
         console.log("✅ Token refreshed! Retrying createAssistant...");
-        
+
         // Retry the request with new token
         const retryResponse = await fetch(`${getBackendUrl()}/api/v1/assistants`, {
           method: "POST",
@@ -204,20 +198,17 @@ export async function createAssistant(payload: CreateAssistantPayload): Promise<
           },
           body: JSON.stringify(payload),
         });
-        
+
         if (retryResponse.ok) {
           const data = (await retryResponse.json()) as AssistantResponse;
           if (!data.success || !data.assistant) {
             throw new Error("Assistant creation response malformed");
           }
-          return {
-            assistant: data.assistant,
-            twilioLink: data.twilio_link ?? null,
-          };
+          return data.assistant;
         }
       }
     }
-    
+
     throw new Error("Session expired. Please login again.");
   }
 
@@ -231,10 +222,7 @@ export async function createAssistant(payload: CreateAssistantPayload): Promise<
     throw new Error("Assistant creation response malformed");
   }
 
-  return {
-    assistant: data.assistant,
-    twilioLink: data.twilio_link ?? null,
-  };
+  return data.assistant;
 }
 
 export async function getAssistantDetail(id: string) {
@@ -248,14 +236,14 @@ export async function getAssistantDetail(id: string) {
   // 🎯 DIVINE: If 401, try to refresh token automatically
   if (response.status === 401) {
     console.log("⚠️ 401 Unauthorized - Attempting token refresh...");
-    
+
     const refreshToken = localStorage.getItem("refresh_token");
     if (refreshToken) {
       const newAccessToken = await refreshAccessToken(refreshToken);
-      
+
       if (newAccessToken) {
         console.log("✅ Token refreshed! Retrying getAssistantDetail...");
-        
+
         // Retry the request with new token
         const retryResponse = await fetch(`${getBackendUrl()}/api/v1/assistants/${encodeURIComponent(id)}`, {
           method: "GET",
@@ -265,7 +253,7 @@ export async function getAssistantDetail(id: string) {
           },
           cache: "no-store",
         });
-        
+
         if (retryResponse.ok) {
           const payload = (await retryResponse.json()) as AssistantDetailResponse;
           if (!payload.success || !payload.assistant) {
@@ -275,7 +263,7 @@ export async function getAssistantDetail(id: string) {
         }
       }
     }
-    
+
     throw new Error("Session expired. Please login again.");
   }
 
@@ -302,14 +290,14 @@ export async function updateAssistant(payload: UpdateAssistantPayload) {
   // 🎯 DIVINE: If 401, try to refresh token automatically
   if (response.status === 401) {
     console.log("⚠️ 401 Unauthorized - Attempting token refresh...");
-    
+
     const refreshToken = localStorage.getItem("refresh_token");
     if (refreshToken) {
       const newAccessToken = await refreshAccessToken(refreshToken);
-      
+
       if (newAccessToken) {
         console.log("✅ Token refreshed! Retrying updateAssistant...");
-        
+
         // Retry the request with new token
         const retryResponse = await fetch(`${getBackendUrl()}/api/v1/assistants/${encodeURIComponent(payload.id)}`, {
           method: "PATCH",
@@ -319,7 +307,7 @@ export async function updateAssistant(payload: UpdateAssistantPayload) {
           },
           body: JSON.stringify(payload),
         });
-        
+
         if (retryResponse.ok) {
           const data = (await retryResponse.json()) as AssistantDetailResponse;
           if (!data.success || !data.assistant) {
@@ -329,7 +317,7 @@ export async function updateAssistant(payload: UpdateAssistantPayload) {
         }
       }
     }
-    
+
     throw new Error("Session expired. Please login again.");
   }
 

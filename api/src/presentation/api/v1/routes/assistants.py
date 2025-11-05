@@ -19,9 +19,9 @@ router = APIRouter(prefix="/assistants", tags=["Assistants"])
 
 class CreateAssistantRequest(BaseModel):
     """Request body for creating a new assistant."""
-    
+
     model_config = {"protected_namespaces": ()}  # Allow model_* fields
-    
+
     name: str = Field(..., min_length=1, max_length=40, description="Assistant name")
     voice_provider: str = Field(..., description="Voice provider (11labs, azure, deepgram, etc.)")
     voice_id: str = Field(..., description="Voice ID from provider")
@@ -40,9 +40,9 @@ class CreateAssistantRequest(BaseModel):
 
 class UpdateAssistantRequest(BaseModel):
     """Request body for updating an assistant."""
-    
+
     model_config = {"protected_namespaces": ()}  # Allow model_* fields
-    
+
     name: str | None = Field(None, min_length=1, max_length=40, description="Assistant name")
     voice_provider: str | None = Field(None, description="Voice provider")
     voice_id: str | None = Field(None, description="Voice ID from provider")
@@ -239,24 +239,24 @@ async def create_assistant(
 ) -> dict[str, object]:
     """
     Create a new AI assistant with personalized voice and configuration.
-    
+
     This creates the assistant FIRST, then you link it to phone numbers.
     Returns the assistant_id (UUID) which you'll use for phone setup.
-    
+
     During onboarding: No auth required (user creates assistant before signup)
     After onboarding: Should validate tenant ownership
     """
     client = _client(user)
     settings = get_settings()
-    
+
     # DIVINE: Safe metadata handling - use empty dict if None
     metadata = request.metadata or {}
-    
+
     # TODO: Add function calling for caller info collection
     # Vapi requires specific format for functions - needs investigation
     # For now, create assistant without functions to unblock onboarding
     functions = None  # Disabled temporarily due to Vapi format requirements
-    
+
     try:
         # 🔥 DIVINE: Create assistant with webhook URL so calls appear in app!
         webhook_url = f"{settings.backend_url}/api/v1/webhooks/vapi"
@@ -285,12 +285,12 @@ async def create_assistant(
         logger = logging.getLogger(__name__)
         logger.error(f"Vapi API error creating assistant: {exc}")
         logger.error(f"Request payload - name: {request.name}, voice: {request.voice_provider}/{request.voice_id}")
-        
+
         raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY, 
+            status_code=status.HTTP_502_BAD_GATEWAY,
             detail=f"Failed to create assistant: {str(exc)}"
         ) from exc
-    
+
     # 🔥 DIVINE: Auto-link Twilio number if credentials are configured
     twilio_link = await _auto_link_twilio_number(user, assistant.get("id"))
 
@@ -310,28 +310,28 @@ async def update_assistant(
 ) -> dict[str, object]:
     """
     Update an existing AI assistant.
-    
+
     Only provided fields will be updated. Omitted fields remain unchanged.
     """
     client = _client(user)
-    
+
     try:
         # 🔥 DIVINE: Build COMPLETE update payload - ALL fields!
         update_data = {}
-        
+
         # Basic fields
         if request.name is not None:
             update_data["name"] = request.name
         if request.first_message is not None:
             update_data["firstMessage"] = request.first_message
-        
+
         # 🔥 DIVINE: System prompt (custom AI instructions)
         if request.system_prompt is not None:
             update_data["model"] = update_data.get("model", {})
             update_data["model"]["messages"] = [
                 {"role": "system", "content": request.system_prompt}
             ]
-        
+
         # Voice configuration
         if request.voice_provider is not None and request.voice_id is not None:
             update_data["voice"] = {
@@ -344,18 +344,18 @@ async def update_assistant(
         elif request.voice_speed is not None:
             # Update only voice speed
             update_data["voice"] = {"speed": request.voice_speed}
-        
+
         # Model configuration
         if request.model is not None:
             update_data["model"] = update_data.get("model", {})
             update_data["model"]["provider"] = request.model_provider or "openai"
             update_data["model"]["model"] = request.model
-            
+
             if request.temperature is not None:
                 update_data["model"]["temperature"] = request.temperature
             if request.max_tokens is not None:
                 update_data["model"]["maxTokens"] = request.max_tokens
-        
+
         # 🔥 DIVINE: Transcriber configuration (speech-to-text)
         if request.transcriber_provider is not None:
             update_data["transcriber"] = {
@@ -363,26 +363,26 @@ async def update_assistant(
                 "model": request.transcriber_model or "nova-2",
                 "language": request.transcriber_language or "fr",
             }
-        
+
         # Metadata
         if request.metadata is not None:
             update_data["metadata"] = request.metadata
-        
+
         import logging
         logger = logging.getLogger(__name__)
         logger.info(f"🔄 Updating assistant {assistant_id} with: {list(update_data.keys())}")
-        
+
         assistant = await client.update_assistant(assistant_id, update_data)
     except VapiApiError as exc:
         import logging
         logger = logging.getLogger(__name__)
         logger.error(f"Vapi API error updating assistant {assistant_id}: {exc}")
-        
+
         raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY, 
+            status_code=status.HTTP_502_BAD_GATEWAY,
             detail=f"Failed to update assistant: {str(exc)}"
         ) from exc
-    
+
     # 🎯 DIVINE: Return format compatible with frontend expectations
     return {
         "success": True,
@@ -397,15 +397,15 @@ async def configure_webhook(
 ) -> dict[str, object]:
     """
     🔥 DIVINE: Configure webhook on existing assistant.
-    
+
     Use this endpoint to migrate existing assistants created before
     automatic webhook configuration was implemented.
-    
+
     This endpoint:
     1. Gets the backend webhook URL from settings
     2. Updates the assistant's serverUrl via Vapi API
     3. Returns confirmation with webhook URL
-    
+
     Returns:
         {
             "success": True,
@@ -416,18 +416,18 @@ async def configure_webhook(
     """
     client = _client(user)
     settings = get_settings()
-    
+
     webhook_url = f"{settings.backend_url}/api/v1/webhooks/vapi"
-    
+
     try:
         # Update assistant with webhook URL
         update_data = {"serverUrl": webhook_url}
         assistant = await client.update_assistant(assistant_id, update_data)
-        
+
         import logging
         logger = logging.getLogger(__name__)
         logger.info(f"✅ Webhook configured on assistant {assistant_id}: {webhook_url}")
-        
+
         return {
             "success": True,
             "assistant_id": assistant_id,
@@ -438,7 +438,7 @@ async def configure_webhook(
         import logging
         logger = logging.getLogger(__name__)
         logger.error(f"Failed to configure webhook on assistant {assistant_id}: {exc}")
-        
+
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail=f"Failed to configure webhook: {str(exc)}"

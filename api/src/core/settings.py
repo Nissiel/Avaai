@@ -24,12 +24,12 @@ class Settings(BaseSettings):
     vapi_base_url: str = "https://api.vapi.ai"
     vapi_api_key: Optional[str] = None
     jwt_secret_key: str = "CHANGE_ME_IN_PRODUCTION_USE_ENV_VAR"
-    
+
     # Email settings (Resend)
     resend_api_key: Optional[str] = None
     resend_domain: str = "avaai.app"
     app_url: str = "http://localhost:3000"
-    
+
     # Backend URL (for webhook configuration)
     backend_url: str = "https://ava-api-production.onrender.com"
 
@@ -44,7 +44,7 @@ class Settings(BaseSettings):
                 return []
             return [origin.strip() for origin in v.split(",") if origin.strip()]
         return []
-    
+
     model_config = SettingsConfigDict(
         env_file=str(API_DIR / (".env.test" if IS_TESTING else ".env")),
         env_prefix="AVA_API_",

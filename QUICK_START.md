@@ -95,7 +95,7 @@ app.add_middleware(
 vercel env add NEXTAUTH_URL
 # Enter: https://YOUR_VERCEL_URL
 
-vercel env add NEXT_PUBLIC_API_URL  
+vercel env add NEXT_PUBLIC_API_URL
 # Enter: https://ava-api-production.onrender.com
 ```
 
@@ -133,7 +133,7 @@ OU via dashboard: https://vercel.com/nissiel/avaai/settings/environment-variable
 
 ### 2. 500 Server Error
 **Symptôme:** API calls fail with 500
-**Fix:** 
+**Fix:**
 - Check Render logs: https://dashboard.render.com
 - Vérifier DATABASE_URL est correct
 - Vérifier migrations ont run: `alembic upgrade head`

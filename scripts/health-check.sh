@@ -34,9 +34,9 @@ FRONTEND_URL="${1:-}"
 check_endpoint() {
     local url=$1
     local name=$2
-    
+
     echo -n "Checking $name... "
-    
+
     if curl -s -f -o /dev/null -w "%{http_code}" "$url" | grep -q "200\|301\|302\|307"; then
         echo -e "${GREEN}✅ OK${NC}"
         return 0
@@ -51,11 +51,11 @@ check_json() {
     local url=$1
     local name=$2
     local expected=$3
-    
+
     echo -n "Checking $name... "
-    
+
     response=$(curl -s "$url")
-    
+
     if echo "$response" | grep -q "$expected"; then
         echo -e "${GREEN}✅ OK${NC}"
         echo "   Response: $response"
@@ -98,19 +98,19 @@ echo ""
 if [ -n "$FRONTEND_URL" ]; then
     echo "🌐 Frontend Checks"
     echo "------------------"
-    
+
     # Root redirect
     check_endpoint "$FRONTEND_URL/" "Root page"
-    
+
     # Locales
     check_endpoint "$FRONTEND_URL/en" "English locale"
     check_endpoint "$FRONTEND_URL/fr" "French locale"
     check_endpoint "$FRONTEND_URL/he" "Hebrew locale"
-    
+
     # Auth pages
     check_endpoint "$FRONTEND_URL/en/login" "Login page"
     check_endpoint "$FRONTEND_URL/en/signup" "Signup page"
-    
+
     echo ""
 fi
 

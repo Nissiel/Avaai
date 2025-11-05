@@ -211,7 +211,7 @@ Le backend doit avoir un endpoint qui reçoit les webhooks Vapi.
 
 > **"Un système n'est pas connecté tant que les données ne circulent pas de bout en bout."**
 
-Le problème n'était PAS la DB.  
+Le problème n'était PAS la DB.
 Le problème était les **WEBHOOKS** entre Twilio → Vapi → Backend!
 
 **Fix ça, et tout marche!** ✨

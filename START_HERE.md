@@ -18,33 +18,33 @@
 ## 📚 Documentation (START HERE)
 
 ### 1. **INDEX.md** 📍
-→ **Navigation complète** de toute la doc  
-→ Workflows recommandés selon ton objectif  
+→ **Navigation complète** de toute la doc
+→ Workflows recommandés selon ton objectif
 → **Lis ça EN PREMIER** pour t'orienter
 
 ### 2. **RECAP_FINAL.md** ⭐
-→ **Résumé visuel** de tout ce qui a été fait  
-→ Avant/Après, design highlights, décisions smart  
+→ **Résumé visuel** de tout ce qui a été fait
+→ Avant/Après, design highlights, décisions smart
 → **5 minutes** pour tout comprendre
 
 ### 3. **PRE_LAUNCH_CHECKLIST.md** ✅
-→ **Checklist exhaustive** avant de partager  
-→ Tests fonctionnels, responsive, performance  
+→ **Checklist exhaustive** avant de partager
+→ Tests fonctionnels, responsive, performance
 → **30 minutes** pour tout valider
 
 ### 4. **MVP_CLIENT_GUIDE.md** 📋
-→ **Guide pour tes premiers clients**  
-→ Parcours user, feedback questions, email template  
+→ **Guide pour tes premiers clients**
+→ Parcours user, feedback questions, email template
 → **8 minutes**, ready to share
 
 ### 5. **UX_STRATEGY.md** 🧠
-→ **Stratégie UX complète** (25 pages)  
-→ Psychologie cognitive, metrics, design system  
+→ **Stratégie UX complète** (25 pages)
+→ Psychologie cognitive, metrics, design system
 → **20 minutes** pour maîtriser la vision
 
 ### 6. **RÉSUMÉ_DIVINE.md** 📝
-→ **Transformation détaillée** expliquée  
-→ Tous les changements, impact prévu, next steps  
+→ **Transformation détaillée** expliquée
+→ Tous les changements, impact prévu, next steps
 → **10 minutes** pour approfondir
 
 ---
@@ -54,7 +54,7 @@
 ### Landing Page (`/en`)
 ```
 ✨ Hero centré full-height avec gradient text
-🎯 CTA géants impossibles à rater  
+🎯 CTA géants impossibles à rater
 📊 Social proof subtile (100+ appels, 3min, 24/7)
 🎨 Demo card interactive glassmorphism
 🌊 Animations fluides et modernes
@@ -183,8 +183,8 @@
 
 Questions ? Feedback ? Ideas ?
 
-→ Check `INDEX.md` pour navigation complète  
-→ Check `MVP_CLIENT_GUIDE.md` pour questions FAQ  
+→ Check `INDEX.md` pour navigation complète
+→ Check `MVP_CLIENT_GUIDE.md` pour questions FAQ
 → Check `PRE_LAUNCH_CHECKLIST.md` pour troubleshooting
 
 ---

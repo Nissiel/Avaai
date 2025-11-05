@@ -17,7 +17,6 @@ import {
 import { toast } from "sonner";
 import { useIntegrationsStatus } from "@/lib/hooks/use-integrations-status";
 import { createAssistant } from "@/lib/api/assistants";
-import { getTwilioLinkToast } from "@/lib/twilio/twilio-link-feedback";
 import type { OnboardingValues } from "@/lib/validations/onboarding";
 
 interface AssistantStepProps {
@@ -42,20 +41,6 @@ export function AssistantStep({ form, onNext, onBack }: AssistantStepProps) {
   const [isCreating, setIsCreating] = useState(false);
 
   const vapiConfigured = integrations?.vapi?.configured;
-
-  const triggerTwilioToast = (link?: Parameters<typeof getTwilioLinkToast>[1]) => {
-    const payload = getTwilioLinkToast(t, link);
-    if (!payload) return;
-
-    const emitter =
-      payload.variant === "error"
-        ? toast.error
-        : payload.variant === "success"
-        ? toast.success
-        : toast.info;
-
-    emitter(payload.title, { description: payload.description });
-  };
 
   const handleCreateAssistant = async () => {
     if (!vapiConfigured) {
@@ -96,7 +81,7 @@ export function AssistantStep({ form, onNext, onBack }: AssistantStepProps) {
       console.log("🚀 Creating assistant via centralized API:", payload);
 
       // 🔥 DIVINE: Call through centralized function (has retry + token refresh)
-      const { assistant, twilioLink } = await createAssistant(payload);
+      const assistant = await createAssistant(payload);
       console.log("✅ Assistant created successfully:", assistant);
 
       // Mark assistant as created in onboarding
@@ -116,7 +101,6 @@ export function AssistantStep({ form, onNext, onBack }: AssistantStepProps) {
       }
 
       toast.success(t("success.created", { name: assistantName }));
-      triggerTwilioToast(twilioLink);
       if (onNext) onNext();
     } catch (error) {
       console.error("❌ Failed to create assistant:", error);

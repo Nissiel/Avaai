@@ -80,6 +80,6 @@ curl https://ava-api-production.onrender.com/api/v1/assistants
 
 ---
 
-**DATE:** 2025-11-04  
-**STATUS:** FIXED (temporary allow_origins=["*"])  
+**DATE:** 2025-11-04
+**STATUS:** FIXED (temporary allow_origins=["*"])
 **TODO:** Restrict origins in production

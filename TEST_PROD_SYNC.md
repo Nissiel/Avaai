@@ -57,7 +57,7 @@ TOKEN="eyJ..." # Ton access token
 
 curl -X GET https://ava-api-production.onrender.com/api/v1/vapi-settings \
   -H "Authorization: Bearer $TOKEN"
-  
+
 # Devrait retourner:
 # {
 #   "configured": true,
@@ -71,7 +71,7 @@ curl -X GET https://ava-api-production.onrender.com/api/v1/vapi-settings \
 ```bash
 curl -X GET https://ava-api-production.onrender.com/api/v1/studio/config \
   -H "Authorization: Bearer $TOKEN"
-  
+
 # Devrait retourner la config actuelle
 ```
 
@@ -81,7 +81,7 @@ curl -X GET https://ava-api-production.onrender.com/api/v1/studio/config \
 curl -X POST https://ava-api-production.onrender.com/api/v1/studio/sync-vapi \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json"
-  
+
 # Devrait retourner:
 # {
 #   "action": "updated",
@@ -231,9 +231,9 @@ if (!vapiResponse.ok) {
 ### Debug Avancé:
 
 1. **Activer les logs backend:**
-   
+
    Dans `api/src/presentation/api/v1/routes/studio_config.py`, ligne 169:
-   
+
    ```python
    @router.post("/sync-vapi")
    async def sync_config_to_vapi(...):
@@ -250,7 +250,7 @@ if (!vapiResponse.ok) {
    ```
 
 2. **Vérifier les logs Render:**
-   
+
    - Aller sur Render Dashboard
    - Sélectionner le service backend
    - Cliquer "Logs"
@@ -258,7 +258,7 @@ if (!vapiResponse.ok) {
    - Vérifier les erreurs
 
 3. **Tester directement l'API Vapi:**
-   
+
    ```bash
    curl -X PATCH https://api.vapi.ai/assistant/ASSISTANT_ID \
      -H "Authorization: Bearer YOUR_VAPI_KEY" \
@@ -292,7 +292,7 @@ from api.src.infrastructure.external.vapi_client import VapiClient
 
 async def recreate_assistant():
     client = VapiClient(token="YOUR_VAPI_KEY")
-    
+
     # Créer nouvel assistant
     assistant = await client.create_assistant(
         name="Test Assistant",
@@ -302,10 +302,10 @@ async def recreate_assistant():
         model="gpt-4o",
         system_prompt="Tu es une assistante professionnelle française.",
     )
-    
+
     print(f"✅ Assistant créé: {assistant['id']}")
     print(f"URL: https://dashboard.vapi.ai/assistants/{assistant['id']}")
-    
+
     return assistant['id']
 
 # Exécuter
@@ -355,5 +355,5 @@ curl -X POST https://ava-api-production.onrender.com/api/v1/studio/sync-vapi \
 **DIVINE CODEX:**
 > "Le code ne ment jamais. Seuls les logs disent la vérité."
 
-**Date:** 31 Oct 2025  
+**Date:** 31 Oct 2025
 **Status:** DIAGNOSTIC COMPLET - EN ATTENTE DE TEST USER

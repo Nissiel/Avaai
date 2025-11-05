@@ -18,19 +18,19 @@
 
 **Flow actuel** ❌:
 ```
-Step 8 (Plan) 
-  → User clique "Launch Ava" 
-  → Crée assistant Vapi 
+Step 8 (Plan)
+  → User clique "Launch Ava"
+  → Crée assistant Vapi
   → Passe au Step 9 (Done)
   → Affiche résumé + bouton "Launch Ava Studio" (qui ne fait rien)
 ```
 
 **Ce que ça devrait être** ✅:
 ```
-Step 8 (Plan) 
-  → User clique "Complete Setup" 
-  → Crée assistant Vapi 
-  → Marque onboarding terminé 
+Step 8 (Plan)
+  → User clique "Complete Setup"
+  → Crée assistant Vapi
+  → Marque onboarding terminé
   → REDIRIGE directement vers /dashboard
   ✨ PAS de step "Done" inutile!
 ```
@@ -94,13 +94,13 @@ if (Object.keys(updatePayload).length > 0) {
 if (current === "plan" && !hasLaunched) {
   // 1. Crée assistant Vapi
   await assistantMutation.mutateAsync(assistantPayload);
-  
+
   // 2. Marque onboarding completed
   const updatedUser = await completeOnboarding();
-  
+
   // 3. Sauvegarde dans localStorage (backup)
   localStorage.setItem("onboarding_completed", "true");
-  
+
   // 4. Met à jour session locale
   setSession({ ...session, user: { ...user, onboarding_completed: true }});
 }
@@ -152,16 +152,16 @@ setTimeout(() => {
 
 **Si on garde le step Done**:
 ```tsx
-function DoneStep({ summary, onLaunch }: { 
+function DoneStep({ summary, onLaunch }: {
   summary: OnboardingValues;
   onLaunch: () => void;
 }) {
   return (
     <div className="space-y-4">
       {/* ... résumé ... */}
-      <Button 
-        size="lg" 
-        className="w-full" 
+      <Button
+        size="lg"
+        className="w-full"
         type="button"
         onClick={onLaunch}  // ✅ FIX: Ajouter onClick
       >
@@ -172,8 +172,8 @@ function DoneStep({ summary, onLaunch }: {
 }
 
 // Dans OnboardingWizard:
-<DoneStep 
-  summary={summary} 
+<DoneStep
+  summary={summary}
   onLaunch={() => router.push("/dashboard")}
 />
 ```
@@ -236,15 +236,15 @@ if (current === "plan" && !hasLaunched) {
     await assistantMutation.mutateAsync(assistantPayload);
     await completeOnboarding();
     setHasLaunched(true);
-    
+
     toast.success("🎉 Setup complete! Welcome to Ava Studio");
     track("onboarding_completed", { plan: values.plan });
-    
+
     // REDIRECTION IMMÉDIATE
     setTimeout(() => {
       router.push("/dashboard");
     }, 1500);
-    
+
     return; // Ne pas continuer vers step suivant
   } catch (error) {
     // ... error handling

@@ -27,7 +27,7 @@ Tone: Professional
 **Ce qu'on configure**:
 - 🏷️ **Nom de l'assistant**: "Ava Assistant"
 - 🔊 **Voix**: Choix de la voix Azure (Jenny, Denise, Hila)
-- ⚙️ **Configuration technique**: 
+- ⚙️ **Configuration technique**:
   - Instructions du système
   - Premier message de l'assistant
   - Modèle AI (GPT-4o-mini)
@@ -85,12 +85,12 @@ Tone: Professional
 - **Avant**: `{t("onboarding.actions.skip")}` → clé manquante
 - **Après**: Traduction ajoutée dans EN/FR/HE
   - EN: "Skip for now"
-  - FR: "Passer pour l'instant"  
+  - FR: "Passer pour l'instant"
   - HE: "דלג לעת עתה"
 
 ### 2. Plan simplifié - Free seulement ✅
 - **Avant**: 3 plans (Free, Pro, Business) avec choix de seats
-- **Après**: 
+- **Après**:
   - Affichage uniquement du plan Free
   - Auto-sélection du plan Free
   - Message informatif pour upgrade via Settings
@@ -119,7 +119,7 @@ Tone: Professional
 │  ✓ Upgrade anytime from Settings       │
 └─────────────────────────────────────────┘
 
-🚀 You can upgrade to Pro or Business 
+🚀 You can upgrade to Pro or Business
    plans later from Settings → Billing
 ```
 
@@ -138,7 +138,7 @@ Tone: Professional
 
 ✅ **Traductions**: EN, FR, HE complètes
 
-✅ **Backend**: 
+✅ **Backend**:
 - Migrations Alembic (Twilio, onboarding flags)
 - Routes `/api/v1/user/onboarding`
 - Tracking skip/completion par step

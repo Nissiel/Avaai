@@ -331,7 +331,7 @@ Items qui peuvent être fixés post-launch :
 4. **Facilité** : 2 clics pour commencer ?
 5. **Performance** : < 3s de chargement ?
 
-### Si 5/5 = ✅ 
+### Si 5/5 = ✅
 → **READY TO LAUNCH** 🚀
 
 ### Si < 4/5

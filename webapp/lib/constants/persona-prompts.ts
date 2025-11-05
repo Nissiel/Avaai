@@ -1,6 +1,6 @@
 /**
  * 🔥 DIVINE PERSONA PROMPTS
- * 
+ *
  * Pre-built system prompts for different assistant personas.
  * Users can select a preset and customize it further.
  */

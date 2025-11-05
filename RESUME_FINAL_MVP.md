@@ -160,7 +160,7 @@ async def update_profile(
     if payload.full_name:
         user.name = payload.full_name
     # ... autres champs
-    
+
     await session.commit()
     return {"message": "Profile updated"}
 ```
@@ -201,7 +201,7 @@ async def update_studio_config(
     if payload.tone:
         user.tone = payload.tone
     # ... etc
-    
+
     await session.commit()
     return user
 ```
@@ -305,12 +305,12 @@ test('complete onboarding flow', async ({ page }) => {
   await page.goto('/signup');
   await page.fill('[name="email"]', 'test@example.com');
   // ...
-  
+
   // 2. Complete onboarding
   await page.click('[data-testid="step-profile-continue"]');
   await page.click('[data-testid="step-vapi-skip"]');
   // ...
-  
+
   // 3. Verify completion
   await page.click('[data-testid="launch-ava"]');
   await expect(page).toHaveURL('/ava-studio');

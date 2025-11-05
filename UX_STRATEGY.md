@@ -72,13 +72,13 @@ Features + Pricing + FAQ + Footer
 - **Design** : Gradient text + shadow primaire = eye-catching sans être agressif
 
 **3. CTA Hiérarchie**
-- **Primaire** : "Commencer gratuitement" 
+- **Primaire** : "Commencer gratuitement"
   - Shadow XL + gradient + animation hover
   - Position : Hero center + Header right
 - **Secondaire** : "Se connecter"
   - Outline style + hover subtil
   - Position : Hero center + Header right
-  
+
 **4. Social Proof Stratégique**
 - **Pourquoi** : Rassure sans être intrusif
 - **Design** : Icons + metrics en ligne, style minimaliste
@@ -278,5 +278,5 @@ Le résultat : Une webapp qui fait dire "Wow, c'est professionnel" tout en étan
 
 ---
 
-**Créé avec 🧠 et ✨**  
+**Créé avec 🧠 et ✨**
 *Pour que chaque pixel serve un objectif*

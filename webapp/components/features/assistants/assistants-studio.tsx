@@ -16,11 +16,11 @@ const STUDIO_CONFIG_QUERY_KEY = ["studio-config"] as const;
 async function fetchStudioConfig(): Promise<StudioConfigInput> {
   // 🔐 DIVINE: Get token from localStorage for authenticated request
   const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
-  
+
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
-  
+
   if (token) {
     headers.Authorization = `Bearer ${token}`;
   }
@@ -42,7 +42,7 @@ export function AssistantsStudio() {
   const t = useTranslations("assistantsPage");
   const tHero = useTranslations("assistantsPage.hero");
   const tDesigner = useTranslations("assistantsPage.designer");
-  
+
   const { hasVapiKey, isLoading: isLoadingVapi } = useVapiStatus();
 
   const studioConfigQuery = useQuery<StudioConfigInput>({

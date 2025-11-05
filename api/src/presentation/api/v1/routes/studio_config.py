@@ -26,7 +26,7 @@ async def get_or_create_user_config(
 ) -> StudioConfigModel:
     """
     Get user's studio config from database, or create default if doesn't exist.
-    
+
     This replaces the old in-memory _config_state with proper database persistence.
     """
     # Try to find existing config for this user
@@ -34,7 +34,7 @@ async def get_or_create_user_config(
         select(StudioConfigModel).where(StudioConfigModel.user_id == user.id)
     )
     config = result.scalar_one_or_none()
-    
+
     if config is None:
         # Create default config for new user
         config = StudioConfigModel(
@@ -61,7 +61,7 @@ async def get_or_create_user_config(
         db.add(config)
         await db.commit()
         await db.refresh(config)
-    
+
     return config
 
 
@@ -126,12 +126,12 @@ async def update_studio_config(
     Use POST /studio/sync-vapi to apply changes to the Vapi assistant.
     """
     db_config = await get_or_create_user_config(db, current_user)
-    
+
     # Update only provided fields
     data = payload.model_dump(exclude_none=True)
     if not data:
         return db_to_schema(db_config)
-    
+
     # Map Pydantic fields to database columns (camelCase → snake_case)
     field_mapping = {
         "organizationName": "organization_name",
@@ -155,15 +155,15 @@ async def update_studio_config(
         "askForEmail": "ask_for_email",
         "askForPhone": "ask_for_phone",
     }
-    
+
     for camel_key, value in data.items():
         snake_key = field_mapping.get(camel_key, camel_key)
         if hasattr(db_config, snake_key):
             setattr(db_config, snake_key, value)
-    
+
     await db.commit()
     await db.refresh(db_config)
-    
+
     return db_to_schema(db_config)
 
 
@@ -188,7 +188,7 @@ async def sync_config_to_vapi(
 
     # Build enhanced system prompt with caller info collection
     enhanced_prompt = config.systemPrompt
-    
+
     # 🔥 DIVINE: Anti-repetition instruction
     enhanced_prompt += "\n\n⚠️ CRITICAL: NEVER repeat yourself. If you already said something, move on to the next topic. Be concise and efficient."
 
@@ -247,11 +247,11 @@ async def sync_config_to_vapi(
         # Save the assistant ID in DATABASE for future updates
         assistant_id = assistant["id"]
         was_update = config.vapiAssistantId == assistant_id
-        
+
         db_config.vapi_assistant_id = assistant_id
         await db.commit()
         await db.refresh(db_config)
-        
+
         print(f"✅ DIVINE SYNC {'UPDATE' if was_update else 'CREATE'} SUCCESS!")
         print(f"   🆔 Assistant ID: {assistant_id}")
         print(f"   📛 Assistant Name: {assistant.get('name')}")

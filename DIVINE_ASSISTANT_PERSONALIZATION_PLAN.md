@@ -2,7 +2,7 @@
 
 ## 🎯 PROBLÈME IDENTIFIÉ
 
-**Symptôme**: User clique sur "Create Assistant" pendant onboarding → ✅ Crée assistant basique (nom + voix)  
+**Symptôme**: User clique sur "Create Assistant" pendant onboarding → ✅ Crée assistant basique (nom + voix)
 **Mais**: Les autres boutons de personnalisation (system prompt, instructions, personality) ne semblent pas fonctionner
 
 **Cause Racine**:
@@ -60,15 +60,15 @@ const payload = {
   voice_provider: voice.provider,
   voice_id: voice.voiceId,
   first_message: `Bonjour, je suis ${assistantName}. Comment puis-je vous aider aujourd'hui ?`,
-  
+
   // 🔥 NOUVEAU: Ajouter instructions complètes
   system_prompt: PERSONA_PROMPTS[selectedPersona], // Prompt complet par persona
-  
+
   model_provider: "openai",
   model: "gpt-4o",  // Upgraded from gpt-4o-mini
   temperature: 0.7,
   max_tokens: 200,
-  
+
   metadata: {
     persona: selectedPersona,
     created_from: "onboarding",
@@ -121,10 +121,10 @@ const payload = {
         Make it DETAILED, SPECIFIC, and ACTION-ORIENTED.
       </FormDescription>
       <FormControl>
-        <Textarea 
-          {...field} 
+        <Textarea
+          {...field}
           rows={20}  // BIG textarea
-          disabled={isDisabled} 
+          disabled={isDisabled}
           placeholder="Tu es [name], [role] de [company]..."
           className="resize-none font-mono text-sm"
         />
@@ -154,7 +154,7 @@ const payload = {
           🔥 PREVIEW: This will be synced to Vapi
         </h3>
       </div>
-      
+
       <div className="space-y-3 text-sm">
         <div className="p-3 bg-background rounded-lg">
           <strong>🎙️ Voice:</strong> {form.watch("voiceProvider")} / {form.watch("voiceId")}
@@ -163,12 +163,12 @@ const payload = {
           <br />
           <strong>⚡ Speed:</strong> {form.watch("voiceSpeed")}x
         </div>
-        
+
         <div className="p-3 bg-background rounded-lg">
           <strong>💬 First Message:</strong>
           <p className="italic mt-1">"{form.watch("firstMessage")}"</p>
         </div>
-        
+
         <div className="p-3 bg-background rounded-lg max-h-40 overflow-y-auto">
           <strong>🧠 System Prompt ({form.watch("systemPrompt").length} chars):</strong>
           <pre className="text-xs mt-2 whitespace-pre-wrap font-mono">
@@ -176,7 +176,7 @@ const payload = {
           </pre>
         </div>
       </div>
-      
+
       <Button type="submit" size="lg" className="w-full">
         <Save className="mr-2 h-5 w-5" />
         💾 SAVE & SYNC TO VAPI NOW
@@ -207,13 +207,13 @@ class CreateAssistantRequest(BaseModel):
     voice_provider: str = Field(...)
     voice_id: str = Field(...)
     first_message: str = Field(...)
-    
+
     # 🔥 NOUVEAU
     system_prompt: str | None = Field(
-        default=None, 
+        default=None,
         description="System instructions for AI behavior"
     )
-    
+
     model_provider: str = Field(default="openai")
     model: str = Field(default="gpt-4o")
     temperature: float = Field(default=0.7, ge=0.0, le=1.0)
@@ -262,7 +262,7 @@ async def create_assistant(
         "model": {...},
         "firstMessage": first_message,
     }
-    
+
     # 🔥 NOUVEAU: Add system prompt if provided
     if system_prompt:
         payload["model"]["messages"] = [
@@ -271,7 +271,7 @@ async def create_assistant(
                 "content": system_prompt,
             }
         ]
-    
+
     return await self._post("/assistant", json=payload)
 ```
 

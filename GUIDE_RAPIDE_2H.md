@@ -101,7 +101,7 @@ async def update_profile(
     if payload.accept_terms is not None:
         # Ajouter colonne si nécessaire
         pass
-    
+
     await session.commit()
     await session.refresh(user)
     return {"message": "Profile updated"}
@@ -132,7 +132,7 @@ async def update_studio_config(
     session: AsyncSession = Depends(get_session),
 ) -> StudioConfig:
     """Update studio config and save to DB."""
-    
+
     # Update user fields
     if payload.persona:
         user.persona = payload.persona
@@ -144,7 +144,7 @@ async def update_studio_config(
         user.tone = payload.tone
     if payload.guidelines:
         user.guidelines = payload.guidelines
-    
+
     # Telephony
     if payload.strategy:
         user.strategy = payload.strategy
@@ -154,7 +154,7 @@ async def update_studio_config(
         user.business_hours = payload.business_hours
     if payload.fallback_email:
         user.fallback_email = payload.fallback_email
-    
+
     # Integrations
     if payload.calendar:
         user.calendar = payload.calendar
@@ -162,16 +162,16 @@ async def update_studio_config(
         user.workspace_apps = payload.workspace_apps  # JSONB
     if payload.crm:
         user.crm = payload.crm
-    
+
     # Plan
     if payload.plan:
         user.plan = payload.plan
     if payload.seats:
         user.seats = payload.seats
-    
+
     await session.commit()
     await session.refresh(user)
-    
+
     # Return as StudioConfig
     return StudioConfig(
         persona=user.persona,
@@ -200,10 +200,10 @@ async def complete_onboarding(
     current_user.onboarding_completed = True
     # Si colonne existe:
     # current_user.onboarding_completed_at = datetime.now()
-    
+
     await db.commit()
     await db.refresh(current_user)
-    
+
     return {
         "message": "Onboarding completed successfully",
         "completed": True
@@ -287,15 +287,15 @@ npm run dev
 
 **Vérifier dans DB**:
 ```sql
-SELECT 
-    id, 
-    email, 
+SELECT
+    id,
+    email,
     name,
     onboarding_completed,
     onboarding_vapi_skipped,
     onboarding_twilio_skipped
-FROM users 
-ORDER BY created_at DESC 
+FROM users
+ORDER BY created_at DESC
 LIMIT 1;
 ```
 

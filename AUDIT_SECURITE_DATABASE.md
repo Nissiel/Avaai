@@ -26,36 +26,36 @@
 CREATE TABLE users (
     -- Primary Key
     id VARCHAR(36) PRIMARY KEY,  -- UUID string
-    
+
     -- Authentication
     email VARCHAR(255) UNIQUE NOT NULL,
     phone VARCHAR(20) UNIQUE,
     password VARCHAR(255),
-    
+
     -- Profile
     name VARCHAR(255),
     image VARCHAR(512),
     locale VARCHAR(8) DEFAULT 'en',
-    
+
     -- Security
     phone_verified BOOLEAN DEFAULT FALSE,
     two_fa_enabled BOOLEAN DEFAULT FALSE,
-    
+
     -- ✅ VAPI INTEGRATION (PER USER)
     vapi_api_key VARCHAR(255),  -- ⚠️ À CHIFFRER
-    
+
     -- ✅ TWILIO INTEGRATION (PER USER)
     twilio_account_sid VARCHAR(255),  -- ⚠️ À CHIFFRER
     twilio_auth_token VARCHAR(255),   -- ⚠️ À CHIFFRER
     twilio_phone_number VARCHAR(50),
-    
+
     -- ✅ ONBOARDING TRACKING (PER USER)
     onboarding_completed BOOLEAN DEFAULT FALSE,
     onboarding_step INTEGER DEFAULT 0,
     onboarding_vapi_skipped BOOLEAN DEFAULT FALSE,
     onboarding_twilio_skipped BOOLEAN DEFAULT FALSE,
     onboarding_assistant_created BOOLEAN DEFAULT FALSE,
-    
+
     -- Timestamps
     created_at TIMESTAMP WITH TIME ZONE,
     updated_at TIMESTAMP WITH TIME ZONE
@@ -94,7 +94,7 @@ CREATE TABLE tenants (
 CREATE TABLE ava_profiles (
     -- ✅ FOREIGN KEY TO TENANT
     tenant_id UUID PRIMARY KEY REFERENCES tenants(id) ON DELETE CASCADE,
-    
+
     -- Configuration
     name VARCHAR(40) DEFAULT 'Ava',
     voice VARCHAR(64) DEFAULT 'alloy',
@@ -129,10 +129,10 @@ CREATE TABLE ava_profiles (
 CREATE TABLE calls (
     id VARCHAR(64) PRIMARY KEY,
     assistant_id VARCHAR(64) NOT NULL,
-    
+
     -- ✅ FOREIGN KEY TO TENANT
     tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE NOT NULL,
-    
+
     -- Call metadata
     customer_number VARCHAR(32),
     status VARCHAR(32) NOT NULL,
@@ -168,27 +168,27 @@ if not call or str(call.tenant_id) != str(current.tenant.id):
 ```sql
 CREATE TABLE phone_numbers (
     id VARCHAR(36) PRIMARY KEY,
-    
+
     -- ✅ ORGANISATION LINK
     org_id VARCHAR(36) NOT NULL,  -- ⚠️ Quel modèle? User? Tenant?
-    
+
     -- Provider
     provider VARCHAR(20) NOT NULL,  -- VAPI, TWILIO, VAPI_TWILIO, SIP
-    
+
     -- Phone number
     e164 VARCHAR(20) UNIQUE NOT NULL,
-    
+
     -- Vapi specific
     vapi_phone_number_id VARCHAR(255),
-    
+
     -- Twilio specific
     twilio_account_sid VARCHAR(255),  -- ⚠️ À CHIFFRER
-    
+
     -- Routing
     routing JSONB DEFAULT '{}',
     business_hours JSONB DEFAULT '{}',
     voicemail JSONB DEFAULT '{}',
-    
+
     -- Status
     active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP WITH TIME ZONE,
@@ -219,7 +219,7 @@ async def get_current_user(
     # Decode JWT
     # Query user from DB
     # Return authenticated user
-    
+
 async def get_current_tenant(
     token: str = Depends(oauth2_scheme),
     session: AsyncSession = Depends(get_session)
@@ -309,7 +309,7 @@ async def update_onboarding_flags(
         current_user.onboarding_vapi_skipped = payload.onboarding_vapi_skipped
     # ... autres flags
     await db.commit()
-    
+
 @router.get("/user/onboarding")
 async def get_onboarding_status(
     current_user: User = Depends(get_current_user),  # ✅ FILTRE PAR USER
@@ -339,7 +339,7 @@ async def list_calls(
 ):
     # ✅ FILTRE EXPLICITE PAR TENANT_ID
     calls = await get_recent_calls(
-        session, 
+        session,
         tenant_id=str(current.tenant.id),  # ✅ CRUCIAL
         limit=limit
     )
@@ -351,7 +351,7 @@ async def get_call_detail(
     current: CurrentTenant = Depends(get_current_tenant),  # ✅ FILTRE PAR TENANT
 ):
     call = await get_call_by_id(session, call_id)
-    
+
     # ✅ DOUBLE VÉRIFICATION SÉCURITÉ
     if not call or str(call.tenant_id) != str(current.tenant.id):
         raise HTTPException(status_code=404, detail="Call not found")
@@ -373,13 +373,13 @@ async def create_assistant(
 ):
     # 1. Récupère la clé Vapi du user authentifié
     vapi_key = user.vapi_api_key  # ✅ ISOLATION PAR USER
-    
+
     # 2. Crée l'assistant avec la clé du user
     assistant = await vapi_client.create_assistant(
         api_key=vapi_key,
         payload=payload
     )
-    
+
     # 3. Sauvegarde avec tenant_id
     # (code à vérifier)
 ```
@@ -444,16 +444,16 @@ phone_numbers.twilio_account_sid -- ❌ Clair (si stocké)
 **Fix**:
 ```sql
 -- Clarifier org_id
-ALTER TABLE phone_numbers 
-    ADD CONSTRAINT fk_phone_numbers_org 
+ALTER TABLE phone_numbers
+    ADD CONSTRAINT fk_phone_numbers_org
     FOREIGN KEY (org_id) REFERENCES users(id) ON DELETE CASCADE;
 
 -- OU si org_id = tenant_id
-ALTER TABLE phone_numbers 
+ALTER TABLE phone_numbers
     RENAME COLUMN org_id TO tenant_id;
-    
-ALTER TABLE phone_numbers 
-    ADD CONSTRAINT fk_phone_numbers_tenant 
+
+ALTER TABLE phone_numbers
+    ADD CONSTRAINT fk_phone_numbers_tenant
     FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE;
 ```
 
@@ -534,8 +534,8 @@ CREATE INDEX idx_users_created_at ON users(created_at);
 
 3. **Ajouter foreign key phone_numbers** (5min)
    ```sql
-   ALTER TABLE phone_numbers 
-       ADD CONSTRAINT fk_phone_numbers_org 
+   ALTER TABLE phone_numbers
+       ADD CONSTRAINT fk_phone_numbers_org
        FOREIGN KEY (org_id) REFERENCES users(id) ON DELETE CASCADE;
    ```
 

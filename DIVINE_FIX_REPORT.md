@@ -19,7 +19,7 @@
 # ❌ WRONG - Used global Vapi key (doesn't exist in multi-tenant)
 def _client() -> VapiClient:
     return VapiClient()  # Uses settings.vapi_api_key (global)
-    
+
 # ✅ CORRECT - Use user's personal key (multi-tenant)
 def _client(user: User) -> VapiClient:
     return VapiClient(token=user.vapi_api_key)  # Uses user's key!
@@ -131,7 +131,7 @@ curl -H "Authorization: Bearer YOUR_TOKEN" \
   https://ava-api-production.onrender.com/api/v1/analytics/overview
 # Expected: 200 OK with analytics data (not 403!)
 
-# 3. Test assistants endpoint  
+# 3. Test assistants endpoint
 curl -H "Authorization: Bearer YOUR_TOKEN" \
   https://ava-api-production.onrender.com/api/v1/assistants
 # Expected: 200 OK with list of assistants (not 404!)
@@ -141,7 +141,7 @@ curl -H "Authorization: Bearer YOUR_TOKEN" \
 Vercel will auto-deploy from main branch. Test:
 
 1. **Login Page**: Should load without locale errors
-2. **Dashboard**: 
+2. **Dashboard**:
    - ✅ Should show analytics (no 403)
    - ✅ Should show "We couldn't load your assistant" if no Vapi key set
    - ✅ Should show assistants if Vapi key configured
@@ -258,7 +258,7 @@ async def some_endpoint(
 **Before Fixes:**
 - ❌ Analytics: 403 Forbidden
 - ❌ Onboarding: Infinite loop
-- ❌ Assistant page: Infinite loop  
+- ❌ Assistant page: Infinite loop
 - ❌ Dashboard: "Session expired"
 - ❌ Vercel: Locale SSR errors
 
@@ -289,5 +289,5 @@ async def some_endpoint(
 
 **DIVINE STATUS: PRODUCTION-READY ✨**
 
-*"The best code is elegant, the best fix is systemic."*  
+*"The best code is elegant, the best fix is systemic."*
 — DIVINE CODEX, Level 5

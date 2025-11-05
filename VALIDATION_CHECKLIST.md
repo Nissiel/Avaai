@@ -161,11 +161,11 @@ Le 1% restant = bugs Vapi API ou réseau, pas notre code.
 
 ## 🎨 DIVINE QUOTE
 
-> **"Un code qui gère ses edge cases avec grâce**  
+> **"Un code qui gère ses edge cases avec grâce**
 > **Est un code qui inspire confiance."**
 
 ---
 
-**DATE:** 2025-11-04  
-**STATUS:** READY FOR TESTING 🚀  
+**DATE:** 2025-11-04
+**STATUS:** READY FOR TESTING 🚀
 **NEXT:** User testing + validation

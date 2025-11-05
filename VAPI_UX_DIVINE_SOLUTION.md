@@ -225,10 +225,10 @@ export function AssistantsStudio() {
   return (
     <section>
       <header>...</header>
-      
+
       {/* Show banner only if user doesn't have a key */}
       {!isLoading && !hasVapiKey && <VapiSetupBanner />}
-      
+
       <StudioSettingsForm />
     </section>
   );

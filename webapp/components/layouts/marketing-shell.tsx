@@ -83,20 +83,20 @@ export function MarketingShell({ children }: { children: React.ReactNode }) {
 
           {/* Navigation centrale */}
           <nav className="hidden items-center gap-8 md:flex">
-            <Link 
-              href={routes.features as any} 
+            <Link
+              href={routes.features as any}
               className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
               {translate(locale, "marketing.features", "Features")}
             </Link>
-            <Link 
-              href={routes.pricing as any} 
+            <Link
+              href={routes.pricing as any}
               className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
               {translate(locale, "marketing.pricing", "Pricing")}
             </Link>
-            <Link 
-              href={routes.faq as any} 
+            <Link
+              href={routes.faq as any}
               className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
               FAQ
@@ -114,14 +114,14 @@ export function MarketingShell({ children }: { children: React.ReactNode }) {
       <div className="h-16" />
 
       <main className="flex flex-1 flex-col">{hasRenderableChildren ? (
-          children
-        ) : (
-          <DefaultMarketingFallback
-            locale={locale}
-            translate={(key, fallbackText) => translate(locale, key, fallbackText)}
-            routes={routes}
-          />
-        )}
+        children
+      ) : (
+        <DefaultMarketingFallback
+          locale={locale}
+          translate={(key, fallbackText) => translate(locale, key, fallbackText)}
+          routes={routes}
+        />
+      )}
       </main>
 
       <footer className="border-t border-border/60 bg-background/85 backdrop-blur">

@@ -85,13 +85,13 @@ def run_migrations_online() -> None:
     # Check if we're using an async driver
     from sqlalchemy import engine_from_config
     url = config.get_main_option("sqlalchemy.url")
-    
+
     # ALWAYS use sync mode for migrations (psycopg2)
     # Remove +asyncpg from URL if present to force psycopg2
     if url and "+asyncpg" in url:
         url_sync = url.replace("+asyncpg", "")
         config.set_main_option("sqlalchemy.url", url_sync)
-    
+
     # Use sync mode for all migrations
     connectable = engine_from_config(
         config.get_section(config.config_ini_section, {}),

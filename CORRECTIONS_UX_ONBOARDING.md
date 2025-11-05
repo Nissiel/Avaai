@@ -74,7 +74,7 @@ if (segment === "onboarding" && index === segments.length - 1) {
 
 **Flow AVANT** ❌:
 ```
-Step 8 (Plan) → "Launch Ava" 
+Step 8 (Plan) → "Launch Ava"
   ↓
 Step 9 (Done) → Bouton "Launch Ava Studio" (mort, ne fait rien)
   ↓
@@ -96,7 +96,7 @@ User arrive directement dans l'app 🎉
 
 ### 4️⃣ Changé le texte du bouton final ✅
 
-**Avant**: "Launch Ava"  
+**Avant**: "Launch Ava"
 **Après**: "Complete Setup"
 
 **Pendant création**: "Creating your assistant..."
@@ -206,7 +206,7 @@ User arrive directement dans l'app 🎉
 
 ## 🎯 RÉSULTAT
 
-**Avant**: Onboarding confus avec step mort et breadcrumb cassé  
+**Avant**: Onboarding confus avec step mort et breadcrumb cassé
 **Après**: Flow fluide, redirection automatique, zero friction ✨
 
 **Experience score**:
@@ -217,10 +217,10 @@ User arrive directement dans l'app 🎉
 
 ## 🚀 PRÊT POUR DEPLOY
 
-✅ Aucune erreur TypeScript  
-✅ Aucun code cassé  
-✅ Traductions complètes (EN, FR, HE)  
-✅ Flow testé mentalement  
+✅ Aucune erreur TypeScript
+✅ Aucun code cassé
+✅ Traductions complètes (EN, FR, HE)
+✅ Flow testé mentalement
 ✅ UX optimisée
 
 **Prochaine étape**: Commit + Push + Deploy!

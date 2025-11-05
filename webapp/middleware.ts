@@ -48,8 +48,8 @@ function stripLocale(pathname: string): string {
  */
 function isPublicRoute(pathname: string): boolean {
   const normalizedPath = stripLocale(pathname)
-  
-  return PUBLIC_ROUTES.some(route => 
+
+  return PUBLIC_ROUTES.some(route =>
     normalizedPath === route || normalizedPath.startsWith(`${route}/`)
   )
 }
@@ -59,8 +59,8 @@ function isPublicRoute(pathname: string): boolean {
  */
 function isProtectedRoute(pathname: string): boolean {
   const normalizedPath = stripLocale(pathname)
-  
-  return PROTECTED_ROUTE_PREFIXES.some(prefix => 
+
+  return PROTECTED_ROUTE_PREFIXES.some(prefix =>
     normalizedPath.startsWith(prefix)
   )
 }
@@ -72,19 +72,19 @@ function getAuthToken(request: NextRequest): string | null {
   // Try cookie first (server-side)
   const cookieToken = request.cookies.get('access_token')?.value
   if (cookieToken) return cookieToken
-  
+
   // Fallback: check Authorization header
   const authHeader = request.headers.get('authorization')
   if (authHeader?.startsWith('Bearer ')) {
     return authHeader.substring(7)
   }
-  
+
   return null
 }
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
-  
+
   // Skip middleware for:
   // - API routes (handled by API route auth)
   // - Static files
@@ -97,31 +97,31 @@ export function middleware(request: NextRequest) {
   ) {
     return NextResponse.next()
   }
-  
+
   // Check if route is public
   if (isPublicRoute(pathname)) {
     return NextResponse.next()
   }
-  
+
   // Check if route needs protection
   if (isProtectedRoute(pathname)) {
     const token = getAuthToken(request)
-    
+
     if (!token) {
       // No token → redirect to login with return URL
       const locale = pathname.match(/^\/([a-z]{2})\//)?.[1] || 'en'
       const loginUrl = new URL(`/${locale}/login`, request.url)
       loginUrl.searchParams.set('redirect', pathname)
-      
+
       return NextResponse.redirect(loginUrl)
     }
-    
+
     // Token exists → allow access
     // Note: Token validation is done by API routes, not middleware
     // to avoid unnecessary backend calls on every request
     return NextResponse.next()
   }
-  
+
   // Default: allow access
   return NextResponse.next()
 }

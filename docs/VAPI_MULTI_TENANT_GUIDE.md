@@ -36,7 +36,7 @@
 4. Cliquez sur **"Create New API Key"**
 5. Donnez-lui un nom : `Ava.ai Production`
 6. **Copiez la clé** (elle commence par `sk_live_...`)
-   
+
    ⚠️ **IMPORTANT** : Sauvegardez cette clé maintenant ! Elle ne sera plus visible après.
 
 ### Étape 3 : Configurer la Clé dans Ava.ai
@@ -165,7 +165,7 @@ export default function VapiSettingsPage() {
       },
       body: JSON.stringify({ vapi_api_key: apiKey })
     });
-    
+
     if (res.ok) {
       toast({ title: 'Clé Vapi sauvegardée ✅' });
       fetchVapiSettings();
@@ -178,7 +178,7 @@ export default function VapiSettingsPage() {
   return (
     <div className="max-w-2xl mx-auto p-6">
       <h1 className="text-2xl font-bold mb-6">⚙️ Configuration Vapi.ai</h1>
-      
+
       <div className="bg-white p-6 rounded-lg shadow">
         <div className="mb-4">
           <p className="text-sm text-gray-600 mb-2">
@@ -271,13 +271,13 @@ Ava.ai évolue avec une nouvelle architecture **multi-tenant** pour Vapi.ai.
 
 **Qu'est-ce que ça change pour vous ?**
 
-Avant, tous les utilisateurs partageaient une seule clé Vapi (limite de 100 assistants).  
+Avant, tous les utilisateurs partageaient une seule clé Vapi (limite de 100 assistants).
 Maintenant, **chaque utilisateur a sa propre clé Vapi** !
 
 **Avantages :**
-✅ Aucune limite de croissance  
-✅ Contrôle total sur votre compte Vapi  
-✅ Meilleure isolation et sécurité  
+✅ Aucune limite de croissance
+✅ Contrôle total sur votre compte Vapi
+✅ Meilleure isolation et sécurité
 
 **Action requise :**
 
@@ -309,7 +309,7 @@ L'équipe Ava.ai 🚀
 
 ### Q: Que se passe-t-il si je ne configure pas ma clé Vapi ?
 
-**R:** Vous verrez le message "Configuration Vapi introuvable. Ajoutez votre clé API Vapi pour synchroniser les assistantes."  
+**R:** Vous verrez le message "Configuration Vapi introuvable. Ajoutez votre clé API Vapi pour synchroniser les assistantes."
 Les fonctionnalités Vapi (assistants téléphoniques) seront désactivées jusqu'à ce que vous configuriez votre clé.
 
 ### Q: Ma clé Vapi est-elle sécurisée ?

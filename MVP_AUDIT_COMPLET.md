@@ -217,10 +217,10 @@ async def save_vapi_key(
 ):
     # 1. Encrypt key with Fernet
     encrypted_key = cipher.encrypt(payload.vapi_api_key.encode())
-    
+
     # 2. Create preview (show last 4 chars)
     preview = f"****{payload.vapi_api_key[-4:]}"
-    
+
     # 3. INSERT or UPDATE vapi_credentials
     # ON CONFLICT (user_id) DO UPDATE
     # ✅ CONNECTÉ
@@ -290,7 +290,7 @@ async def save_twilio_credentials(
 ):
     # 1. Encrypt auth_token
     encrypted_token = cipher.encrypt(payload.auth_token.encode())
-    
+
     # 2. INSERT or UPDATE twilio_credentials
     # ON CONFLICT (user_id) DO UPDATE
     # ✅ CONNECTÉ
@@ -394,7 +394,7 @@ async def complete_onboarding(
     current_user = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    # UPDATE users 
+    # UPDATE users
     # SET onboarding_completed = TRUE,
     #     onboarding_completed_at = NOW()
     # WHERE id = current_user.id
@@ -440,13 +440,13 @@ async def create_assistant(
 ):
     # 1. Récupérer la clé Vapi du user
     vapi_key = get_vapi_key(current_user.id, db)
-    
+
     # 2. Appeler l'API Vapi.ai
     response = await vapi_client.create_assistant(
         api_key=vapi_key,
         payload=payload
     )
-    
+
     # 3. Sauvegarder l'assistant en DB
     # INSERT INTO assistants (...) VALUES (...)
     # ✅ CONNECTÉ
@@ -466,7 +466,7 @@ async def create_assistant(
 useEffect(() => {
   const interval = setInterval(() => {
     if (!form.formState.isDirty) return;
-    
+
     // Sauvegarder automatiquement
     handleAutoSave();
   }, 10000); // 10 secondes
@@ -485,7 +485,7 @@ useEffect(() => {
 ```typescript
 const handleAutoSave = async () => {
   const values = form.getValues();
-  
+
   // 1. Sauvegarder Profile
   if (hasProfileData(values)) {
     await fetch("/api/v1/user/profile", {
@@ -501,7 +501,7 @@ const handleAutoSave = async () => {
       })
     });
   }
-  
+
   // 2. Sauvegarder Studio Config (Ava, Telephony, Integrations, Plan)
   await fetch("/api/v1/user/studio-config", {
     method: "PATCH",
@@ -597,13 +597,13 @@ const handleCreateAssistant = async () => {
       // ...
     })
   });
-  
+
   // 2. Marquer comme créé
   await fetch("/api/user/onboarding", {
     method: "PATCH",
     body: JSON.stringify({ onboarding_assistant_created: true })
   });
-  
+
   // ✅ Assistant créé dans Vapi ET flag sauvegardé
 };
 ```
@@ -617,18 +617,18 @@ const handleCreateAssistant = async () => {
 ```typescript
 const goNext = async () => {
   const current = steps[stepIndex].id;
-  
+
   // Validation stricte seulement pour Profile et Plan
   const shouldValidate = current === "profile" || current === "plan";
-  
+
   if (shouldValidate && !isStepValid(current)) {
     toast.warning("Certains champs sont incomplets, mais vous pouvez continuer");
     // ⚠️ PAS DE RETURN - Permet de skip même incomplet
   }
-  
+
   // Auto-save avant de passer à l'étape suivante
   await handleAutoSave();
-  
+
   // Navigation
   setStepIndex(stepIndex + 1);
 };
@@ -651,11 +651,11 @@ export function useIntegrationsStatus() {
       // 1. Vérifier Vapi
       const vapiRes = await fetch("/api/v1/vapi-settings");
       const vapi = await vapiRes.json();
-      
+
       // 2. Vérifier Twilio
       const twilioRes = await fetch("/api/v1/twilio-settings");
       const twilio = await twilioRes.json();
-      
+
       return {
         vapi: { configured: vapi.has_vapi_key },
         twilio: { configured: twilio.has_credentials }
@@ -676,16 +676,16 @@ export function useIntegrationsStatus() {
 ```
 1. User tape "John Doe" dans fullName
    └─> React Hook Form: form.setValue("fullName", "John Doe")
-   
+
 2. User tape "Acme Corp" dans organizationName
    └─> form.setValue("organizationName", "Acme Corp")
-   
+
 3. 10 secondes s'écoulent (auto-save)
    └─> handleAutoSave() déclenché
        └─> PATCH /api/v1/user/profile
            └─> Backend: UPDATE users SET full_name='John Doe', organization_name='Acme Corp'
                └─> ✅ PostgreSQL: Données sauvegardées
-   
+
 4. User clique "Continue"
    └─> goNext()
        └─> handleAutoSave() (encore)
@@ -702,10 +702,10 @@ export function useIntegrationsStatus() {
 ```
 1. User clique "⚡ Quick Configuration"
    └─> Affiche le formulaire inline
-   
+
 2. User colle la clé "sk-abc123xyz789"
    └─> setApiKey("sk-abc123xyz789")
-   
+
 3. User clique "Save & Continue"
    └─> handleSaveInline()
        └─> POST /api/v1/vapi-settings
@@ -728,12 +728,12 @@ export function useIntegrationsStatus() {
 ```
 1. User arrive sur l'étape Twilio
    └─> Affiche 3 options: inline, settings, skip
-   
+
 2. User clique "Skip for now"
    └─> handleSkip()
        └─> PATCH /api/v1/user/onboarding
            Body: { onboarding_twilio_skipped: true }
-           └─> Backend: INSERT INTO user_onboarding (...) 
+           └─> Backend: INSERT INTO user_onboarding (...)
                ON CONFLICT (user_id) DO UPDATE
                SET onboarding_twilio_skipped = TRUE
                └─> ✅ PostgreSQL: Flag skip enregistré
@@ -752,11 +752,11 @@ export function useIntegrationsStatus() {
        └─> sessionStorage.setItem("onboarding_current_step", "1")
        └─> router.push("/fr/settings?section=vapi&returnTo=onboarding")
            └─> ✅ Navigation vers Settings avec locale
-   
+
 2. User configure dans Settings
    └─> POST /api/v1/vapi-settings
        └─> ✅ Même endpoint, même sauvegarde
-   
+
 3. User clique "Retour onboarding"
    └─> router.push("/fr/onboarding/welcome")
        └─> sessionStorage.setItem("returning_from_settings", "true")
@@ -779,7 +779,7 @@ export function useIntegrationsStatus() {
        └─> GET /api/v1/vapi-settings
            └─> Response: { has_vapi_key: true }
                └─> ✅ Vapi configuré → Bouton "Create" enabled
-   
+
 2. User clique "Create Assistant"
    └─> handleCreateAssistant()
        └─> POST /api/assistants
@@ -798,12 +798,12 @@ export function useIntegrationsStatus() {
                4. Sauvegarde assistant en DB:
                   INSERT INTO assistants (user_id, vapi_id, name, ...)
                └─> ✅ Assistant créé dans Vapi ET en DB
-       
+
        └─> PATCH /api/v1/user/onboarding
            Body: { onboarding_assistant_created: true }
            └─> Backend: UPDATE user_onboarding SET assistant_created = TRUE
                └─> ✅ Flag completion sauvegardé
-       
+
        └─> onNext() → Navigation vers Plan
 ```
 
@@ -817,13 +817,13 @@ export function useIntegrationsStatus() {
 1. User clique "Launch Ava"
    └─> handleLaunch()
        └─> POST /api/v1/user/complete-onboarding
-           └─> Backend: 
-               UPDATE users 
+           └─> Backend:
+               UPDATE users
                SET onboarding_completed = TRUE,
                    onboarding_completed_at = NOW()
                WHERE id = current_user.id
                └─> ✅ PostgreSQL: Onboarding marqué complet
-       
+
        └─> localStorage.setItem("onboarding_completed", "true")
        └─> router.push("/fr/ava-studio")
            └─> ✅ Redirection vers l'app principale

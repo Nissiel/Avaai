@@ -12,7 +12,7 @@
    - **Root Directory**: `api`
    - **Runtime**: `Python 3`
    - **Build Command**: `pip install -r ../requirements.txt`
-   - **Start Command**: `### ✏️ **Start Command**  
+   - **Start Command**: `### ✏️ **Start Command**
 ```bash
 bash -c "export MIGRATION_URL=\$(echo \$AVA_API_DATABASE_URL | sed 's/+asyncpg//g') && cd .. && AVA_API_DATABASE_URL=\$MIGRATION_URL alembic upgrade head && cd api && uvicorn src.presentation.api.main:app --host 0.0.0.0 --port \$PORT"
 ````
@@ -86,7 +86,7 @@ Pas besoin de faire `alembic upgrade head` localement. Les migrations s'exécute
 > 1. Va au root du projet (`cd ..`)
 > 2. Exécute les migrations Alembic (`alembic upgrade head`)
 > 3. Démarre l'API FastAPI (`uvicorn`)
-> 
+>
 > **Pourquoi au START et pas au BUILD ?**
 > - Render isole le réseau pendant la phase BUILD (sécurité)
 > - La DB n'est accessible que pendant la phase START
@@ -367,7 +367,7 @@ Render ajoute automatiquement un rate limit basique. Pour plus :
 ### 500 Error Backend
 
 **Symptôme** : Backend crash au démarrage
-**Solution** : 
+**Solution** :
 1. Render Logs → Chercher la variable manquante
 2. Ajouter la variable dans **Environment**
 3. Redéployer
@@ -380,7 +380,7 @@ Render ajoute automatiquement un rate limit basique. Pour plus :
 ### Database connection failed
 
 **Symptôme** : `could not connect to server`
-**Solution** : 
+**Solution** :
 1. Vérifier connection string Supabase
 2. Ajouter `?sslmode=require` à la fin
 3. Format : `postgresql+asyncpg://...?sslmode=require`
@@ -403,5 +403,5 @@ Render ajoute automatiquement un rate limit basique. Pour plus :
 
 ---
 
-**Dernière mise à jour** : 27 Octobre 2025  
+**Dernière mise à jour** : 27 Octobre 2025
 **Version** : Production v1.0 (commit `cebe4c5`)

@@ -32,7 +32,7 @@ from api.src.presentation.dependencies.auth import get_current_user
 - **Location**: `api/src/presentation/dependencies/auth.py`
 - **Status**: AUCUNE route ne l'utilise (nettoyé dans commits a3a2a70 + b62d7d8)
 - **Code mort**: 85 lignes de legacy code inutile
-- **Incluait**: 
+- **Incluait**:
   - `get_current_tenant()` function (45 lignes)
   - `_get_dev_tenant()` helper (22 lignes)
   - `CurrentTenant` dataclass (10 lignes)
@@ -98,7 +98,7 @@ from api.src.presentation.dependencies.auth import get_current_user
 
 **Supprimé de `dependencies/auth.py`**:
 - ❌ `get_current_tenant()` function (45 lignes)
-- ❌ `_get_dev_tenant()` helper (22 lignes)  
+- ❌ `_get_dev_tenant()` helper (22 lignes)
 - ❌ `CurrentTenant` dataclass (10 lignes)
 - ❌ `Role` class (8 lignes)
 - ❌ Imports inutiles: `uuid`, `dataclass`, `Iterable`, `Tenant`
@@ -153,13 +153,13 @@ the authenticated User object with vapi_api_key for multi-tenant operations.
 ✅ Single Source of Truth:
   - 1 seul get_current_user() (avant: 2)
   - 11 routes uniformisées (avant: split 9/2)
-  
+
 ✅ Dead Code Eliminated:
   - get_current_tenant(): GONE
   - CurrentTenant: GONE
   - Role class: GONE
   - _get_dev_tenant(): GONE
-  
+
 ✅ Complexity Reduced:
   - No more tenant/role logic
   - No more RBAC enforcement
@@ -169,7 +169,7 @@ the authenticated User object with vapi_api_key for multi-tenant operations.
 ### Code Quality
 ```
 ✅ 0 compilation errors
-✅ 0 lint errors  
+✅ 0 lint errors
 ✅ 0 type errors
 ✅ Imports cohérents (11/11 routes)
 ✅ Documentation claire
@@ -247,7 +247,7 @@ $ get_errors
 ```python
 # All 11 routes now import from canonical source:
 ✅ analytics.py
-✅ voices.py  
+✅ voices.py
 ✅ phone_numbers.py
 ✅ assistants.py
 ✅ calls.py

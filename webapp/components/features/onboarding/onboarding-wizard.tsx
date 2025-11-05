@@ -251,7 +251,7 @@ export function OnboardingWizard() {
   });
 
   const queryClient = useQueryClient();
-  
+
   // 🌟 DIVINE: Offline-first config management
   // Load from localStorage immediately, sync with backend in background
   const [localConfig, setLocalConfig] = useState<StudioConfig | null>(() => {
@@ -291,20 +291,20 @@ export function OnboardingWizard() {
     onMutate: async (payload) => {
       // Cancel outgoing refetches
       await queryClient.cancelQueries({ queryKey: ["studio", "config"] });
-      
+
       // Snapshot previous value
       const previous = queryClient.getQueryData<StudioConfig>(["studio", "config"]);
-      
+
       // Optimistically update to new value
       const optimistic = { ...previous, ...payload } as StudioConfig;
       queryClient.setQueryData(["studio", "config"], optimistic);
-      
+
       // Save to localStorage immediately
       if (typeof window !== "undefined") {
         localStorage.setItem("studio_config_draft", JSON.stringify(optimistic));
         setLocalConfig(optimistic);
       }
-      
+
       return { previous };
     },
     onError: (error, variables, context) => {
@@ -316,7 +316,7 @@ export function OnboardingWizard() {
           setLocalConfig(context.previous);
         }
       }
-      
+
       // 🎯 DIVINE: Log détaillé + feedback utilisateur clair
       console.error("❌ Failed to update config:", {
         error,
@@ -324,7 +324,7 @@ export function OnboardingWizard() {
         variables,
         timestamp: new Date().toISOString(),
       });
-      
+
       // Afficher l'erreur réelle à l'utilisateur
       const errorMessage = error instanceof Error ? error.message : "Erreur inconnue";
       toast.error(`Sauvegarde échouée: ${errorMessage}`, {
@@ -347,15 +347,15 @@ export function OnboardingWizard() {
 
   // 🌟 DIVINE: Use local config if available, fallback to remote
   const effectiveConfig = localConfig ?? configQuery.data ?? null;
-  
+
   // 🌟 DIVINE: Only block initial load, not subsequent fetches
   const isInitialLoading = configQuery.isLoading && !effectiveConfig;
-  
+
   // 🌟 DIVINE: Show error but don't block navigation
-  const configErrorMessage = configQuery.error instanceof Error 
-    ? configQuery.error.message 
+  const configErrorMessage = configQuery.error instanceof Error
+    ? configQuery.error.message
     : null;
-    
+
   // 🌟 DIVINE: Only block navigation during critical operations
   const isLaunching = assistantMutation.isPending;
   const [hasLaunched, setHasLaunched] = useState<boolean>(false);
@@ -366,7 +366,7 @@ export function OnboardingWizard() {
     const savedStep = sessionStorage.getItem("onboarding_current_step");
     return savedStep ? parseInt(savedStep, 10) : 0;
   });
-  
+
   const step = steps[stepIndex];
 
   // Save step index whenever it changes
@@ -411,7 +411,7 @@ export function OnboardingWizard() {
 
     // Validation only for critical steps
     const shouldValidate = current === "profile" || current === "plan";
-    
+
     if (shouldValidate && !isStepValid(current, values)) {
       toast.warning(t("errors.incomplete", { defaultValue: "Some fields are incomplete, but you can skip and complete later." }));
     }
@@ -419,7 +419,7 @@ export function OnboardingWizard() {
     try {
       // 🌟 DIVINE: Optimistic update - save locally first, sync in background
       const updatePayload = buildConfigUpdate(current, values);
-      
+
       if (Object.keys(updatePayload).length > 0) {
         // Save to localStorage immediately (offline-first)
         if (typeof window !== "undefined") {
@@ -429,7 +429,7 @@ export function OnboardingWizard() {
           localStorage.setItem("studio_config_draft", JSON.stringify(updated));
           setLocalConfig(updated as StudioConfig);
         }
-        
+
         // Trigger backend sync in background (don't await - fire and forget)
         updateConfigMutation.mutate(updatePayload);
       }
@@ -442,11 +442,11 @@ export function OnboardingWizard() {
           if (typeof window !== "undefined") {
             localStorage.setItem("onboarding_completed", "true");
           }
-          
+
           // Try to sync with backend (don't block if fails)
           completeOnboarding().then((updatedUser) => {
             console.log("✅ Onboarding synced to backend:", updatedUser);
-            
+
             if (session?.user) {
               const updatedSession = {
                 ...session,
@@ -477,26 +477,26 @@ export function OnboardingWizard() {
         }
 
         track("onboarding_completed", { plan: values.plan, seats: values.seats });
-        
+
         // � DIVINE: Always redirect (never block)
         setTimeout(() => {
           console.log("🚀 Redirecting to dashboard...");
           router.push(`/${locale}/dashboard`);
         }, 1500);
-        
+
         return;
       }
 
       // 🌟 DIVINE: Move to next step (never blocked)
       setStepIndex((prev) => Math.min(prev + 1, steps.length - 1));
-      
+
     } catch (error) {
       // 🌟 DIVINE: Graceful error handling - log but don't block
       console.error("Failed to persist onboarding step:", error);
-      toast.warning(t("errors.save", { 
-        defaultValue: "Changes saved locally. Will sync when connection is restored." 
+      toast.warning(t("errors.save", {
+        defaultValue: "Changes saved locally. Will sync when connection is restored."
       }));
-      
+
       // Still allow navigation
       setStepIndex((prev) => Math.min(prev + 1, steps.length - 1));
     }
@@ -589,8 +589,8 @@ export function OnboardingWizard() {
                       ? t("actions.complete", { defaultValue: "Complete Setup" })
                       : t("actions.next", { defaultValue: "Continue" })}
                 </Button>
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
                   onClick={goNext}
                   disabled={isLaunching}
                   className="text-muted-foreground"
@@ -984,7 +984,7 @@ function PlanStep({ form }: { form: UseFormReturn<OnboardingValues> }) {
           <CheckCircle2 className="w-8 h-8 text-brand-500" />
         </div>
         <p className="text-muted-foreground mb-6">Perfect for testing and solo makers</p>
-        
+
         <div className="space-y-3">
           <div className="flex items-center gap-2 text-sm">
             <CheckCircle2 className="w-4 h-4 text-brand-500" />
