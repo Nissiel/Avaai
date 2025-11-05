@@ -823,6 +823,22 @@
     "twilio": {
       "title": "הגדרות Twilio",
       "description": "הגדר את פרטי הכניסה של Twilio עבור שיחות טלפון",
+      "form": {
+        "accountSid": {
+          "label": "Account SID",
+          "placeholder": "הזן את ה-Account SID של Twilio",
+          "help": "נמצא בקונסולה של Twilio"
+        },
+        "authToken": {
+          "label": "Auth Token",
+          "placeholder": "הזן את ה-Auth Token של Twilio"
+        },
+        "phoneNumber": {
+          "label": "מספר טלפון",
+          "placeholder": "+972501234567",
+          "help": "מספר Twilio כולל קידומת מדינה"
+        }
+      },
       "accountSid": {
         "label": "Account SID",
         "placeholder": "הזן את ה-Account SID של Twilio",

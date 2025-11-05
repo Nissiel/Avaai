@@ -823,6 +823,22 @@
     "twilio": {
       "title": "Configuration Twilio",
       "description": "Configurez vos identifiants Twilio pour les appels téléphoniques",
+      "form": {
+        "accountSid": {
+          "label": "Account SID",
+          "placeholder": "Entrez votre Twilio Account SID",
+          "help": "Trouvez ceci dans votre Console Twilio"
+        },
+        "authToken": {
+          "label": "Auth Token",
+          "placeholder": "Entrez votre Twilio Auth Token"
+        },
+        "phoneNumber": {
+          "label": "Numéro de téléphone",
+          "placeholder": "+33123456789",
+          "help": "Votre numéro Twilio avec l'indicatif pays"
+        }
+      },
       "accountSid": {
         "label": "Account SID",
         "placeholder": "Entrez votre Twilio Account SID",

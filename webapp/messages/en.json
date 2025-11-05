@@ -826,6 +826,22 @@
     "twilio": {
       "title": "Twilio Configuration",
       "description": "Configure your Twilio credentials for phone calls",
+      "form": {
+        "accountSid": {
+          "label": "Account SID",
+          "placeholder": "Enter your Twilio Account SID",
+          "help": "Find this in your Twilio Console"
+        },
+        "authToken": {
+          "label": "Auth Token",
+          "placeholder": "Enter your Twilio Auth Token"
+        },
+        "phoneNumber": {
+          "label": "Phone Number",
+          "placeholder": "+1234567890",
+          "help": "Your Twilio phone number with country code"
+        }
+      },
       "accountSid": {
         "label": "Account SID",
         "placeholder": "Enter your Twilio Account SID",

@@ -98,11 +98,11 @@ export function TwilioSettingsForm() {
         {statusLoading ? (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="w-4 h-4 animate-spin" />
-            Loading status...
+            {t("status.testing")}
           </div>
         ) : hasTwilioCredentials ? (
           <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20 text-green-600 dark:text-green-400">
-            ✅ {t("status.configured")}
+            ✅ {t("status.connected")}
             {currentPhone && <div className="text-sm mt-1">Phone: {currentPhone}</div>}
           </div>
         ) : (
