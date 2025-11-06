@@ -202,7 +202,7 @@ export default function ChecklistAndConfig({
           if (selection) {
             setCurrentNumberSid((prev) => (prev === selection.sid ? prev : selection.sid));
             const friendlyName = selection.friendlyName || "";
-            setSelectedPhoneNumber((prev) => (prev === friendlyName ? prev : friendlyName));
+            setSelectedPhoneNumber(friendlyName);
             const voiceUrl = selection.voiceUrl || "";
             setCurrentVoiceUrl((prev) => (prev === voiceUrl ? prev : voiceUrl));
           }
