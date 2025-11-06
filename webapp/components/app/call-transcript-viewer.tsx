@@ -15,6 +15,8 @@ import { Bot, User, Clock, DollarSign, Phone, Mail, Download, X } from 'lucide-r
 import { GlassCard } from '@/components/ui/glass-card';
 import { FuturisticButton } from '@/components/ui/futuristic-button';
 import { cn } from '@/lib/utils';
+import { useSingleAction } from "@/lib/hooks/use-single-action";
+import { clientLogger } from "@/lib/logging/client-logger";
 
 interface CallTranscriptViewerProps {
   call: {
@@ -57,19 +59,22 @@ function parseTranscript(transcript: string): TranscriptLine[] {
 }
 
 export function CallTranscriptViewer({ call, onClose, onSendEmail }: CallTranscriptViewerProps) {
-  const [sendingEmail, setSendingEmail] = React.useState(false);
   const lines = parseTranscript(call.transcript || '');
 
-  const handleSendEmail = async () => {
-    if (!onSendEmail) return;
-    
-    setSendingEmail(true);
-    try {
+  const { run: sendEmail, pending: sendingEmail } = useSingleAction(
+    async () => {
+      if (!onSendEmail) return;
+      const requestId = crypto.randomUUID();
+      clientLogger.info("Triggering transcript email", { callId: call.id, requestId });
       await onSendEmail(call.id);
-    } finally {
-      setSendingEmail(false);
-    }
-  };
+    },
+    {
+      label: "call-transcript-email",
+      onError: (error) => {
+        clientLogger.error("Failed to send transcript email", { error, callId: call.id });
+      },
+    },
+  );
 
   return (
     <motion.div
@@ -128,7 +133,7 @@ export function CallTranscriptViewer({ call, onClose, onSendEmail }: CallTranscr
             <div className="flex items-center gap-2">
               {onSendEmail && (
                 <FuturisticButton
-                  onClick={handleSendEmail}
+                  onClick={() => sendEmail()}
                   disabled={sendingEmail}
                   variant="primary"
                   size="sm"

@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import type { CallDetail, CallListResponse, CallSummary } from "@/lib/dto";
+import { apiFetch } from "@/lib/api/client";
 
 const CallSummaryApiSchema = z.object({
   id: z.string(),
@@ -101,11 +102,10 @@ export interface SendTranscriptEmailResponse {
  * @returns Promise resolving to email send result
  */
 export async function sendCallTranscriptEmail(callId: string): Promise<SendTranscriptEmailResponse> {
-  const res = await fetch(`/api/calls/${callId}/email`, {
+  const res = await apiFetch(`/api/v1/analytics/calls/${encodeURIComponent(callId)}/email`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    cache: "no-store",
+    auth: true,
+    dedupeKey: `email-${callId}`,
   });
 
   if (!res.ok) {

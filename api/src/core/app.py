@@ -7,11 +7,13 @@ from fastapi import FastAPI
 
 from api.src.core.middleware import configure_middleware
 from api.src.core.settings import get_settings
+from api.src.core.logging import configure_logging
 from api.src.presentation.api.v1.router import api_v1_router
 
 
 def create_app() -> FastAPI:
     settings = get_settings()
+    configure_logging()
 
     app = FastAPI(
         title="Ava API",
