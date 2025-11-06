@@ -11,11 +11,16 @@ function resolveAuthToken(request: NextRequest): string | undefined {
   return request.cookies.get("access_token")?.value ?? undefined;
 }
 
-function createAbortError(message: string): Error {
-  const error = new Error(message);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (error as any).name = "AbortError";
-  return error;
+type AbortLikeError = Error & { name: string };
+
+function createAbortError(message: string): AbortLikeError {
+  try {
+    return new DOMException(message, "AbortError");
+  } catch {
+    const error = new Error(message) as AbortLikeError;
+    error.name = "AbortError";
+    return error;
+  }
 }
 
 export interface ProxyOptions {

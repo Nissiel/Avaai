@@ -61,13 +61,14 @@ function buildHeaders(options: ApiRequestOptions, requestId: string): Headers {
   return headers;
 }
 
-function createAbortError(message: string, name: string): DOMException | Error {
+type NamedError = Error & { name: string };
+
+function createAbortError(message: string, name: string): DOMException | NamedError {
   try {
     return new DOMException(message, name);
   } catch {
-    const error = new Error(message);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (error as any).name = name;
+    const error = new Error(message) as NamedError;
+    error.name = name;
     return error;
   }
 }

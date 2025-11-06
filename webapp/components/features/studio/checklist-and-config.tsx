@@ -88,7 +88,6 @@ export default function ChecklistAndConfig({
       setLocalServerUp(false);
       setPublicUrl("");
       setPublicUrlAccessible(false);
-    }
     } finally {
       window.clearTimeout(timeoutId);
     }
