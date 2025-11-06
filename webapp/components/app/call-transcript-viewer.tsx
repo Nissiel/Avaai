@@ -69,7 +69,7 @@ export function CallTranscriptViewer({ call, onClose, onSendEmail }: CallTranscr
       await onSendEmail(call.id);
     },
     {
-      label: "call-transcript-email",
+      metricsLabel: "call-transcript-email",
       onError: (error) => {
         clientLogger.error("Failed to send transcript email", { error, callId: call.id });
       },
