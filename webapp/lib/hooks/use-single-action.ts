@@ -1,57 +1,129 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-type SingleActionRunner<TArgs extends unknown[]> = (...args: TArgs) => Promise<unknown> | unknown;
+type Callback<T extends (...args: any[]) => any> = (...args: Parameters<T>) => Promise<Awaited<ReturnType<T>>>;
 
-interface UseSingleActionOptions {
-  onError?: (error: unknown) => void;
-  label?: string;
-}
-
-interface UseSingleActionResult<TArgs extends unknown[]> {
-  run: (...args: TArgs) => Promise<void>;
+export interface SingleActionState {
   pending: boolean;
+  runs: number;
   lastError: unknown;
+  lastDurationMs: number | null;
 }
 
-/**
- * Ensures a handler executes only once at a time even if the user spam-clicks.
- * Any additional calls while the action is pending are ignored.
- */
-export function useSingleAction<TArgs extends unknown[]>(
-  action: SingleActionRunner<TArgs>,
-  { onError, label }: UseSingleActionOptions = {},
-): UseSingleActionResult<TArgs> {
-  const inFlightRef = useRef(false);
-  const actionLabel = label ?? action.name ?? "single-action";
-  const [pending, setPending] = useState(false);
-  const [lastError, setLastError] = useState<unknown>(null);
+export interface UseSingleActionOptions<T extends (...args: any[]) => any> {
+  onError?: (error: unknown) => void;
+  onSuccess?: (result: Awaited<ReturnType<T>>) => void;
+  metricsLabel?: string;
+}
 
-  const run = useCallback(
-    async (...args: TArgs) => {
-      if (inFlightRef.current) {
-        console.info(`[useSingleAction] Ignored re-entry for ${actionLabel}`);
-        return;
-      }
+const INITIAL_STATE: SingleActionState = {
+  pending: false,
+  runs: 0,
+  lastError: null,
+  lastDurationMs: null,
+};
 
-      inFlightRef.current = true;
-      setPending(true);
-      setLastError(null);
+export function useSingleAction<T extends (...args: any[]) => any>(
+  fn: T,
+  options: UseSingleActionOptions<T> = {},
+): { run: Callback<T>; pending: boolean; state: SingleActionState; lastError: unknown; lastDurationMs: number | null } {
+  const fnRef = useRef(fn);
+  const mountedRef = useRef(true);
+  const inflightRef = useRef<Promise<Awaited<ReturnType<T>>> | null>(null);
+  const [state, setState] = useState<SingleActionState>(INITIAL_STATE);
 
-      try {
-        await action(...args);
-      } catch (error) {
-        setLastError(error);
-        onError?.(error);
-        throw error;
-      } finally {
-        inFlightRef.current = false;
-        setPending(false);
-      }
+  useEffect(() => {
+    fnRef.current = fn;
+  }, [fn]);
+
+  useEffect(
+    () => () => {
+      mountedRef.current = false;
     },
-    [action, actionLabel, onError],
+    [],
   );
 
-  return { run, pending, lastError };
+  const updateState = useCallback((updater: (prev: SingleActionState) => SingleActionState) => {
+    if (!mountedRef.current) {
+      return;
+    }
+    setState(updater);
+  }, []);
+
+  const run: Callback<T> = useCallback(
+    async (...args: Parameters<T>) => {
+      // Reuse inflight promise when pending to guarantee single flight.
+      if (state.pending && inflightRef.current) {
+        return inflightRef.current;
+      }
+
+      updateState((prev) => ({
+        ...prev,
+        pending: true,
+        lastError: null,
+      }));
+
+      const startedAt =
+        typeof performance !== "undefined" && typeof performance.now === "function"
+          ? performance.now()
+          : Date.now();
+
+      const execution = (async () => {
+        try {
+          const result = await fnRef.current(...args);
+          const durationMs = Math.round(
+            (typeof performance !== "undefined" && typeof performance.now === "function"
+              ? performance.now()
+              : Date.now()) - startedAt,
+          );
+          updateState((prev) => ({
+            pending: false,
+            runs: prev.runs + 1,
+            lastError: null,
+            lastDurationMs: durationMs,
+          }));
+
+          if (options.metricsLabel && typeof window !== "undefined") {
+            const globalObject = window as unknown as {
+              __AVA_METRICS__?: { actions: Record<string, unknown> };
+            };
+            if (!globalObject.__AVA_METRICS__) {
+              globalObject.__AVA_METRICS__ = { actions: {} };
+            }
+            globalObject.__AVA_METRICS__.actions[options.metricsLabel] = {
+              runs: (globalObject.__AVA_METRICS__.actions?.[options.metricsLabel]?.runs ?? 0) + 1,
+              lastDurationMs: durationMs,
+              ts: new Date().toISOString(),
+            };
+          }
+
+          options.onSuccess?.(result);
+          return result;
+        } catch (error) {
+          updateState((prev) => ({
+            ...prev,
+            pending: false,
+            lastError: error,
+          }));
+          options.onError?.(error);
+          throw error;
+        } finally {
+          inflightRef.current = null;
+        }
+      })();
+
+      inflightRef.current = execution;
+      return execution;
+    },
+    [options, state.pending, updateState],
+  );
+
+  return {
+    run,
+    pending: state.pending,
+    state,
+    lastError: state.lastError,
+    lastDurationMs: state.lastDurationMs,
+  };
 }

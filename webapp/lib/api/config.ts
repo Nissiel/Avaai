@@ -1,48 +1,76 @@
+import { apiFetch } from "@/lib/api/client";
 import type { StudioConfig, StudioConfigUpdate } from "@/lib/dto";
-import { getAuthHeaders } from "./auth-helper";
 
-/**
- * 🎯 DIVINE FIX: Use Next.js API routes to avoid CORS issues
- * Frontend calls /api/studio/config → Next.js proxies to backend
- */
+function parseResponse<T>(status: number, text: string | null, fallback: string): T {
+  if (!text) {
+    throw new Error(fallback);
+  }
+
+  try {
+    return JSON.parse(text) as T;
+  } catch (error) {
+    console.error("Failed to parse studio config response", error);
+    throw new Error(fallback);
+  }
+}
 
 export async function getStudioConfig(): Promise<StudioConfig> {
-  const response = await fetch(`/api/studio/config`, {
-    method: "GET",
-    headers: getAuthHeaders(),
-    cache: "no-store",
+  const response = await apiFetch("/api/studio/config", {
+    baseUrl: "relative",
+    timeoutMs: 12_000,
+    metricsLabel: "studio.config.get",
   });
 
+  const text = await response.text();
+
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ detail: "Unknown error" }));
-    const errorMessage = errorData.detail || `HTTP ${response.status}`;
-    console.error("❌ getStudioConfig failed:", { status: response.status, errorData });
+    let payload: { detail?: string } = {};
+    if (text) {
+      try {
+        payload = JSON.parse(text);
+      } catch (error) {
+        console.error("Failed to parse studio config error payload", error);
+      }
+    }
+    const errorMessage = payload.detail ?? `HTTP ${response.status}`;
+    console.error("❌ getStudioConfig failed:", { status: response.status, payload });
     throw new Error(`Impossible de charger la configuration: ${errorMessage}`);
   }
 
-  return response.json();
+  return parseResponse<StudioConfig>(response.status, text, "Invalid studio config payload");
 }
 
 export async function updateStudioConfigClient(payload: StudioConfigUpdate): Promise<StudioConfig> {
   console.log("🔄 updateStudioConfigClient:", payload);
 
-  const response = await fetch(`/api/studio/config`, {
+  const response = await apiFetch("/api/studio/config", {
     method: "PATCH",
-    headers: getAuthHeaders(),
+    baseUrl: "relative",
+    timeoutMs: 12_000,
     body: JSON.stringify(payload),
+    metricsLabel: "studio.config.update",
   });
 
+  const text = await response.text();
+
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ detail: "Unknown error" }));
-    const errorMessage = errorData.detail || `HTTP ${response.status}`;
+    let errorPayload: { detail?: string } = {};
+    if (text) {
+      try {
+        errorPayload = JSON.parse(text);
+      } catch (error) {
+        console.error("Failed to parse studio config error payload", error);
+      }
+    }
+    const errorMessage = errorPayload.detail ?? `HTTP ${response.status}`;
     console.error("❌ updateStudioConfigClient failed:", {
       status: response.status,
-      errorData,
+      errorPayload,
       payload,
     });
     throw new Error(`Impossible de sauvegarder: ${errorMessage}`);
   }
 
   console.log("✅ updateStudioConfigClient success");
-  return response.json();
+  return parseResponse<StudioConfig>(response.status, text, "Invalid studio config payload");
 }

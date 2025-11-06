@@ -14,6 +14,9 @@ export function createRealtimeClient({ url, onEvent, onStatusChange, reconnect =
   let status: RealtimeStatus = "idle";
   let reconnectAttempts = 0;
   let shouldReconnect = reconnect;
+  let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  const maxReconnectDelay = 5000;
+  const baseReconnectDelay = 500;
 
   const notifyStatus = (next: RealtimeStatus) => {
     status = next;
@@ -21,6 +24,10 @@ export function createRealtimeClient({ url, onEvent, onStatusChange, reconnect =
   };
 
   const connect = () => {
+    if (!shouldReconnect) {
+      return;
+    }
+
     if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) {
       return;
     }
@@ -36,9 +43,9 @@ export function createRealtimeClient({ url, onEvent, onStatusChange, reconnect =
     socket.onclose = () => {
       notifyStatus("disconnected");
       if (shouldReconnect) {
-        const timeout = Math.min(5000, 500 * 2 ** reconnectAttempts);
+        const timeout = Math.min(maxReconnectDelay, baseReconnectDelay * 2 ** reconnectAttempts);
         reconnectAttempts += 1;
-        setTimeout(connect, timeout);
+        reconnectTimer = setTimeout(connect, timeout);
       }
     };
 
@@ -66,6 +73,10 @@ export function createRealtimeClient({ url, onEvent, onStatusChange, reconnect =
 
   const disconnect = () => {
     shouldReconnect = false;
+    if (reconnectTimer) {
+      clearTimeout(reconnectTimer);
+      reconnectTimer = null;
+    }
     socket?.close();
     socket = null;
   };

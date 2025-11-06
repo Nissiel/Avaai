@@ -6,72 +6,116 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Play, Square, RotateCw, Loader2, Server, CheckCircle2, XCircle } from "lucide-react";
 import { toast } from "sonner";
+import { useSingleAction } from "@/lib/hooks/use-single-action";
+import { apiFetch } from "@/lib/api/client";
+import { useRenderDiagnostics } from "@/lib/diagnostics/use-render-diagnostics";
 
 export function BackendControl() {
   const [status, setStatus] = useState<"running" | "stopped" | "unknown">("unknown");
-  const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
+  useRenderDiagnostics("BackendControl");
 
-  // Check status every 3 seconds
+  const { run: runStatusCheck } = useSingleAction(
+    async () => {
+      const response = await apiFetch("/api/backend", {
+        baseUrl: "relative",
+        timeoutMs: 5_000,
+        auth: false,
+        metricsLabel: "backend.status.poll",
+      });
+      if (!response.ok) {
+        throw new Error(`Status request failed (${response.status})`);
+      }
+      const data = await response.json();
+      const nextStatus = (data.status as typeof status) ?? "unknown";
+      setStatus(nextStatus);
+      return nextStatus;
+    },
+    {
+      onError: (error) => {
+        console.error("Error checking backend status:", error);
+        setStatus("unknown");
+        setChecking(false);
+      },
+      onSuccess: () => {
+        setChecking(false);
+      },
+      metricsLabel: "backend.status.poll",
+    },
+  );
+
+  const statusCheckRef = React.useRef(runStatusCheck);
   useEffect(() => {
-    checkStatus();
-    const interval = setInterval(checkStatus, 3000);
-    return () => clearInterval(interval);
+    statusCheckRef.current = runStatusCheck;
+  }, [runStatusCheck]);
+
+  // Check status every 3 seconds with single-flight guard
+  useEffect(() => {
+    let cancelled = false;
+
+    const tick = () => {
+      if (!cancelled) {
+        void statusCheckRef.current();
+      }
+    };
+
+    tick();
+    const interval = setInterval(tick, 3000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
   }, []);
 
-  const checkStatus = async () => {
-    try {
-      const response = await fetch("/api/backend");
-      if (response.ok) {
-        const data = await response.json();
-        setStatus(data.status);
-      }
-    } catch (error) {
-      console.error("Error checking backend status:", error);
-      setStatus("unknown");
-    } finally {
-      setChecking(false);
-    }
-  };
-
-  const handleAction = async (action: "start" | "stop" | "restart") => {
-    setLoading(true);
-    try {
-      const response = await fetch("/api/backend", {
+  const lastActionRef = React.useRef<"start" | "stop" | "restart" | null>(null);
+  const { run: runRuntimeAction, state: runtimeActionState } = useSingleAction(
+    async (action: "start" | "stop" | "restart") => {
+      const response = await apiFetch("/api/backend", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        baseUrl: "relative",
+        timeoutMs: 10_000,
+        auth: false,
         body: JSON.stringify({ action }),
+        headers: { "Content-Type": "application/json" },
+        metricsLabel: `backend.action.${action}`,
       });
 
       const data = await response.json();
-      
-      if (data.success) {
-        toast.success(data.message);
-        
-        // 🔥 FORCER UN REFRESH IMMÉDIAT après 500ms
-        setTimeout(() => {
-          checkStatus();
-        }, 500);
-        
-        // 🔥 ET UN AUTRE après 2s pour être sûr
-        setTimeout(() => {
-          checkStatus();
-        }, 2000);
-        
-        // 🔥 ET UN DERNIER après 4s
-        setTimeout(() => {
-          checkStatus();
-        }, 4000);
-      } else {
-        toast.error(data.message);
+      if (!response.ok || !data.success) {
+        throw new Error(data.message ?? `Action ${action} failed`);
       }
-    } catch (error) {
-      console.error(`Error ${action} backend:`, error);
-      toast.error(`Erreur lors de ${action === "start" ? "démarrage" : action === "stop" ? "l'arrêt" : "du redémarrage"}`);
-    } finally {
-      setLoading(false);
-    }
+
+      return data as { success: boolean; message: string };
+    },
+    {
+      onSuccess: (data) => {
+        toast.success(data.message);
+        void runStatusCheck();
+        setTimeout(() => {
+          void runStatusCheck();
+        }, 2_000);
+      },
+      onError: (error) => {
+        const action = lastActionRef.current;
+        console.error(`Error ${action ?? "runtime"} backend:`, error);
+        toast.error(
+          `Erreur lors de ${
+            action === "start" ? "démarrage" : action === "stop" ? "l'arrêt" : "du redémarrage"
+          }`,
+        );
+      },
+      metricsLabel: "backend.action",
+    },
+  );
+
+  const handleAction = (action: "start" | "stop" | "restart") => {
+    lastActionRef.current = action;
+    void runRuntimeAction(action).finally(() => {
+      lastActionRef.current = null;
+    });
   };
+
+  const actionPending = runtimeActionState.pending;
 
   const getStatusBadge = () => {
     if (checking) {
@@ -126,10 +170,10 @@ export function BackendControl() {
       <div className="flex gap-3">
         <Button
           onClick={() => handleAction("start")}
-          disabled={loading || status === "running"}
+          disabled={actionPending || status === "running"}
           className="bg-green-600 hover:bg-green-700"
         >
-          {loading ? (
+          {actionPending ? (
             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
           ) : (
             <Play className="w-4 h-4 mr-2" />
@@ -139,10 +183,10 @@ export function BackendControl() {
 
         <Button
           onClick={() => handleAction("stop")}
-          disabled={loading || status === "stopped"}
+          disabled={actionPending || status === "stopped"}
           variant="destructive"
         >
-          {loading ? (
+          {actionPending ? (
             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
           ) : (
             <Square className="w-4 h-4 mr-2" />
@@ -152,10 +196,10 @@ export function BackendControl() {
 
         <Button
           onClick={() => handleAction("restart")}
-          disabled={loading}
+          disabled={actionPending}
           variant="outline"
         >
-          {loading ? (
+          {actionPending ? (
             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
           ) : (
             <RotateCw className="w-4 h-4 mr-2" />

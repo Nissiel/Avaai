@@ -1,10 +1,4 @@
-/**
- * 🔥 DIVINE: Twilio Settings API Client
- * Centralized API calls with retry logic + token refresh
- */
-
-import { getAuthHeaders } from "./auth-helper";
-import { refreshAccessToken } from "@/lib/auth/session-client";
+import { apiFetch } from "@/lib/api/client";
 
 const NEXT_ROUTE = "/api/twilio-settings";
 
@@ -26,7 +20,7 @@ export interface SaveTwilioSettingsPayload {
   phone_number?: string;
 }
 
-function normalizeTwilioSettings(payload?: RawTwilioSettingsResponse): TwilioSettingsResponse {
+function normalizeTwilioSettings(payload?: RawTwilioSettingsResponse | null): TwilioSettingsResponse {
   if (!payload) {
     return {
       configured: false,
@@ -42,121 +36,61 @@ function normalizeTwilioSettings(payload?: RawTwilioSettingsResponse): TwilioSet
   };
 }
 
-async function handleMaybeRefresh<T>(
-  request: () => Promise<Response>,
-  retry: (newAccessToken: string) => Promise<Response>,
-  transform?: (payload: RawTwilioSettingsResponse | undefined) => T,
-): Promise<T> {
-  const response = await request();
+async function requestTwilioSettings(
+  init: RequestInit & { metricsLabel: string; timeoutMs?: number },
+): Promise<{ response: Response; text: string; payload: RawTwilioSettingsResponse | { detail?: string } | null }> {
+  const { metricsLabel, timeoutMs = 10_000, ...fetchInit } = init;
 
-  if (response.status === 401) {
-    console.log("⚠️ 401 Unauthorized - Attempting token refresh...");
+  const response = await apiFetch(NEXT_ROUTE, {
+    ...fetchInit,
+    baseUrl: "relative",
+    metricsLabel,
+    timeoutMs,
+  });
 
-    if (typeof window !== "undefined") {
-      const refreshToken = window.localStorage.getItem("refresh_token");
-      if (refreshToken) {
-        const newAccessToken = await refreshAccessToken(refreshToken);
-        if (newAccessToken) {
-          console.log("✅ Token refreshed! Retrying Twilio request...");
-          const retryResponse = await retry(newAccessToken);
-          if (retryResponse.ok) {
-            if (retryResponse.status === 204) {
-              return transform ? transform(undefined) : (undefined as T);
-            }
-            const data = (await retryResponse.json()) as RawTwilioSettingsResponse;
-            if (transform) {
-              return transform(data);
-            }
-            return data as unknown as T;
-          }
-        }
-      }
-    }
+  const text = await response.text();
+  const payload = text ? (JSON.parse(text) as RawTwilioSettingsResponse | { detail?: string }) : null;
+  return { response, text, payload };
+}
 
-    throw new Error("Session expired. Please login again.");
-  }
+export async function getTwilioSettings(): Promise<TwilioSettingsResponse> {
+  const { response, payload } = await requestTwilioSettings({
+    method: "GET",
+    metricsLabel: "twilio.settings.get",
+  });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ detail: "Twilio settings request failed" }));
-    throw new Error(error.detail || "Twilio settings request failed");
+    const detail = (payload as { detail?: string } | null)?.detail ?? `Twilio settings request failed (${response.status})`;
+    throw new Error(detail);
   }
 
-  if (response.status === 204) {
-    return transform ? transform(undefined) : (undefined as T);
-  }
-
-  const data = (await response.json()) as RawTwilioSettingsResponse;
-  if (transform) {
-    return transform(data);
-  }
-
-  return data as unknown as T;
+  return normalizeTwilioSettings(payload as RawTwilioSettingsResponse);
 }
 
-/**
- * Get current Twilio settings
- */
-export async function getTwilioSettings(): Promise<TwilioSettingsResponse> {
-  return handleMaybeRefresh(
-    () =>
-      fetch(NEXT_ROUTE, {
-        method: "GET",
-        headers: getAuthHeaders(),
-      }),
-    (token) =>
-      fetch(NEXT_ROUTE, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      }),
-    normalizeTwilioSettings,
-  );
-}
-
-/**
- * Save Twilio credentials
- */
 export async function saveTwilioSettings(payload: SaveTwilioSettingsPayload): Promise<TwilioSettingsResponse> {
-  return handleMaybeRefresh(
-    () =>
-      fetch(NEXT_ROUTE, {
-        method: "POST",
-        headers: getAuthHeaders(),
-        body: JSON.stringify(payload),
-      }),
-    (token) =>
-      fetch(NEXT_ROUTE, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-      }),
-    normalizeTwilioSettings,
-  );
+  const { response, payload: raw } = await requestTwilioSettings({
+    method: "POST",
+    body: JSON.stringify(payload),
+    metricsLabel: "twilio.settings.save",
+    timeoutMs: 15_000,
+  });
+
+  if (!response.ok) {
+    const detail = (raw as { detail?: string } | null)?.detail ?? `Failed to save Twilio settings (${response.status})`;
+    throw new Error(detail);
+  }
+
+  return normalizeTwilioSettings(raw as RawTwilioSettingsResponse);
 }
 
-/**
- * Delete Twilio credentials
- */
 export async function deleteTwilioSettings(): Promise<void> {
-  await handleMaybeRefresh<void>(
-    () =>
-      fetch(NEXT_ROUTE, {
-        method: "DELETE",
-        headers: getAuthHeaders(),
-      }),
-    (token) =>
-      fetch(NEXT_ROUTE, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      }),
-    () => undefined,
-  );
+  const { response, payload } = await requestTwilioSettings({
+    method: "DELETE",
+    metricsLabel: "twilio.settings.delete",
+  });
+
+  if (!response.ok) {
+    const detail = (payload as { detail?: string } | null)?.detail ?? `Failed to delete Twilio settings (${response.status})`;
+    throw new Error(detail);
+  }
 }

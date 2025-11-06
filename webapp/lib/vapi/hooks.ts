@@ -12,6 +12,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import Vapi from '@vapi-ai/web';
 import { toast } from 'sonner';
+import { useSingleAction } from '@/lib/hooks/use-single-action';
 
 export type CallStatus =
   | 'inactive'
@@ -75,6 +76,16 @@ export function useVapi(options: UseVapiOptions): UseVapiReturn {
   const [volume, setVolumeState] = useState(1);
   const [messages, setMessages] = useState<any[]>([]);
   const [error, setError] = useState<Error | null>(null);
+  const callbacksRef = useRef({
+    onCallStart,
+    onCallEnd,
+    onMessage,
+    onError,
+  });
+
+  useEffect(() => {
+    callbacksRef.current = { onCallStart, onCallEnd, onMessage, onError };
+  }, [onCallStart, onCallEnd, onMessage, onError]);
 
   /**
    * Initialize Vapi instance
@@ -89,67 +100,88 @@ export function useVapi(options: UseVapiOptions): UseVapiReturn {
       const vapi = new Vapi(publicKey);
       vapiRef.current = vapi;
 
-      // Event listeners
-      vapi.on('call-start', () => {
+      const handleCallStart = () => {
         console.log('✅ Call started');
         setCallStatus('active');
-        onCallStart?.();
-      });
+        callbacksRef.current.onCallStart?.();
+      };
 
-      vapi.on('call-end', () => {
+      const handleCallEnd = () => {
         console.log('📞 Call ended');
         setCallStatus('ended');
-        onCallEnd?.();
-      });
+        callbacksRef.current.onCallEnd?.();
+      };
 
-      vapi.on('message', (message) => {
+      const handleMessage = (message: unknown) => {
         console.log('💬 Message received:', message);
         setMessages((prev) => [...prev, message]);
-        onMessage?.(message);
-      });
+        callbacksRef.current.onMessage?.(message);
+      };
 
-      vapi.on('error', (err) => {
+      const handleError = (err: Error) => {
         console.error('❌ Vapi error:', err);
         setError(err);
         setCallStatus('error');
-        onError?.(err);
+        callbacksRef.current.onError?.(err);
         toast.error('Call error: ' + err.message);
-      });
+      };
+
+      vapi.on('call-start', handleCallStart);
+      vapi.on('call-end', handleCallEnd);
+      vapi.on('message', handleMessage);
+      vapi.on('error', handleError);
 
       return () => {
+        const anyVapi = vapi as unknown as {
+          off?: (event: string, handler: (...args: unknown[]) => void) => void;
+          removeAllListeners?: () => void;
+        };
+        anyVapi.off?.('call-start', handleCallStart);
+        anyVapi.off?.('call-end', handleCallEnd);
+        anyVapi.off?.('message', handleMessage);
+        anyVapi.off?.('error', handleError);
+        anyVapi.removeAllListeners?.();
         vapi.stop();
+        vapiRef.current = null;
       };
-    } catch (err: any) {
-      console.error('❌ Failed to initialize Vapi:', err);
-      setError(err);
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      console.error('❌ Failed to initialize Vapi:', error);
+      setError(error);
     }
-  }, [publicKey, onCallStart, onCallEnd, onMessage, onError]);
+  }, [publicKey]);
 
   /**
    * Start a call with an assistant
    */
-  const startCall = useCallback(
+  const { run: runStartCall } = useSingleAction(
     async (assistantId: string) => {
       if (!vapiRef.current) {
-        toast.error('Vapi not initialized');
-        return;
+        throw new Error('Vapi not initialized');
       }
-
-      try {
-        setCallStatus('loading');
-        setError(null);
-        setMessages([]);
-
-        await vapiRef.current.start(assistantId);
-        toast.success('Call connected!');
-      } catch (err: any) {
-        console.error('❌ Failed to start call:', err);
-        setError(err);
-        setCallStatus('error');
-        toast.error('Failed to start call: ' + err.message);
-      }
+      setCallStatus('loading');
+      setError(null);
+      setMessages([]);
+      await vapiRef.current.start(assistantId);
+      toast.success('Call connected!');
+      return assistantId;
     },
-    []
+    {
+      onError: (err) => {
+        const error = err instanceof Error ? err : new Error(String(err));
+        console.error('❌ Failed to start call:', error);
+        setError(error);
+        setCallStatus('error');
+        callbacksRef.current.onError?.(error);
+        toast.error('Failed to start call: ' + error.message);
+      },
+      metricsLabel: 'vapi.startCall',
+    },
+  );
+
+  const startCall = useCallback(
+    (assistantId: string) => runStartCall(assistantId),
+    [runStartCall],
   );
 
   /**
@@ -175,13 +207,16 @@ export function useVapi(options: UseVapiOptions): UseVapiReturn {
     if (!vapiRef.current) return;
 
     try {
-      vapiRef.current.setMuted(!isMuted);
-      setIsMuted(!isMuted);
-      toast.success(isMuted ? 'Microphone unmuted' : 'Microphone muted');
-    } catch (err: any) {
+      setIsMuted((prev) => {
+        const next = !prev;
+        vapiRef.current?.setMuted(next);
+        toast.success(next ? 'Microphone muted' : 'Microphone unmuted');
+        return next;
+      });
+    } catch (err: unknown) {
       console.error('❌ Failed to toggle mute:', err);
     }
-  }, [isMuted]);
+  }, []);
 
   /**
    * Set output volume

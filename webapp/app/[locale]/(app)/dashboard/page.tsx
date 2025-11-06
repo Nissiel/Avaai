@@ -30,6 +30,7 @@ import type { Locale as SupportedLocale } from '@/lib/i18n/locales';
 import { formatDuration } from '@/lib/formatters/duration';
 import { humanizeIdentifier } from '@/lib/formatters/name';
 import { useContactAliasStore } from '@/lib/stores/contact-alias-store';
+import { useRenderDiagnostics } from '@/lib/diagnostics/use-render-diagnostics';
 
 const CURRENCY_BY_LOCALE: Record<SupportedLocale, string> = {
   en: 'USD',
@@ -38,6 +39,7 @@ const CURRENCY_BY_LOCALE: Record<SupportedLocale, string> = {
 };
 
 export default function DashboardPage() {
+  useRenderDiagnostics("DashboardPage");
   const t = useTranslations('dashboardPage');
   const tStatus = useTranslations('callsPage.status');
   const tAssistants = useTranslations('dashboardPage.assistants');

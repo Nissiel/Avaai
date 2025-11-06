@@ -4,14 +4,44 @@ import { clientLogger } from "../logging/client-logger";
 import { getAuthTokenSync } from "../hooks/use-auth-token";
 import { refreshAccessToken, getBackendBaseUrl } from "../auth/session-client";
 
+type BaseUrlMode = "backend" | "relative" | "absolute";
+
 type ApiRequestOptions = RequestInit & {
   auth?: boolean;
   dedupeKey?: string;
   requestId?: string;
+  timeoutMs?: number;
+  baseUrl?: BaseUrlMode;
+  metricsLabel?: string;
 };
 
 const inflightControllers = new Map<string, AbortController>();
 let refreshPromise: Promise<string | null> | null = null;
+const DEFAULT_TIMEOUT_MS = 20_000;
+
+function now(): number {
+  if (typeof performance !== "undefined" && typeof performance.now === "function") {
+    return performance.now();
+  }
+  return Date.now();
+}
+
+function resolveEndpoint(input: string, baseUrl?: BaseUrlMode): { url: string; mode: BaseUrlMode } {
+  if (baseUrl === "absolute") {
+    return { url: input, mode: "absolute" };
+  }
+
+  if (/^https?:\/\//i.test(input)) {
+    return { url: input, mode: "absolute" };
+  }
+
+  if (baseUrl === "relative" || input.startsWith("/api/")) {
+    return { url: input, mode: "relative" };
+  }
+
+  const normalized = input.startsWith("/") ? input : `/${input}`;
+  return { url: `${getBackendBaseUrl()}${normalized}`, mode: "backend" };
+}
 
 function buildHeaders(options: ApiRequestOptions, requestId: string): Headers {
   const headers = new Headers(options.headers);
@@ -29,6 +59,17 @@ function buildHeaders(options: ApiRequestOptions, requestId: string): Headers {
   }
 
   return headers;
+}
+
+function createAbortError(message: string, name: string): DOMException | Error {
+  try {
+    return new DOMException(message, name);
+  } catch {
+    const error = new Error(message);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (error as any).name = name;
+    return error;
+  }
 }
 
 async function singleFlightRefresh(): Promise<string | null> {
@@ -50,53 +91,116 @@ async function singleFlightRefresh(): Promise<string | null> {
   }
 }
 
+function recordMetrics(label: string, data: Record<string, unknown>) {
+  if (typeof window !== "undefined") {
+    const globalObject = window as unknown as {
+      __AVA_METRICS__?: { requests: Record<string, unknown> };
+    };
+    if (!globalObject.__AVA_METRICS__) {
+      globalObject.__AVA_METRICS__ = { requests: {} };
+    }
+    globalObject.__AVA_METRICS__.requests[label] = {
+      ...data,
+      ts: new Date().toISOString(),
+    };
+  }
+}
+
 export async function apiFetch(input: string, options: ApiRequestOptions = {}): Promise<Response> {
-  const requestId = options.requestId ?? (typeof crypto !== "undefined" ? crypto.randomUUID() : `${Date.now()}`);
+  const {
+    auth,
+    dedupeKey,
+    requestId: providedRequestId,
+    timeoutMs = DEFAULT_TIMEOUT_MS,
+    baseUrl,
+    metricsLabel,
+    signal,
+    ...fetchInit
+  } = options;
+
+  const requestId =
+    providedRequestId ?? (typeof crypto !== "undefined" ? crypto.randomUUID() : `${Date.now()}`);
   const controller = new AbortController();
-  const { signal } = options;
 
   if (signal) {
     if (signal.aborted) {
-      controller.abort();
+      controller.abort(signal.reason);
     } else {
-      signal.addEventListener("abort", () => controller.abort(), { once: true });
+      signal.addEventListener(
+        "abort",
+        () => {
+          controller.abort(signal.reason);
+        },
+        { once: true },
+      );
     }
   }
 
-  if (options.dedupeKey) {
-    const existing = inflightControllers.get(options.dedupeKey);
-    existing?.abort();
-    inflightControllers.set(options.dedupeKey, controller);
+  if (dedupeKey) {
+    const previous = inflightControllers.get(dedupeKey);
+    previous?.abort(createAbortError("Deduplicated by apiFetch", "AbortError"));
+    inflightControllers.set(dedupeKey, controller);
   }
 
-  const headers = buildHeaders(options, requestId);
-  const endpoint = input.startsWith("http") ? input : `${getBackendBaseUrl()}${input.startsWith("/") ? input : `/${input}`}`;
+  const { url: endpoint, mode } = resolveEndpoint(input, baseUrl);
+  const headers = buildHeaders({ ...options, auth }, requestId);
+
+  const timeoutId = setTimeout(() => {
+    controller.abort(createAbortError("Request timed out", "TimeoutError"));
+  }, timeoutMs);
+
+  const startedAt = now();
 
   const exec = async () =>
     fetch(endpoint, {
-      ...options,
+      ...fetchInit,
       headers,
       signal: controller.signal,
+      credentials:
+        fetchInit.credentials ?? (mode === "relative" ? ("same-origin" as RequestCredentials) : undefined),
     });
 
-  let response = await exec();
+  let response: Response;
+  try {
+    response = await exec();
 
-  if (response.status === 401 && options.auth !== false) {
-    clientLogger.warn("Received 401, attempting token refresh", { requestId });
-    await singleFlightRefresh();
-    const refreshedHeaders = buildHeaders(options, requestId);
-    response = await fetch(endpoint, {
-      ...options,
-      headers: refreshedHeaders,
-      signal: controller.signal,
-    });
+    if (response.status === 401 && auth !== false) {
+      clientLogger.warn("Received 401, attempting token refresh", { requestId, endpoint });
+      await singleFlightRefresh();
+      const retryHeaders = buildHeaders({ ...options, auth }, requestId);
+      response = await fetch(endpoint, {
+        ...fetchInit,
+        headers: retryHeaders,
+        signal: controller.signal,
+        credentials:
+          fetchInit.credentials ?? (mode === "relative" ? ("same-origin" as RequestCredentials) : undefined),
+      });
+    }
+  } finally {
+    clearTimeout(timeoutId);
+    if (dedupeKey) {
+      const current = inflightControllers.get(dedupeKey);
+      if (current === controller) {
+        inflightControllers.delete(dedupeKey);
+      }
+    }
   }
 
-  inflightControllers.delete(options.dedupeKey ?? "");
+  const durationMs = Math.round(now() - startedAt);
+  const metricKey = metricsLabel ?? endpoint;
+  recordMetrics(metricKey, {
+    requestId,
+    status: response.status,
+    durationMs,
+    dedupeKey,
+  });
+
   clientLogger.info("apiFetch completed", {
     requestId,
     url: endpoint,
     status: response.status,
+    durationMs,
+    dedupeKey,
   });
 
   return response;

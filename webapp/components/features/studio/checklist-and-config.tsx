@@ -19,6 +19,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { apiFetch } from "@/lib/api/client";
+import { useSingleAction } from "@/lib/hooks/use-single-action";
+import { useRenderDiagnostics } from "@/lib/diagnostics/use-render-diagnostics";
 
 export default function ChecklistAndConfig({
   ready,
@@ -39,10 +42,24 @@ export default function ChecklistAndConfig({
   const [publicUrl, setPublicUrl] = useState("");
   const [localServerUp, setLocalServerUp] = useState(false);
   const [publicUrlAccessible, setPublicUrlAccessible] = useState(false);
+  useRenderDiagnostics("StudioChecklistAndConfig");
 
-  const checkLocalServer = useCallback(async () => {
+  const checkLocalServer = useCallback(async (abortSignal?: AbortSignal) => {
     const controller = new AbortController();
     const timeoutId = window.setTimeout(() => controller.abort(), 5000);
+
+    if (abortSignal) {
+      if (abortSignal.aborted) {
+        controller.abort(abortSignal.reason);
+      } else {
+        abortSignal.addEventListener(
+          "abort",
+          () => controller.abort(abortSignal.reason),
+          { once: true },
+        );
+      }
+    }
+
     try {
       const response = await fetch("http://localhost:8081/public-url", {
         method: "GET",
@@ -60,8 +77,8 @@ export default function ChecklistAndConfig({
       console.log("✅ Serveur WebSocket détecté:", foundPublicUrl);
       
       // 🎯 INTELLIGENCE SUPRÊME: Auto-check ngrok IMMÉDIATEMENT
-      if (foundPublicUrl && foundPublicUrl.includes('ngrok')) {
-        checkNgrokAuto(foundPublicUrl);
+      if (foundPublicUrl && foundPublicUrl.includes("ngrok")) {
+        void checkNgrokAuto(foundPublicUrl, controller.signal);
       } else {
         setPublicUrlAccessible(false);
       }
@@ -72,14 +89,28 @@ export default function ChecklistAndConfig({
       setPublicUrl("");
       setPublicUrlAccessible(false);
     }
-    window.clearTimeout(timeoutId);
+    } finally {
+      window.clearTimeout(timeoutId);
+    }
   }, []);
 
   // 🔧 FONCTION AUTOMATIQUE NGROK - Intelligence Suprême STABLE
-  const checkNgrokAuto = useCallback(async (testUrl: string) => {
+  const checkNgrokAuto = useCallback(async (testUrl: string, abortSignal?: AbortSignal) => {
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 3000);
+
+      if (abortSignal) {
+        if (abortSignal.aborted) {
+          controller.abort(abortSignal.reason);
+        } else {
+          abortSignal.addEventListener(
+            "abort",
+            () => controller.abort(abortSignal.reason),
+            { once: true },
+          );
+        }
+      }
       
       const response = await fetch(testUrl + "/public-url", {
         method: 'GET',
@@ -105,8 +136,6 @@ export default function ChecklistAndConfig({
   }, []);
 
   const [allChecksPassed, setAllChecksPassed] = useState(false);
-  const [webhookLoading, setWebhookLoading] = useState(false);
-  const [ngrokLoading, setNgrokLoading] = useState(false);
   const [refreshLoading, setRefreshLoading] = useState(false);
 
   const appendedTwimlUrl = publicUrl ? `${publicUrl}/twiml` : "";
@@ -114,127 +143,199 @@ export default function ChecklistAndConfig({
     appendedTwimlUrl && currentVoiceUrl && appendedTwimlUrl !== currentVoiceUrl;
 
   useEffect(() => {
-    let polling = true;
+    let cancelled = false;
+    let nextTick: ReturnType<typeof setTimeout> | null = null;
+    let controller: AbortController | null = null;
 
     const pollChecks = async () => {
-      try {
-        // 1. Check credentials
-        let res = await fetch("/api/twilio");
-        if (!res.ok) throw new Error("Failed credentials check");
-        const credData = await res.json();
-        setHasCredentials(!!credData?.credentialsSet);
+      if (cancelled) {
+        return;
+      }
 
-        // 2. Fetch numbers
-        res = await fetch("/api/twilio/numbers");
-        if (!res.ok) throw new Error("Failed to fetch phone numbers");
-        const numbersData = await res.json();
+      controller?.abort();
+      controller = new AbortController();
+      const { signal } = controller;
+
+      try {
+        const credentialsResponse = await apiFetch("/api/twilio", {
+          baseUrl: "relative",
+          timeoutMs: 8_000,
+          signal,
+          metricsLabel: "studio.credentials.poll",
+        });
+        if (!credentialsResponse.ok) {
+          throw new Error(`Failed credentials check (${credentialsResponse.status})`);
+        }
+        const credData = await credentialsResponse.json();
+        const nextHasCredentials = !!credData?.credentialsSet;
+        setHasCredentials((prev) => (prev === nextHasCredentials ? prev : nextHasCredentials));
+
+        const numbersResponse = await apiFetch("/api/twilio/numbers", {
+          baseUrl: "relative",
+          timeoutMs: 8_000,
+          signal,
+          metricsLabel: "studio.numbers.poll",
+        });
+        if (!numbersResponse.ok) {
+          throw new Error(`Failed to fetch phone numbers (${numbersResponse.status})`);
+        }
+        const numbersData = (await numbersResponse.json()) as PhoneNumber[] | undefined;
+
         if (Array.isArray(numbersData) && numbersData.length > 0) {
-          setPhoneNumbers(numbersData);
-          // If currentNumberSid not set or not in the list, use first
-          const selected =
-            numbersData.find((p: PhoneNumber) => p.sid === currentNumberSid) ||
-            numbersData[0];
-          setCurrentNumberSid(selected.sid);
-          setCurrentVoiceUrl(selected.voiceUrl || "");
-          setSelectedPhoneNumber(selected.friendlyName || "");
+          setPhoneNumbers((prev) => {
+            const sameLength = prev.length === numbersData.length;
+            const unchanged =
+              sameLength &&
+              prev.every((entry, index) => {
+                const candidate = numbersData[index];
+                return (
+                  entry.sid === candidate.sid &&
+                  entry.voiceUrl === candidate.voiceUrl &&
+                  entry.friendlyName === candidate.friendlyName
+                );
+              });
+            return unchanged ? prev : numbersData;
+          });
+
+          const selection =
+            numbersData.find((p) => p.sid === currentNumberSid) ?? numbersData[0];
+
+          if (selection) {
+            setCurrentNumberSid((prev) => (prev === selection.sid ? prev : selection.sid));
+            const friendlyName = selection.friendlyName || "";
+            setSelectedPhoneNumber((prev) => (prev === friendlyName ? prev : friendlyName));
+            const voiceUrl = selection.voiceUrl || "";
+            setCurrentVoiceUrl((prev) => (prev === voiceUrl ? prev : voiceUrl));
+          }
         }
 
-        // 3. Check local server & public URL
-        await checkLocalServer();
+        await checkLocalServer(signal);
       } catch (err) {
-        console.error(err);
+        const error = err as Error;
+        if (error.name === "AbortError") {
+          return;
+        }
+        console.error("Checklist poll failed:", error);
+      } finally {
+        if (!cancelled) {
+          nextTick = setTimeout(pollChecks, 5_000);
+        }
       }
     };
 
     pollChecks();
-    const intervalId = setInterval(() => polling && pollChecks(), 1000);
+
     return () => {
-      polling = false;
-      clearInterval(intervalId);
+      cancelled = true;
+      if (nextTick) {
+        clearTimeout(nextTick);
+      }
+      controller?.abort();
     };
   }, [checkLocalServer, currentNumberSid, setSelectedPhoneNumber]);
 
-  const updateWebhook = async () => {
-    if (!currentNumberSid || !appendedTwimlUrl) {
-      console.log("updateWebhook: missing requirements", { currentNumberSid, appendedTwimlUrl });
-      return;
-    }
-    try {
-      setWebhookLoading(true);
-      console.log("Updating webhook for number:", currentNumberSid, "with URL:", appendedTwimlUrl);
-      
-      const res = await fetch("/api/twilio/numbers", {
+  const { run: runUpdateWebhook, state: updateWebhookState } = useSingleAction(
+    async () => {
+      if (!currentNumberSid || !appendedTwimlUrl) {
+        console.log("updateWebhook: missing requirements", {
+          currentNumberSid,
+          appendedTwimlUrl,
+        });
+        return;
+      }
+
+      const response = await apiFetch("/api/twilio/numbers", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        baseUrl: "relative",
+        timeoutMs: 10_000,
         body: JSON.stringify({
           phoneNumberSid: currentNumberSid,
           voiceUrl: appendedTwimlUrl,
         }),
+        metricsLabel: "studio.updateWebhook",
       });
-      
-      console.log("Webhook update response status:", res.status);
-      
-      if (!res.ok) {
-        const errorText = await res.text();
-        console.error("Webhook update failed:", errorText);
-        throw new Error(`Failed to update webhook: ${res.status} - ${errorText}`);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to update webhook: ${response.status} - ${errorText}`);
       }
-      
-      const updatedNumber = await res.json();
+
+      const updatedNumber = await response.json();
       console.log("Webhook updated successfully:", updatedNumber);
       setCurrentVoiceUrl(appendedTwimlUrl);
-    } catch (err) {
-      console.error("Webhook update error:", err);
-      const errorMessage = err instanceof Error ? err.message : String(err);
-      alert(`Failed to update webhook: ${errorMessage}`);
-    } finally {
-      setWebhookLoading(false);
-    }
-  };
+      return updatedNumber;
+    },
+    {
+      onError: (err) => {
+        console.error("Webhook update error:", err);
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        alert(`Failed to update webhook: ${errorMessage}`);
+      },
+    },
+  );
+  const webhookLoading = updateWebhookState.pending;
 
-  const checkNgrok = async () => {
-    if (!localServerUp || !publicUrl) {
-      console.log("checkNgrok: localServerUp:", localServerUp, "publicUrl:", publicUrl);
-      return;
-    }
-    setNgrokLoading(true);
-    let success = false;
-    console.log("Checking ngrok URL:", publicUrl + "/public-url");
-    
-    for (let i = 0; i < 3; i++) {
-      try {
-        const testUrl = publicUrl + "/public-url";
-        console.log(`Attempt ${i + 1}: Testing ${testUrl}`);
-        const resTest = await fetch(testUrl, {
-          method: 'GET',
-          headers: {
-            'ngrok-skip-browser-warning': 'true' // Skip ngrok browser warning
+  const { run: runCheckNgrok, state: checkNgrokState } = useSingleAction(
+    async () => {
+      if (!localServerUp || !publicUrl) {
+        console.log("checkNgrok: localServerUp:", localServerUp, "publicUrl:", publicUrl);
+        return false;
+      }
+
+      let success = false;
+      console.log("Checking ngrok URL:", `${publicUrl}/public-url`);
+
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        const testUrl = `${publicUrl}/public-url`;
+        console.log(`Attempt ${attempt + 1}: Testing ${testUrl}`);
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3_000);
+        try {
+          const resTest = await fetch(testUrl, {
+            method: "GET",
+            headers: { "ngrok-skip-browser-warning": "true" },
+            signal: controller.signal,
+          });
+          console.log(`Response status: ${resTest.status}`);
+          if (resTest.ok) {
+            const data = await resTest.json();
+            console.log("Response data:", data);
+            setPublicUrlAccessible(true);
+            success = true;
+            break;
           }
-        });
-        console.log(`Response status: ${resTest.status}`);
-        if (resTest.ok) {
-          const data = await resTest.json();
-          console.log("Response data:", data);
-          setPublicUrlAccessible(true);
-          success = true;
-          break;
+        } catch (error) {
+          const err = error as Error;
+          if (err.name === "AbortError") {
+            console.warn("Ngrok check aborted:", err.message);
+          } else {
+            console.error(`Attempt ${attempt + 1} failed:`, error);
+          }
+        } finally {
+          clearTimeout(timeoutId);
         }
-      } catch (error) {
-        console.error(`Attempt ${i + 1} failed:`, error);
+
+        if (attempt < 2) {
+          console.log("Waiting 2 seconds before retry...");
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+        }
       }
-      if (i < 2) {
-        console.log("Waiting 2 seconds before retry...");
-        await new Promise((r) => setTimeout(r, 2000));
+
+      if (!success) {
+        console.log("All ngrok check attempts failed");
+        setPublicUrlAccessible(false);
+      } else {
+        console.log("Ngrok check successful!");
       }
-    }
-    if (!success) {
-      console.log("All ngrok check attempts failed");
-      setPublicUrlAccessible(false);
-    } else {
-      console.log("Ngrok check successful!");
-    }
-    setNgrokLoading(false);
-  };
+
+      return success;
+    },
+    {
+      metricsLabel: "studio.checkNgrok",
+    },
+  );
+  const ngrokLoading = checkNgrokState.pending;
 
   const checklist = useMemo(() => {
     return [
@@ -415,7 +516,7 @@ export default function ChecklistAndConfig({
                   
                   // Tenter la vraie fonction OU simuler si pas de vraies données
                   if (currentNumberSid && appendedTwimlUrl) {
-                    updateWebhook();
+                    runUpdateWebhook();
                   } else {
                     console.log("🧪 Mode test - webhook update simulé");
                     setWebhookLoading(true);
@@ -464,7 +565,7 @@ export default function ChecklistAndConfig({
 
   useEffect(() => {
     if (!ready) {
-      checkNgrok();
+      runCheckNgrok();
     }
   }, [localServerUp, ready]);
 
@@ -537,7 +638,7 @@ export default function ChecklistAndConfig({
           // 🎯 ÉTAPE 4: Si tout est OK, check ngrok également
           if (foundPublicUrl) {
             console.log("🔗 Running ngrok accessibility check...");
-            await checkNgrok();
+            await runCheckNgrok();
           }
         } else {
           throw new Error("Local server not responding");

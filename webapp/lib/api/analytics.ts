@@ -1,3 +1,4 @@
+import { apiFetch } from "@/lib/api/client";
 import type {
   AnalyticsAnomaly,
   AnalyticsHeatmapCell,
@@ -6,17 +7,30 @@ import type {
   DashboardAnalytics,
 } from "@/lib/dto";
 
-export async function getAnalyticsOverview(): Promise<DashboardAnalytics> {
-  const response = await fetch("/api/analytics/overview", {
-    method: "GET",
-    headers: { "Content-Type": "application/json" },
+async function fetchInternalJson<T>(path: string, metricsLabel: string): Promise<T> {
+  const response = await apiFetch(path, {
+    baseUrl: "relative",
+    timeoutMs: 10_000,
+    metricsLabel,
   });
 
+  const text = await response.text();
+  const payload = text ? (JSON.parse(text) as T & { detail?: string; error?: string; success?: boolean }) : ({} as T);
+
   if (!response.ok) {
-    throw new Error(`Failed to load analytics overview (status: ${response.status})`);
+    const detail = (payload as { detail?: string; error?: string }).detail ?? (payload as { error?: string }).error;
+    throw new Error(detail ?? `Failed request (${response.status})`);
   }
 
-  const payload = (await response.json()) as DashboardAnalytics & { success?: boolean };
+  return payload as T;
+}
+
+export async function getAnalyticsOverview(): Promise<DashboardAnalytics> {
+  const payload = await fetchInternalJson<DashboardAnalytics & { success?: boolean; calls?: unknown[]; topics?: unknown[] }>(
+    "/api/analytics/overview",
+    "analytics.overview",
+  );
+
   if (payload.success === false || !payload?.overview) {
     throw new Error("Analytics payload malformed");
   }
@@ -29,16 +43,7 @@ export async function getAnalyticsOverview(): Promise<DashboardAnalytics> {
 }
 
 async function fetchClientEndpoint<T>(path: string): Promise<T> {
-  const response = await fetch(`/api/analytics/${path}`, {
-    method: "GET",
-    headers: { "Content-Type": "application/json" },
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to load analytics ${path} (status: ${response.status})`);
-  }
-
-  return response.json() as Promise<T>;
+  return fetchInternalJson<T>(`/api/analytics/${path}`, `analytics.${path}`);
 }
 
 export async function getAnalyticsTimeseries(): Promise<AnalyticsTimeseriesPoint[]> {

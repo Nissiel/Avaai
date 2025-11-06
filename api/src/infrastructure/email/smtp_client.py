@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import smtplib
+import time
 from dataclasses import dataclass
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -65,6 +66,7 @@ class SMTPClient:
         msg.attach(MIMEText(html, "html"))
 
         try:
+            started_at = time.perf_counter()
             with smtplib.SMTP(config.server, config.port, timeout=10) as smtp:
                 smtp.ehlo()
                 if config.use_starttls:
@@ -72,12 +74,14 @@ class SMTPClient:
                     smtp.ehlo()
                 smtp.login(config.username, config.password)
                 smtp.send_message(msg)
+            duration_ms = (time.perf_counter() - started_at) * 1000
             logger.info(
                 "SMTP email dispatched",
                 extra={
                     "recipients": recipients,
                     "sender": sender,
                     "server": config.server,
+                    "duration_ms": round(duration_ms, 2),
                 },
             )
         except smtplib.SMTPAuthenticationError as exc:

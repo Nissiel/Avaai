@@ -106,6 +106,7 @@ export async function sendCallTranscriptEmail(callId: string): Promise<SendTrans
     method: "POST",
     auth: true,
     dedupeKey: `email-${callId}`,
+    baseUrl: "backend",
   });
 
   if (!res.ok) {

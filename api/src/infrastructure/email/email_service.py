@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import time
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Iterable, Optional, Sequence
@@ -75,6 +76,7 @@ class EmailService:
     ) -> dict:
         recipients = [to] if isinstance(to, str) else list(to)
         request = EmailRequest(to=recipients, subject=subject, html=html, sender=sender)
+        started_at = time.perf_counter()
 
         smtp_error: Optional[Exception] = None
         if self._smtp_client and self._smtp_config:
@@ -84,6 +86,15 @@ class EmailService:
                     recipients=request.to,
                     subject=request.subject,
                     html=request.html,
+                )
+                duration_ms = (time.perf_counter() - started_at) * 1000
+                logger.info(
+                    "SMTP delivery succeeded",
+                    extra={
+                        "duration_ms": round(duration_ms, 2),
+                        "provider": "smtp",
+                        "recipients": recipients,
+                    },
                 )
                 return {"id": message_id or "smtp_delivery"}
             except Exception as exc:  # pragma: no cover - network failure
@@ -105,6 +116,15 @@ class EmailService:
                 "to": request.to,
                 "subject": request.subject,
                 "html": request.html,
+            },
+        )
+        duration_ms = (time.perf_counter() - started_at) * 1000
+        logger.info(
+            "Resend delivery succeeded",
+            extra={
+                "duration_ms": round(duration_ms, 2),
+                "provider": "resend",
+                "recipients": recipients,
             },
         )
         return result

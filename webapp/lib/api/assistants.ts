@@ -1,3 +1,4 @@
+import { apiFetch } from "@/lib/api/client";
 import type {
   AssistantDetail,
   AssistantDetailResponse,
@@ -7,19 +8,11 @@ import type {
   CreateAssistantPayload,
   UpdateAssistantPayload,
 } from "@/lib/dto";
-import { getAuthHeaders } from "./auth-helper";
-import { refreshAccessToken } from "@/lib/auth/session-client";
-
-/**
- * 🎯 DIVINE: Get backend API base URL
- */
-function getBackendUrl(): string {
-  return process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-}
 
 type AssistantListApiPayload = AssistantListResponse & {
   error?: string;
   configured?: boolean;
+  success?: boolean;
 };
 
 export type AssistantsWarningCode =
@@ -39,96 +32,64 @@ export interface AssistantsResult {
   configured?: boolean;
 }
 
+const BASE_PATH = "/api/v1/assistants";
+
+interface BackendResponse<T> {
+  response: Response;
+  data: T | null;
+  raw: string | null;
+}
+
+async function backendRequest<T>(
+  path: string,
+  init: RequestInit & { metricsLabel: string; timeoutMs?: number },
+): Promise<BackendResponse<T>> {
+  const { metricsLabel, timeoutMs = 12_000, ...fetchInit } = init;
+  const response = await apiFetch(path, {
+    ...fetchInit,
+    metricsLabel,
+    timeoutMs,
+    baseUrl: "backend",
+  });
+
+  const raw = await response.text();
+  let data: T | null = null;
+
+  if (raw) {
+    try {
+      data = JSON.parse(raw) as T;
+    } catch (error) {
+      console.warn(`[assistants] failed to parse payload for ${path}`, error);
+    }
+  }
+
+  return { response, data, raw };
+}
+
 export async function listAssistants(): Promise<AssistantsResult> {
   try {
-    // 🎯 DIVINE: Call Python backend with user's Vapi key (multi-tenant)
-    const response = await fetch(`${getBackendUrl()}/api/v1/assistants`, {
+    const { response, data } = await backendRequest<AssistantListApiPayload>(BASE_PATH, {
       method: "GET",
-      headers: getAuthHeaders(),
+      metricsLabel: "assistants.list",
     });
-
-    // 🎯 DIVINE: If 401, try to refresh token automatically
-    if (response.status === 401) {
-      console.log("⚠️ 401 Unauthorized - Attempting token refresh...");
-
-      const refreshToken = localStorage.getItem("refresh_token");
-      if (refreshToken) {
-        const newAccessToken = await refreshAccessToken(refreshToken);
-
-        if (newAccessToken) {
-          console.log("✅ Token refreshed! Retrying listAssistants...");
-
-          // Retry the request with new token
-          const retryResponse = await fetch(`${getBackendUrl()}/api/v1/assistants`, {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${newAccessToken}`,
-            },
-          });
-
-          if (retryResponse.ok) {
-            const payload = await retryResponse.json() as AssistantListApiPayload;
-            return {
-              assistants: payload.assistants ?? [],
-              configured: payload.configured,
-            };
-          }
-        }
-      }
-
-      // If we get here, refresh failed
-      console.error("❌ Token refresh failed - redirecting to login");
-      return {
-        assistants: [],
-        warning: {
-          code: "FETCH_FAILED",
-          message: "Session expired. Please login again.",
-        },
-      };
-    }
-
-    const text = await response.text();
-    let payload: AssistantListApiPayload | null = null;
-
-    if (text) {
-      try {
-        payload = JSON.parse(text) as AssistantListApiPayload;
-      } catch (parseError) {
-        console.warn("[assistants] unable to parse response payload:", parseError);
-        return {
-          assistants: [],
-          warning: {
-            code: "PARSE_FAILED",
-            message:
-              parseError instanceof Error
-                ? parseError.message
-                : "Malformed assistants payload.",
-          },
-        };
-      }
-    }
 
     if (!response.ok) {
       const code: AssistantsWarningCode =
         response.status === 503 ? "NOT_CONFIGURED" : "FETCH_FAILED";
       const message =
-        payload?.error ??
+        data?.error ??
         (code === "NOT_CONFIGURED"
           ? "Vapi client not configured. Add a valid VAPI_API_KEY."
           : `Failed to load assistants (status ${response.status}).`);
       console.warn("[assistants] backend returned non-OK status:", message);
       return {
-        assistants: payload?.assistants ?? [],
-        warning: {
-          code,
-          message,
-        },
-        configured: payload?.configured,
+        assistants: data?.assistants ?? [],
+        warning: { code, message },
+        configured: data?.configured,
       };
     }
 
-    if (!payload) {
+    if (!data) {
       console.warn("[assistants] payload empty");
       return {
         assistants: [],
@@ -140,22 +101,22 @@ export async function listAssistants(): Promise<AssistantsResult> {
       };
     }
 
-    if (payload.success === false) {
-      const message = payload.error ?? "Assistants service responded with success=false.";
+    if (data.success === false) {
+      const message = data.error ?? "Assistants service responded with success=false.";
       console.warn("[assistants] fetch success flag false:", message);
       return {
-        assistants: payload.assistants ?? [],
+        assistants: data.assistants ?? [],
         warning: {
           code: "FETCH_FAILED",
           message,
         },
-        configured: payload.configured,
+        configured: data.configured,
       };
     }
 
     return {
-      assistants: payload.assistants ?? [],
-      configured: payload.configured,
+      assistants: data.assistants ?? [],
+      configured: data.configured,
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error while loading assistants.";
@@ -171,53 +132,18 @@ export async function listAssistants(): Promise<AssistantsResult> {
 }
 
 export async function createAssistant(payload: CreateAssistantPayload) {
-  // 🎯 DIVINE: Call Python backend with user's Vapi key (multi-tenant)
-  const response = await fetch(`${getBackendUrl()}/api/v1/assistants`, {
+  const { response, data } = await backendRequest<AssistantResponse>(BASE_PATH, {
     method: "POST",
-    headers: getAuthHeaders(),
     body: JSON.stringify(payload),
+    metricsLabel: "assistants.create",
+    timeoutMs: 15_000,
   });
 
-  // 🎯 DIVINE: If 401, try to refresh token automatically
-  if (response.status === 401) {
-    console.log("⚠️ 401 Unauthorized - Attempting token refresh...");
-
-    const refreshToken = localStorage.getItem("refresh_token");
-    if (refreshToken) {
-      const newAccessToken = await refreshAccessToken(refreshToken);
-
-      if (newAccessToken) {
-        console.log("✅ Token refreshed! Retrying createAssistant...");
-
-        // Retry the request with new token
-        const retryResponse = await fetch(`${getBackendUrl()}/api/v1/assistants`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${newAccessToken}`,
-          },
-          body: JSON.stringify(payload),
-        });
-
-        if (retryResponse.ok) {
-          const data = (await retryResponse.json()) as AssistantResponse;
-          if (!data.success || !data.assistant) {
-            throw new Error("Assistant creation response malformed");
-          }
-          return data.assistant;
-        }
-      }
-    }
-
-    throw new Error("Session expired. Please login again.");
+  if (!response.ok || !data) {
+    const errorMessage = data?.error ?? `Failed to create assistant (${response.status})`;
+    throw new Error(errorMessage);
   }
 
-  if (!response.ok) {
-    const errorPayload = await response.json().catch(() => ({}));
-    throw new Error(errorPayload.error ?? "Failed to create assistant");
-  }
-
-  const data = (await response.json()) as AssistantResponse;
   if (!data.success || !data.assistant) {
     throw new Error("Assistant creation response malformed");
   }
@@ -226,107 +152,41 @@ export async function createAssistant(payload: CreateAssistantPayload) {
 }
 
 export async function getAssistantDetail(id: string) {
-  // 🎯 DIVINE: Call Python backend with user's Vapi key (multi-tenant)
-  const response = await fetch(`${getBackendUrl()}/api/v1/assistants/${encodeURIComponent(id)}`, {
-    method: "GET",
-    headers: getAuthHeaders(),
-    cache: "no-store",
-  });
+  const { response, data } = await backendRequest<AssistantDetailResponse>(
+    `${BASE_PATH}/${encodeURIComponent(id)}`,
+    {
+      method: "GET",
+      metricsLabel: "assistants.detail",
+    },
+  );
 
-  // 🎯 DIVINE: If 401, try to refresh token automatically
-  if (response.status === 401) {
-    console.log("⚠️ 401 Unauthorized - Attempting token refresh...");
-
-    const refreshToken = localStorage.getItem("refresh_token");
-    if (refreshToken) {
-      const newAccessToken = await refreshAccessToken(refreshToken);
-
-      if (newAccessToken) {
-        console.log("✅ Token refreshed! Retrying getAssistantDetail...");
-
-        // Retry the request with new token
-        const retryResponse = await fetch(`${getBackendUrl()}/api/v1/assistants/${encodeURIComponent(id)}`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${newAccessToken}`,
-          },
-          cache: "no-store",
-        });
-
-        if (retryResponse.ok) {
-          const payload = (await retryResponse.json()) as AssistantDetailResponse;
-          if (!payload.success || !payload.assistant) {
-            throw new Error("Assistant detail malformed");
-          }
-          return payload.assistant;
-        }
-      }
-    }
-
-    throw new Error("Session expired. Please login again.");
-  }
-
-  if (!response.ok) {
+  if (!response.ok || !data) {
     throw new Error(`Failed to fetch assistant ${id} (status: ${response.status})`);
   }
 
-  const payload = (await response.json()) as AssistantDetailResponse;
-  if (!payload.success || !payload.assistant) {
+  if (!data.success || !data.assistant) {
     throw new Error("Assistant detail malformed");
   }
 
-  return payload.assistant;
+  return data.assistant;
 }
 
 export async function updateAssistant(payload: UpdateAssistantPayload) {
-  // 🎯 DIVINE: Call Python backend with user's Vapi key (multi-tenant)
-  const response = await fetch(`${getBackendUrl()}/api/v1/assistants/${encodeURIComponent(payload.id)}`, {
-    method: "PATCH",
-    headers: getAuthHeaders(),
-    body: JSON.stringify(payload),
-  });
+  const { response, data } = await backendRequest<AssistantDetailResponse>(
+    `${BASE_PATH}/${encodeURIComponent(payload.id)}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+      metricsLabel: "assistants.update",
+      timeoutMs: 15_000,
+    },
+  );
 
-  // 🎯 DIVINE: If 401, try to refresh token automatically
-  if (response.status === 401) {
-    console.log("⚠️ 401 Unauthorized - Attempting token refresh...");
-
-    const refreshToken = localStorage.getItem("refresh_token");
-    if (refreshToken) {
-      const newAccessToken = await refreshAccessToken(refreshToken);
-
-      if (newAccessToken) {
-        console.log("✅ Token refreshed! Retrying updateAssistant...");
-
-        // Retry the request with new token
-        const retryResponse = await fetch(`${getBackendUrl()}/api/v1/assistants/${encodeURIComponent(payload.id)}`, {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${newAccessToken}`,
-          },
-          body: JSON.stringify(payload),
-        });
-
-        if (retryResponse.ok) {
-          const data = (await retryResponse.json()) as AssistantDetailResponse;
-          if (!data.success || !data.assistant) {
-            throw new Error("Assistant update response malformed");
-          }
-          return data.assistant;
-        }
-      }
-    }
-
-    throw new Error("Session expired. Please login again.");
+  if (!response.ok || !data) {
+    const errorPayload = (data as { error?: string } | null)?.error;
+    throw new Error(errorPayload ?? `Failed to update assistant ${payload.id}`);
   }
 
-  if (!response.ok) {
-    const errorPayload = await response.json().catch(() => ({}));
-    throw new Error(errorPayload.error ?? `Failed to update assistant ${payload.id}`);
-  }
-
-  const data = (await response.json()) as AssistantDetailResponse;
   if (!data.success || !data.assistant) {
     throw new Error("Assistant update response malformed");
   }
