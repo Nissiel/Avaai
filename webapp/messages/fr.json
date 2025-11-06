@@ -791,6 +791,7 @@
       },
       "success": {
         "saved": "Configuration Vapi enregistrée avec succès",
+        "savedDesc": "Votre clé API est sauvegardée. Vous pouvez maintenant synchroniser vos assistants.",
         "updated": "Configuration Vapi mise à jour avec succès",
         "deleted": "Configuration Vapi supprimée",
         "connected": "Connecté avec succès à Vapi.ai"
@@ -806,6 +807,20 @@
     "twilio": {
       "title": "Configuration Twilio",
       "description": "Configurez vos identifiants Twilio pour les appels téléphoniques",
+      "form": {
+        "accountSid": {
+          "label": "Account SID",
+          "placeholder": "Entrez votre Account SID Twilio"
+        },
+        "authToken": {
+          "label": "Auth Token",
+          "placeholder": "Entrez votre Auth Token Twilio"
+        },
+        "phoneNumber": {
+          "label": "Numéro de téléphone",
+          "help": "Format international : +33123456789 (E.164)"
+        }
+      },
       "accountSid": {
         "label": "Account SID",
         "placeholder": "Entrez votre Twilio Account SID",
@@ -834,18 +849,29 @@
       },
       "success": {
         "saved": "Identifiants Twilio enregistrés avec succès",
+        "savedDesc": "Nous allons importer et lier votre numéro automatiquement.",
         "updated": "Identifiants Twilio mis à jour avec succès",
         "deleted": "Identifiants Twilio supprimés",
         "connected": "Connecté avec succès à Twilio"
       },
+      "import": {
+        "start": "Import du numéro en cours…",
+        "startDesc": "Association de votre numéro Twilio à l’assistant via Vapi.",
+        "guidance": "Complétez l’étape manquante puis relancez l’import."
+      },
       "errors": {
         "emptyFields": "Veuillez remplir tous les champs requis",
+        "invalidPhone": "Numéro invalide",
+        "invalidPhoneDesc": "Utilisez le format international, ex. +33123456789.",
         "invalidAccountSid": "Format Account SID invalide",
         "invalidAuthToken": "Format Auth Token invalide",
         "invalidPhoneNumber": "Format de numéro invalide",
         "saveFailed": "Échec de l'enregistrement",
         "connectionFailed": "Échec de la connexion à Twilio",
         "deleteFailed": "Échec de la suppression"
+      },
+      "confirm": {
+        "delete": "Supprimer les identifiants Twilio ?"
       }
     }
   }

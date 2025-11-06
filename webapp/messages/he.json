@@ -791,6 +791,7 @@
       },
       "success": {
         "saved": "הגדרות Vapi נשמרו בהצלחה",
+        "savedDesc": "המפתח נשמר. כעת ניתן לסנכרן את העוזרים שלך.",
         "updated": "הגדרות Vapi עודכנו בהצלחה",
         "deleted": "הגדרות Vapi נמחקו",
         "connected": "חיבור ל-Vapi.ai הצליח"
@@ -806,6 +807,20 @@
     "twilio": {
       "title": "הגדרות Twilio",
       "description": "הגדר את פרטי הכניסה של Twilio עבור שיחות טלפון",
+      "form": {
+        "accountSid": {
+          "label": "Account SID",
+          "placeholder": "הזן את ה-Account SID של Twilio"
+        },
+        "authToken": {
+          "label": "Auth Token",
+          "placeholder": "הזן את ה-Auth Token של Twilio"
+        },
+        "phoneNumber": {
+          "label": "מספר טלפון",
+          "help": "פורמט בינלאומי: ‎+972501234567‎"
+        }
+      },
       "accountSid": {
         "label": "Account SID",
         "placeholder": "הזן את ה-Account SID של Twilio",
@@ -834,18 +849,29 @@
       },
       "success": {
         "saved": "פרטי הכניסה של Twilio נשמרו בהצלחה",
+        "savedDesc": "ננסה כעת לייבא ולקשר את המספר שלך אוטומטית.",
         "updated": "פרטי הכניסה של Twilio עודכנו בהצלחה",
         "deleted": "פרטי הכניסה של Twilio נמחקו",
         "connected": "חיבור ל-Twilio הצליח"
       },
+      "import": {
+        "start": "מייבא מספר טלפון…",
+        "startDesc": "מקשר את מספר Twilio שלך לעוזר דרך Vapi.",
+        "guidance": "השלם את הצעדים החסרים ונסה שוב."
+      },
       "errors": {
         "emptyFields": "אנא מלא את כל השדות הנדרשים",
+        "invalidPhone": "מספר טלפון לא תקין",
+        "invalidPhoneDesc": "השתמש בפורמט בינלאומי, לדוגמה ‎+33123456789‎.",
         "invalidAccountSid": "פורמט Account SID לא תקין",
         "invalidAuthToken": "פורמט Auth Token לא תקין",
         "invalidPhoneNumber": "פורמט מספר טלפון לא תקין",
         "saveFailed": "שמירה נכשלה",
         "connectionFailed": "חיבור ל-Twilio נכשל",
         "deleteFailed": "מחיקה נכשלה"
+      },
+      "confirm": {
+        "delete": "למחוק את פרטי הכניסה של Twilio?"
       }
     }
   }

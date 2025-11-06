@@ -794,6 +794,7 @@
       },
       "success": {
         "saved": "Vapi configuration saved successfully",
+        "savedDesc": "Your API key is stored securely. You can now sync your assistants.",
         "updated": "Vapi configuration updated successfully",
         "deleted": "Vapi configuration removed",
         "connected": "Successfully connected to Vapi.ai"
@@ -809,6 +810,20 @@
     "twilio": {
       "title": "Twilio Configuration",
       "description": "Configure your Twilio credentials for phone calls",
+      "form": {
+        "accountSid": {
+          "label": "Account SID",
+          "placeholder": "Enter your Twilio Account SID"
+        },
+        "authToken": {
+          "label": "Auth Token",
+          "placeholder": "Enter your Twilio Auth Token"
+        },
+        "phoneNumber": {
+          "label": "Phone Number",
+          "help": "Format: +33123456789 (international E.164)"
+        }
+      },
       "accountSid": {
         "label": "Account SID",
         "placeholder": "Enter your Twilio Account SID",
@@ -837,18 +852,29 @@
       },
       "success": {
         "saved": "Twilio credentials saved successfully",
+        "savedDesc": "We’ll now try to import and link your number automatically.",
         "updated": "Twilio credentials updated successfully",
         "deleted": "Twilio credentials removed",
         "connected": "Successfully connected to Twilio"
       },
+      "import": {
+        "start": "Importing phone number…",
+        "startDesc": "Linking your Twilio number to your assistant via Vapi.",
+        "guidance": "Complete the missing steps and retry the import."
+      },
       "errors": {
         "emptyFields": "Please fill in all required fields",
+        "invalidPhone": "Invalid phone number",
+        "invalidPhoneDesc": "Use the international format, e.g. +33123456789.",
         "invalidAccountSid": "Invalid Account SID format",
         "invalidAuthToken": "Invalid Auth Token format",
         "invalidPhoneNumber": "Invalid phone number format",
         "saveFailed": "Failed to save credentials",
         "connectionFailed": "Failed to connect to Twilio",
         "deleteFailed": "Failed to remove credentials"
+      },
+      "confirm": {
+        "delete": "Are you sure you want to delete your Twilio credentials?"
       }
     }
   }
