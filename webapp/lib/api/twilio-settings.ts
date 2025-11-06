@@ -6,7 +6,7 @@
 import { getAuthHeaders } from "./auth-helper";
 import { refreshAccessToken } from "@/lib/auth/session-client";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const NEXT_ROUTE = "/api/twilio-settings";
 
 interface RawTwilioSettingsResponse {
   has_twilio_credentials: boolean;
@@ -99,12 +99,12 @@ async function handleMaybeRefresh<T>(
 export async function getTwilioSettings(): Promise<TwilioSettingsResponse> {
   return handleMaybeRefresh(
     () =>
-      fetch(`${API_URL}/api/v1/twilio-settings`, {
+      fetch(NEXT_ROUTE, {
         method: "GET",
         headers: getAuthHeaders(),
       }),
     (token) =>
-      fetch(`${API_URL}/api/v1/twilio-settings`, {
+      fetch(NEXT_ROUTE, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -121,13 +121,13 @@ export async function getTwilioSettings(): Promise<TwilioSettingsResponse> {
 export async function saveTwilioSettings(payload: SaveTwilioSettingsPayload): Promise<TwilioSettingsResponse> {
   return handleMaybeRefresh(
     () =>
-      fetch(`${API_URL}/api/v1/twilio-settings`, {
+      fetch(NEXT_ROUTE, {
         method: "POST",
         headers: getAuthHeaders(),
         body: JSON.stringify(payload),
       }),
     (token) =>
-      fetch(`${API_URL}/api/v1/twilio-settings`, {
+      fetch(NEXT_ROUTE, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -145,12 +145,12 @@ export async function saveTwilioSettings(payload: SaveTwilioSettingsPayload): Pr
 export async function deleteTwilioSettings(): Promise<void> {
   await handleMaybeRefresh<void>(
     () =>
-      fetch(`${API_URL}/api/v1/twilio-settings`, {
+      fetch(NEXT_ROUTE, {
         method: "DELETE",
         headers: getAuthHeaders(),
       }),
     (token) =>
-      fetch(`${API_URL}/api/v1/twilio-settings`, {
+      fetch(NEXT_ROUTE, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",

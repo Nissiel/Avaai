@@ -154,11 +154,7 @@ export async function updateStudioConfiguration(
   }
 
   // Step 2: Sync to Vapi (OPTIONAL - can fail gracefully)
-  // Use the saved config from DB result (which is complete)
-  const vapiResult = await syncStudioConfigToVapi(
-    dbResult.config as any, // Config from DB is complete
-    values.vapiAssistantId || null
-  );
+  const vapiResult = await syncStudioConfigToVapi();
 
   // Return combined result
   return {
