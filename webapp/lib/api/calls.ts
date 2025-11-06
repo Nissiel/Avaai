@@ -104,6 +104,7 @@ export async function sendCallTranscriptEmail(callId: string): Promise<SendTrans
   const res = await fetch(`/api/calls/${callId}/email`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    credentials: "include",
     cache: "no-store",
   });
 

@@ -76,7 +76,7 @@ export function CallTranscriptViewer({ call, onClose, onSendEmail }: CallTranscr
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto"
       onClick={onClose}
     >
       <motion.div
@@ -84,9 +84,9 @@ export function CallTranscriptViewer({ call, onClose, onSendEmail }: CallTranscr
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-4xl max-h-[90vh] overflow-hidden"
+        className="w-full max-w-4xl"
       >
-        <GlassCard className="flex flex-col h-full">
+        <GlassCard className="flex h-full max-h-[85vh] flex-col">
           {/* Header */}
           <div className="flex items-start justify-between p-6 border-b border-white/10">
             <div className="flex-1">
@@ -151,7 +151,7 @@ export function CallTranscriptViewer({ call, onClose, onSendEmail }: CallTranscr
           </div>
 
           {/* Transcript Content */}
-          <div className="flex-1 overflow-y-auto p-6 space-y-4">
+          <div className="flex-1 overflow-y-auto p-6 pr-8 space-y-4">
             {lines.length === 0 ? (
               <div className="text-center text-muted-foreground py-12">
                 <Bot className="h-12 w-12 mx-auto mb-4 opacity-50" />
