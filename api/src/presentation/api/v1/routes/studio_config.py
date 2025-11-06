@@ -16,6 +16,7 @@ from api.src.presentation.schemas.studio_config import (
     StudioConfigUpdate,
 )
 from api.src.infrastructure.external.vapi_client import VapiApiError, VapiClient
+from api.src.core.settings import get_settings
 
 router = APIRouter(prefix="/studio", tags=["Studio"])
 
