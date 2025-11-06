@@ -17,6 +17,7 @@ import { GlassCard } from '@/components/ui/glass-card';
 import { FuturisticButton } from '@/components/ui/futuristic-button';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { CallTranscriptViewer } from '@/components/app/call-transcript-viewer';
+import { CallsTable } from '@/components/app/calls-table';
 import { SetupReminderBanner } from '@/components/app/setup-reminder-banner';
 import { toast } from 'sonner';
 
@@ -258,6 +259,9 @@ export default function DashboardPage() {
             );
           })}
       </div>
+
+      {/* Live Calls Table */}
+      <CallsTable />
 
       {/* Recent Activity */}
       <GlassCard className="p-6">
