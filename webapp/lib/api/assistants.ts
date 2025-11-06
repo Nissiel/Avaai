@@ -140,7 +140,7 @@ export async function createAssistant(payload: CreateAssistantPayload) {
   });
 
   if (!response.ok || !data) {
-    const errorMessage = data?.error ?? `Failed to create assistant (${response.status})`;
+    const errorMessage = ((data as { error?: string } | null)?.error) ?? `Failed to create assistant (${response.status})`;
     throw new Error(errorMessage);
   }
 
