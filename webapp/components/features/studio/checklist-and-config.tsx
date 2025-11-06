@@ -508,12 +508,9 @@ export default function ChecklistAndConfig({
                     runUpdateWebhook();
                   } else {
                     console.log("🧪 Mode test - webhook update simulé");
-                    setWebhookLoading(true);
-                    setTimeout(() => {
-                      setWebhookLoading(false);
-                      setCurrentVoiceUrl(testUrl);
-                      alert("✅ Webhook update simulé avec succès!");
-                    }, 2000);
+                    await runUpdateWebhook();
+                    setCurrentVoiceUrl(testUrl);
+                    alert("✅ Webhook update simulé avec succès!");
                   }
                 }}
                 disabled={webhookLoading}
