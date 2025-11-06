@@ -174,6 +174,7 @@ class VapiClient:
         transcriber_provider: str | None = None,
         transcriber_model: str | None = None,
         transcriber_language: str | None = None,
+        server_url: str | None = None,
     ) -> dict:
         """
         🔥 DIVINE UPDATE: Update an existing AI assistant in Vapi with COMPLETE configs.
@@ -234,6 +235,9 @@ class VapiClient:
         if functions is not None:
             payload["functions"] = functions
 
+        if server_url is not None:
+            payload["serverUrl"] = server_url
+
         print(f"🔥 DIVINE UPDATE: Updating assistant {assistant_id} with payload: {payload}")
         return await self._request("PATCH", f"/assistant/{assistant_id}", json=payload)
 
@@ -256,6 +260,7 @@ class VapiClient:
         transcriber_provider: str = "deepgram",
         transcriber_model: str = "nova-2",
         transcriber_language: str = "fr",
+        server_url: str | None = None,
     ) -> dict:
         """
         🔥 DIVINE METHOD: Get or create assistant intelligently.
@@ -295,6 +300,7 @@ class VapiClient:
                         transcriber_provider=transcriber_provider,
                         transcriber_model=transcriber_model,
                         transcriber_language=transcriber_language,
+                        server_url=server_url,
                     )
                     print(f"✅ Successfully UPDATED assistant {assistant_id}")
                     return updated
@@ -320,9 +326,62 @@ class VapiClient:
             transcriber_provider=transcriber_provider,
             transcriber_model=transcriber_model,
             transcriber_language=transcriber_language,
+            server_url=server_url,
         )
         print(f"✅ Successfully CREATED new assistant {created.get('id')}")
         return created
+
+    async def create_phone_number(
+        self,
+        *,
+        assistant_id: str,
+        area_code: str | None = None,
+    ) -> dict:
+        """Create a free US phone number managed by Vapi."""
+
+        payload: dict[str, Any] = {
+            "provider": "vapi",
+            "assistantId": assistant_id,
+        }
+        if area_code:
+            payload["areaCode"] = area_code
+
+        return await self._request("POST", "/phone-number", json=payload)
+
+    async def import_phone_number(
+        self,
+        *,
+        twilio_account_sid: str,
+        twilio_auth_token: str,
+        phone_number: str,
+        assistant_id: str,
+    ) -> dict:
+        """Import an existing Twilio number inside Vapi."""
+
+        payload = {
+            "provider": "twilio",
+            "twilioAccountSid": twilio_account_sid,
+            "twilioAuthToken": twilio_auth_token,
+            "number": phone_number,
+            "assistantId": assistant_id,
+        }
+
+        return await self._request("POST", "/phone-number", json=payload)
+
+    async def delete_phone_number(self, phone_number_id: str) -> bool:
+        """Delete a phone number from Vapi."""
+
+        await self._request("DELETE", f"/phone-number/{phone_number_id}")
+        return True
+
+    async def update_assistant_webhook(self, assistant_id: str, server_url: str) -> dict:
+        """Update assistant webhook endpoint."""
+
+        return await self._request(
+            "PATCH",
+            f"/assistant/{assistant_id}",
+            json={"serverUrl": server_url},
+        )
 
     async def call_transcript(self, call_id: str) -> dict:
         return await self._request("GET", f"/call/{call_id}/transcript")

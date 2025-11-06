@@ -193,6 +193,8 @@ async def sync_config_to_vapi(
     client = _client(current_user)
     db_config = await get_or_create_user_config(db, current_user)
     config = db_to_schema(db_config)
+    settings = get_settings()
+    webhook_url = f"{settings.backend_url.rstrip('/')}{settings.api_prefix}/webhooks/vapi"
 
     # Build enhanced system prompt with caller info collection
     enhanced_prompt = config.systemPrompt
@@ -252,6 +254,7 @@ async def sync_config_to_vapi(
                 "ask_for_phone": config.askForPhone,
             },
             functions=None,  # Disabled for now - Vapi format investigation needed
+            server_url=webhook_url,
         )
 
         # Save the assistant ID in DATABASE for future updates

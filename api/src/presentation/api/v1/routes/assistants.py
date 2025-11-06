@@ -9,7 +9,6 @@ from pydantic import BaseModel, Field
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from api.src.infrastructure.external.vapi_client import VapiApiError, VapiClient
-from api.src.infrastructure.vapi.client import VapiClient as PhoneNumberVapiClient
 from api.src.infrastructure.persistence.models.user import User
 from api.src.presentation.dependencies.auth import get_current_user
 from api.src.core.settings import get_settings
@@ -94,7 +93,7 @@ async def _auto_link_twilio_number(user: User, assistant_id: Optional[str]) -> O
         return None
 
     try:
-        phone_client = PhoneNumberVapiClient(user_api_key=user.vapi_api_key)
+        phone_client = VapiClient(token=user.vapi_api_key)
     except ValueError as exc:
         logger.warning("Skipping Twilio auto-link for user %s: %s", user.id, exc)
         return {

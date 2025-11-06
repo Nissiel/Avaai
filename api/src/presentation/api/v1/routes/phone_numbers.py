@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field, field_validator
 from typing import Optional
 import logging
 
-from api.src.infrastructure.vapi.client import VapiClient
+from api.src.infrastructure.external.vapi_client import VapiClient
 from api.src.infrastructure.persistence.models.user import User
 from api.src.presentation.dependencies.auth import get_current_user
 from api.src.core.settings import get_settings
@@ -65,8 +65,15 @@ class VerifyTwilioRequest(BaseModel):
 
 def _get_vapi_client(user: User) -> VapiClient:
     """Create VapiClient with user's personal API key (multi-tenant)."""
+    token = user.vapi_api_key or settings.vapi_api_key
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Vapi API key not configured. Add your key in Settings → Vapi.",
+        )
+
     try:
-        return VapiClient(user_api_key=user.vapi_api_key)
+        return VapiClient(token=token)
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,

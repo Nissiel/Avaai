@@ -26,7 +26,6 @@ from api.src.core.settings import get_settings
 from api.src.infrastructure.database.session import get_session
 from api.src.infrastructure.persistence.models.call import CallRecord
 from api.src.infrastructure.persistence.models.user import User
-from api.src.infrastructure.persistence.models.tenant import Tenant
 from twilio.request_validator import RequestValidator
 
 router = APIRouter(prefix="/webhooks", tags=["webhooks"])

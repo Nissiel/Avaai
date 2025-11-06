@@ -17,6 +17,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from api.src.infrastructure.external.vapi_client import VapiClient
 from api.src.infrastructure.persistence.models.user import User
 from api.src.presentation.dependencies.auth import get_current_user
 from api.src.infrastructure.database.session import get_session
@@ -149,7 +150,6 @@ async def delete_twilio_settings(
     This ensures users can re-add their Twilio number without conflicts.
     """
     import logging
-    from api.src.infrastructure.vapi.client import VapiClient
 
     logger = logging.getLogger(__name__)
 
@@ -160,7 +160,7 @@ async def delete_twilio_settings(
     if user.vapi_api_key and user.twilio_phone_number:
         try:
             logger.info(f"🗑️ Deleting Twilio number from Vapi: {user.twilio_phone_number}")
-            vapi = VapiClient(user_api_key=user.vapi_api_key)
+            vapi = VapiClient(token=user.vapi_api_key)
 
             # Get all phone numbers to find the ID
             phone_numbers = await vapi.get_phone_numbers()

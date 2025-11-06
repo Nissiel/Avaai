@@ -28,8 +28,8 @@ router = APIRouter(prefix="/analytics", tags=["Analytics"])
 def _client(user: User) -> VapiClient:
     """Create VapiClient with user's personal API key (multi-tenant)."""
     try:
-        # 🔥 DIVINE FIX: Correct parameter is user_api_key, not token
-        return VapiClient(user_api_key=user.vapi_api_key)
+        token = user.vapi_api_key
+        return VapiClient(token=token)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
 
@@ -265,4 +265,3 @@ async def send_call_transcript_email(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to send email: {str(exc)}"
         ) from exc
-

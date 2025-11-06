@@ -23,14 +23,13 @@ export function useVapiStatus() {
       return await getVapiSettings();
     },
     enabled: !!token, // 🔥 DIVINE: Only run if token exists (no race condition!)
-    staleTime: 0, // 🔥 DIVINE: Always fresh, credentials change frequently
+    staleTime: 10_000,
     gcTime: 1000 * 60, // Keep in cache 1 minute only
   });
 
   // 🔥 DIVINE: Helper to invalidate cache after mutations
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ["vapi-settings"] });
-    queryClient.removeQueries({ queryKey: ["vapi-settings"] }); // Force removal
   };
 
   return {
