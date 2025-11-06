@@ -12,6 +12,13 @@ import { backendConfig } from "@/services/backend-service";
 
 const ANALYTICS_BASE = `${backendConfig.baseUrl}/api/v1/analytics`;
 
+function createHeaders(token: string): HeadersInit {
+  return {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`,
+  };
+}
+
 /**
  * Returns empty analytics data for graceful degradation
  */
@@ -37,11 +44,11 @@ function getEmptyAnalytics(): DashboardAnalytics {
   };
 }
 
-export async function fetchAnalyticsOverview(): Promise<DashboardAnalytics> {
+export async function fetchAnalyticsOverview(token: string): Promise<DashboardAnalytics> {
   try {
     const response = await fetch(`${ANALYTICS_BASE}/overview`, {
       method: "GET",
-      headers: { "Content-Type": "application/json" },
+      headers: createHeaders(token),
       cache: "no-store",
     });
 
@@ -57,11 +64,11 @@ export async function fetchAnalyticsOverview(): Promise<DashboardAnalytics> {
   }
 }
 
-async function fetchAnalyticsEndpoint<T>(path: string, fallback: T): Promise<T> {
+async function fetchAnalyticsEndpoint<T>(path: string, fallback: T, token: string): Promise<T> {
   try {
     const response = await fetch(`${ANALYTICS_BASE}/${path}`, {
       method: "GET",
-      headers: { "Content-Type": "application/json" },
+      headers: createHeaders(token),
       cache: "no-store",
     });
 
@@ -77,34 +84,38 @@ async function fetchAnalyticsEndpoint<T>(path: string, fallback: T): Promise<T> 
   }
 }
 
-export async function fetchAnalyticsTimeseries(): Promise<AnalyticsTimeseriesPoint[]> {
+export async function fetchAnalyticsTimeseries(token: string): Promise<AnalyticsTimeseriesPoint[]> {
   const payload = await fetchAnalyticsEndpoint<{ series: AnalyticsTimeseriesPoint[] }>(
     "timeseries",
-    { series: [] }
+    { series: [] },
+    token,
   );
   return payload.series ?? [];
 }
 
-export async function fetchAnalyticsTopics(): Promise<AnalyticsTopic[]> {
+export async function fetchAnalyticsTopics(token: string): Promise<AnalyticsTopic[]> {
   const payload = await fetchAnalyticsEndpoint<{ topics: AnalyticsTopic[] }>(
     "topics",
-    { topics: [] }
+    { topics: [] },
+    token,
   );
   return payload.topics ?? [];
 }
 
-export async function fetchAnalyticsAnomalies(): Promise<AnalyticsAnomaly[]> {
+export async function fetchAnalyticsAnomalies(token: string): Promise<AnalyticsAnomaly[]> {
   const payload = await fetchAnalyticsEndpoint<{ anomalies: AnalyticsAnomaly[] }>(
     "anomalies",
-    { anomalies: [] }
+    { anomalies: [] },
+    token,
   );
   return payload.anomalies ?? [];
 }
 
-export async function fetchAnalyticsHeatmap(): Promise<AnalyticsHeatmapCell[]> {
+export async function fetchAnalyticsHeatmap(token: string): Promise<AnalyticsHeatmapCell[]> {
   const payload = await fetchAnalyticsEndpoint<{ heatmap: AnalyticsHeatmapCell[] }>(
     "heatmap",
-    { heatmap: [] }
+    { heatmap: [] },
+    token,
   );
   return payload.heatmap ?? [];
 }
