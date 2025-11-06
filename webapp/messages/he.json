@@ -423,7 +423,8 @@
       "profile": "Profile",
       "studio": "Studio settings",
       "vapi": "אינטגרציית Vapi",
-      "twilio": "אינטגרציית Twilio"
+      "twilio": "אינטגרציית Twilio",
+      "email": "שליחת מייל"
     },
     "profile": {
       "title": "User profile",
@@ -639,6 +640,62 @@
       "recent": "שיחה אחרונה",
       "frequent": "הכי הרבה שיחות",
       "oldest": "שיחה ראשונה"
+    },
+    "email": {
+      "title": "שליחת מיילים ממותגים",
+      "description": "שלחו תמלולים והתראות ישירות מהחשבון שלכם ב‑Google Workspace או Outlook.",
+      "status": {
+        "connected": "השולח מאומת",
+        "missing": "נדרשת הגדרה",
+        "caption": "השתמשו בסיסמה ייעודית או ב‑SMTP OAuth כדי לאפשר ל‑Ava לשלוח במקומכם."
+      },
+      "form": {
+        "fallbackEmail": "נמען חירום",
+        "summaryEmail": "סיכום יומי",
+        "smtpTitle": "פרטי SMTP",
+        "providerHint": "השתמשו בשרת ה‑SMTP של הארגון (Google, Microsoft 365, Fastmail ועוד)",
+        "smtpServer": "שרת SMTP",
+        "smtpPort": "פורט",
+        "smtpUsername": "שם משתמש",
+        "smtpPassword": "סיסמת אפליקציה / App password"
+      },
+      "actions": {
+        "save": "שמירת השולח",
+        "reset": "איפוס"
+      },
+      "messages": {
+        "success": "הגדרות המייל נשמרו",
+        "error": "שמירת הגדרות המייל נכשלה"
+      },
+      "errors": {
+        "email": "הזינו כתובת מייל תקינה",
+        "port": "הפורט חייב להכיל ספרות בלבד",
+        "smtpIncomplete": "מלאו שרת, פורט, שם משתמש וסיסמת אפליקציה."
+      },
+      "guides": {
+        "google": {
+          "title": "Google Workspace / Gmail",
+          "description": "צרו סיסמת אפליקציה ייעודית והפעילו SMTP relay.",
+          "linkLabel": "פתיחת Google Admin",
+          "steps": {
+            "step1": "היכנסו ל‑Google Admin → אבטחה → App passwords (או https://myaccount.google.com/apppasswords).",
+            "step2": "צרו סיסמת אפליקציה עבור “Mail” ושמרו את הקוד בן 16 הספרות.",
+            "step3": "הגדירו smtp.gmail.com פורט 587, משתמש = כתובת מלאה, סיסמה = הקוד החדש.",
+            "step4": "ודאו שה‑SMTP relay מותר עבור החשבון או שירות השליחה."
+          }
+        },
+        "outlook": {
+          "title": "Microsoft 365 / Outlook",
+          "description": "אפשרו SMTP מאומת עבור תיבת הדואר הארגונית.",
+          "linkLabel": "מדריך Microsoft",
+          "steps": {
+            "step1": "Microsoft 365 Admin → Users → בחרו את התיבה המתאימה.",
+            "step2": "בקטגוריית Mail → Mail apps הפעילו “Authenticated SMTP”.",
+            "step3": "הגדירו smtp.office365.com פורט 587, משתמש = כתובת התיבה, סיסמה = סיסמת החשבון או סיסמת אפליקציה.",
+            "step4": "אם יש MFA, צרו סיסמת אפליקציה ב‑https://portal.office.com/account/#security."
+          }
+        }
+      }
     },
     "card": {
       "callCount": "{count, plural, one {שיחה אחת} other {# שיחות}}",

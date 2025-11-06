@@ -539,12 +539,69 @@
       "profile": "Profile",
       "studio": "Studio settings",
       "vapi": "Vapi Integration",
-      "twilio": "Twilio Integration"
+      "twilio": "Twilio Integration",
+      "email": "Email delivery"
     },
     "movedNotice": {
       "title": "Looking for studio settings?",
       "subtitle": "Assistant creation and persona tuning now live on the Assistants page.",
       "cta": "Open assistants studio"
+    },
+    "email": {
+      "title": "Branded email delivery",
+      "description": "Send transcripts and notifications from your own Google Workspace or Outlook mailbox.",
+      "status": {
+        "connected": "Sender authenticated",
+        "missing": "Setup required",
+        "caption": "Use app passwords or OAuth SMTP to let Ava send on your behalf."
+      },
+      "form": {
+        "fallbackEmail": "Fallback recipient",
+        "summaryEmail": "Daily summary recipient",
+        "smtpTitle": "SMTP credentials",
+        "providerHint": "Use your workspace SMTP relay (Google Workspace, Microsoft 365, Fastmail…)",
+        "smtpServer": "SMTP server",
+        "smtpPort": "SMTP port",
+        "smtpUsername": "SMTP username",
+        "smtpPassword": "SMTP app password"
+      },
+      "actions": {
+        "save": "Save sender",
+        "reset": "Reset"
+      },
+      "messages": {
+        "success": "Email settings saved",
+        "error": "Unable to save email settings"
+      },
+      "errors": {
+        "email": "Enter a valid email address",
+        "port": "Port must be numeric",
+        "smtpIncomplete": "Provide server, port, username and app password to connect."
+      },
+      "guides": {
+        "google": {
+          "title": "Google Workspace / Gmail",
+          "description": "Leverage SMTP relay with a dedicated app password.",
+          "linkLabel": "Open Google Admin",
+          "steps": {
+            "step1": "Open Google Admin → Security → App passwords (or https://myaccount.google.com/apppasswords).",
+            "step2": "Generate a new app password for “Mail” and copy the 16‑character code.",
+            "step3": "Use smtp.gmail.com with port 587, username = full email address, password = generated app password.",
+            "step4": "Make sure “Less secure apps”/SMTP relay is allowed for the mailbox or service account."
+          }
+        },
+        "outlook": {
+          "title": "Microsoft 365 / Outlook",
+          "description": "Enable authenticated SMTP submission for your shared mailbox.",
+          "linkLabel": "Follow Microsoft guide",
+          "steps": {
+            "step1": "Open Microsoft 365 admin center → Users → Active users → select the mailbox.",
+            "step2": "Enable “Authenticated SMTP” under Mail → Mail apps and save.",
+            "step3": "Use smtp.office365.com with port 587, username = mailbox email, password = the account password or app password.",
+            "step4": "If MFA is enforced, create an app password from https://portal.office.com/account/#security."
+          }
+        }
+      }
     },
     "profile": {
       "title": "User profile",

@@ -423,7 +423,8 @@
       "profile": "Profile",
       "studio": "Studio settings",
       "vapi": "Intégration Vapi",
-      "twilio": "Intégration Twilio"
+      "twilio": "Intégration Twilio",
+      "email": "Emails"
     },
     "profile": {
       "title": "User profile",
@@ -639,6 +640,62 @@
       "recent": "Dernier appel",
       "frequent": "Plus d'appels",
       "oldest": "Premier contact"
+    },
+    "email": {
+      "title": "Envoi d’emails avec votre domaine",
+      "description": "Faites partir les transcripts et notifications depuis votre boîte Google Workspace ou Outlook.",
+      "status": {
+        "connected": "Expéditeur authentifié",
+        "missing": "Configuration requise",
+        "caption": "Utilisez un mot de passe applicatif ou SMTP OAuth pour autoriser Ava."
+      },
+      "form": {
+        "fallbackEmail": "Destinataire de secours",
+        "summaryEmail": "Destinataire des résumés quotidiens",
+        "smtpTitle": "Identifiants SMTP",
+        "providerHint": "Utilisez le relais SMTP de votre workspace (Google, Microsoft 365, Fastmail…)",
+        "smtpServer": "Serveur SMTP",
+        "smtpPort": "Port SMTP",
+        "smtpUsername": "Utilisateur SMTP",
+        "smtpPassword": "Mot de passe / App password"
+      },
+      "actions": {
+        "save": "Enregistrer l’expéditeur",
+        "reset": "Réinitialiser"
+      },
+      "messages": {
+        "success": "Paramètres email sauvegardés",
+        "error": "Impossible de sauvegarder les paramètres email"
+      },
+      "errors": {
+        "email": "Entrez une adresse valide",
+        "port": "Le port doit être numérique",
+        "smtpIncomplete": "Renseignez serveur, port, utilisateur et mot de passe applicatif."
+      },
+      "guides": {
+        "google": {
+          "title": "Google Workspace / Gmail",
+          "description": "Activez le relais SMTP avec un mot de passe applicatif dédié.",
+          "linkLabel": "Ouvrir Google Admin",
+          "steps": {
+            "step1": "Allez dans Google Admin → Sécurité → Mots de passe des applications (ou https://myaccount.google.com/apppasswords).",
+            "step2": "Générez un mot de passe pour “Mail” et copiez le code à 16 caractères.",
+            "step3": "Utilisez smtp.gmail.com port 587, identifiant = adresse email complète, mot de passe = code généré.",
+            "step4": "Vérifiez que le relais SMTP / applications moins sécurisées est autorisé pour ce compte."
+          }
+        },
+        "outlook": {
+          "title": "Microsoft 365 / Outlook",
+          "description": "Activez l’envoi SMTP authentifié pour votre boîte partagée.",
+          "linkLabel": "Consulter la documentation Microsoft",
+          "steps": {
+            "step1": "Dans le centre d’administration Microsoft 365 → Utilisateurs → sélectionnez la boîte.",
+            "step2": "Activez “SMTP authentifié” dans Mail → Applications courrier puis enregistrez.",
+            "step3": "Utilisez smtp.office365.com port 587, identifiant = email de la boîte, mot de passe = mot de passe du compte ou app password.",
+            "step4": "Si MFA est activée, créez un mot de passe d’application depuis https://portal.office.com/account/#security."
+          }
+        }
+      }
     },
     "card": {
       "callCount": "{count, plural, one {# appel} other {# appels}}",
