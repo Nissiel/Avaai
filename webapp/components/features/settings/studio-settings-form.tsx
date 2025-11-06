@@ -867,10 +867,10 @@ export function StudioSettingsForm({
                         <FormItem>
                           <LabeledSlider
                             label="Voice Speed"
-                            description="0.5x = Slow | 1.0x = Normal | 2.0x = Fast"
+                            description="0.5x = Slow | 1.0x = Normal | 1.2x = Fastest allowed by Vapi"
                             min={0.5}
-                            max={2.0}
-                            step={0.1}
+                            max={1.2}
+                            step={0.05}
                             value={field.value}
                             onChange={field.onChange}
                             disabled={isDisabled}

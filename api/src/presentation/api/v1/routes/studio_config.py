@@ -223,12 +223,14 @@ async def sync_config_to_vapi(
 
     try:
         # 🎯 DIVINE: Use get_or_create_assistant (updates if exists, creates if not)
+        safe_speed = min(max(config.voiceSpeed or 1.0, 0.5), 1.2)
+
         assistant = await client.get_or_create_assistant(
             assistant_id=config.vapiAssistantId,  # Will update this if exists
             name=f"{config.organizationName} Assistant",
             voice_provider=config.voiceProvider,
             voice_id=config.voiceId,
-            voice_speed=config.voiceSpeed,  # ✨ NEW: Voice speed control
+            voice_speed=safe_speed,  # ✨ NEW: Voice speed control (Vapi max 1.2)
             first_message=config.firstMessage,
             model_provider="openai",
             model=config.aiModel,

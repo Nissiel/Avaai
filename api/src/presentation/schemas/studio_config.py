@@ -33,7 +33,7 @@ class StudioConfig(BaseModel):
     # 🎤 NEW: Voice settings
     voiceProvider: str = Field(default="azure", description="Voice provider (azure recommended for natural French)")
     voiceId: str = Field(default="fr-FR-DeniseNeural", description="Voice ID (Denise Neural - ultra natural French)")
-    voiceSpeed: float = Field(default=1.0, ge=0.5, le=2.0, description="Voice speed (1.0=normal, natural flow)")
+    voiceSpeed: float = Field(default=1.0, ge=0.5, le=1.2, description="Voice speed (1.0=normal, Vapi max=1.2)")
 
     # 🎧 NEW: Transcriber settings (Speech-to-Text)
     transcriberProvider: str = Field(default="deepgram", description="STT provider (deepgram recommended)")

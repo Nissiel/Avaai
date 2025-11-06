@@ -28,7 +28,7 @@ export const studioConfigSchema = z.object({
   // 🎤 Voice Settings
   voiceProvider: z.string().default("azure"),  // 🔥 ULTRA DIVINE: Azure Neural
   voiceId: z.string().default("fr-FR-DeniseNeural"),  // 🔥 Most natural French
-  voiceSpeed: z.number().min(0.5).max(2.0).default(1.0),  // 🔥 Natural flow
+  voiceSpeed: z.number().min(0.5).max(1.2).default(1.0),  // 🔥 Natural flow (Vapi max 1.2)
   
   // 🎧 Transcriber Settings (Speech-to-Text)
   transcriberProvider: z.string().default("deepgram"),
@@ -85,7 +85,7 @@ export function createStudioConfigSchema(
     // 🎤 Voice Settings
     voiceProvider: z.string().default("azure"),  // 🔥 ULTRA DIVINE: Azure Neural
     voiceId: z.string().default("fr-FR-DeniseNeural"),  // 🔥 Most natural French
-    voiceSpeed: z.number().min(0.5).max(2.0).default(1.0),  // 🔥 Natural flow
+    voiceSpeed: z.number().min(0.5).max(1.2).default(1.0),  // 🔥 Natural flow (Vapi max 1.2)
     
     // 🎧 Transcriber Settings (Speech-to-Text)
     transcriberProvider: z.string().default("deepgram"),
