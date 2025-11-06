@@ -431,36 +431,26 @@ export default function ChecklistAndConfig({
                 onClick={async (e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  console.log('🔧 Check ngrok clicked!', { ngrokLoading, localServerUp, publicUrl });
-                  
-                  // 🎯 INTELLIGENCE SUPRÊME: Test manuel ngrok avec diagnostic approfondi
+                  console.log("🔧 Check ngrok clicked!", { ngrokLoading, localServerUp, publicUrl });
+
                   if (!publicUrl) {
-                    alert('❌ Aucune URL ngrok trouvée. Démarrez d\'abord le serveur WebSocket.');
+                    alert("❌ Aucune URL ngrok trouvée. Démarrez d'abord le serveur WebSocket.");
                     return;
                   }
-                  
+
                   try {
-                    setNgrokLoading(true);
-                    
-                    // Test 1: Basic connectivity
-                    const response = await fetch(publicUrl, {
-                      method: 'HEAD',
-                      headers: { 'ngrok-skip-browser-warning': 'true' },
-                      signal: AbortSignal.timeout(5000)
-                    });
-                    
-                    if (response.ok) {
-                      alert(`✅ Ngrok PARFAIT !\n🔗 URL: ${publicUrl}\n📊 Status: ${response.status}\n⚡ Headers: ${response.headers.get('server') || 'OK'}`);
-                      setPublicUrlAccessible(true);
+                    const success = await runCheckNgrok();
+                    if (success) {
+                      alert(`✅ Ngrok PARFAIT !\n🔗 URL: ${publicUrl}`);
                     } else {
-                      alert(`❌ Ngrok problème!\n📊 Status: ${response.status}\n💡 Vérifiez que ngrok expose le port 8081`);
-                      setPublicUrlAccessible(false);
+                      alert("❌ Ngrok problème! Vérifiez que ngrok expose bien le port 8081.");
                     }
                   } catch (error) {
-                    alert(`🚨 Erreur ngrok:\n${error instanceof Error ? error.message : 'Connexion échouée'}\n💡 Vérifiez: 1) Ngrok démarré 2) Port 8081 ouvert`);
-                    setPublicUrlAccessible(false);
-                  } finally {
-                    setNgrokLoading(false);
+                    alert(
+                      `🚨 Erreur ngrok:\n${
+                        error instanceof Error ? error.message : "Connexion échouée"
+                      }\n💡 Vérifiez: 1) Ngrok démarré 2) Port 8081 ouvert`,
+                    );
                   }
                 }}
                 disabled={ngrokLoading || !localServerUp || !publicUrl}
