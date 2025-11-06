@@ -22,12 +22,12 @@ import json
 from sqlalchemy import select
 from urllib.parse import parse_qs
 
+from api.src.application.services.tenant import ensure_tenant_for_user
 from api.src.infrastructure.email import get_email_service
 from api.src.core.settings import get_settings
 from api.src.infrastructure.database.session import get_session
 from api.src.infrastructure.persistence.models.call import CallRecord
 from api.src.infrastructure.persistence.models.studio_config import StudioConfig as StudioConfigModel
-from api.src.infrastructure.persistence.models.tenant import Tenant
 from api.src.infrastructure.persistence.models.user import User
 from twilio.request_validator import RequestValidator
 
@@ -179,7 +179,7 @@ async def handle_call_ended(event: dict):
                 print("   ⚠️  No user found, skipping DB save")
                 break
 
-            tenant = await _ensure_tenant_for_user(db, user)
+            tenant = await ensure_tenant_for_user(db, user)
             business_name = config.organization_name if config else business_name
             org_email = user.email or org_email
 
@@ -441,22 +441,6 @@ async def _resolve_user_and_config(
     return user, config
 
 
-async def _ensure_tenant_for_user(db, user: User) -> Tenant:
-    try:
-        tenant_id = UUID(str(user.id))
-    except ValueError:
-        tenant_id = uuid4()
-
-    tenant = await db.get(Tenant, tenant_id)
-    if tenant:
-        return tenant
-
-    tenant = Tenant(id=tenant_id, name=user.name or user.email or "Ava Tenant")
-    db.add(tenant)
-    await db.flush()
-    return tenant
-
-
 def _parse_iso_datetime(value: Optional[str]) -> datetime:
     if not value:
         return datetime.utcnow()
@@ -535,7 +519,7 @@ async def twilio_status_webhook(request: Request):
                     detail="No user configured for Twilio status webhook",
                 )
 
-            tenant = await _ensure_tenant_for_user(db, user)
+            tenant = await ensure_tenant_for_user(db, user)
 
             record = CallRecord(
                 id=call_sid,

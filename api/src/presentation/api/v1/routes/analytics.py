@@ -14,6 +14,7 @@ from api.src.application.services.analytics import (
     recent_calls_with_transcripts,
     synchronise_calls_from_vapi,
 )
+from api.src.application.services.tenant import ensure_tenant_for_user
 from api.src.infrastructure.external.vapi_client import VapiApiError, VapiClient
 from api.src.infrastructure.database.session import get_session
 from api.src.infrastructure.email import get_email_service
@@ -47,11 +48,13 @@ async def analytics_overview(
     session: AsyncSession = Depends(get_session),
 ) -> dict[str, object]:
     client = _client(user)
-    await _sync_calls(session, user.id, client)
+    tenant = await ensure_tenant_for_user(session, user)
+    tenant_id = tenant.id
+    await _sync_calls(session, tenant_id, client)
 
-    overview = await compute_overview_metrics(session, tenant_id=user.id)
-    calls = await recent_calls_with_transcripts(session, tenant_id=user.id)
-    topics = await compute_trending_topics(session, tenant_id=user.id, limit=6)
+    overview = await compute_overview_metrics(session, tenant_id=tenant_id)
+    calls = await recent_calls_with_transcripts(session, tenant_id=tenant_id)
+    topics = await compute_trending_topics(session, tenant_id=tenant_id, limit=6)
 
     return {
         "overview": overview,
@@ -66,8 +69,9 @@ async def analytics_timeseries(
     session: AsyncSession = Depends(get_session),
 ) -> dict[str, object]:
     client = _client(user)
-    await _sync_calls(session, user.id, client)
-    series = await compute_time_series(session, tenant_id=user.id)
+    tenant = await ensure_tenant_for_user(session, user)
+    await _sync_calls(session, tenant.id, client)
+    series = await compute_time_series(session, tenant_id=tenant.id)
     return {"series": series}
 
 
@@ -77,8 +81,9 @@ async def analytics_topics(
     session: AsyncSession = Depends(get_session),
 ) -> dict[str, object]:
     client = _client(user)
-    await _sync_calls(session, user.id, client)
-    topics = await compute_trending_topics(session, tenant_id=user.id)
+    tenant = await ensure_tenant_for_user(session, user)
+    await _sync_calls(session, tenant.id, client)
+    topics = await compute_trending_topics(session, tenant_id=tenant.id)
     return {"topics": topics}
 
 
@@ -88,8 +93,9 @@ async def analytics_anomalies(
     session: AsyncSession = Depends(get_session),
 ) -> dict[str, object]:
     client = _client(user)
-    await _sync_calls(session, user.id, client)
-    anomalies = await detect_anomalies(session, tenant_id=user.id)
+    tenant = await ensure_tenant_for_user(session, user)
+    await _sync_calls(session, tenant.id, client)
+    anomalies = await detect_anomalies(session, tenant_id=tenant.id)
     return {"anomalies": anomalies}
 
 
@@ -99,8 +105,9 @@ async def analytics_heatmap(
     session: AsyncSession = Depends(get_session),
 ) -> dict[str, object]:
     client = _client(user)
-    await _sync_calls(session, user.id, client)
-    heatmap = await compute_activity_heatmap(session, tenant_id=user.id)
+    tenant = await ensure_tenant_for_user(session, user)
+    await _sync_calls(session, tenant.id, client)
+    heatmap = await compute_activity_heatmap(session, tenant_id=tenant.id)
     return {"heatmap": heatmap}
 
 
