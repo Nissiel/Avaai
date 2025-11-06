@@ -32,7 +32,13 @@ export async function POST(request: NextRequest) {
       body: body && body.trim() ? body : "{}",
     });
 
-    const data = await response.json().catch(() => ({}));
+    const raw = await response.text();
+    let data: unknown;
+    try {
+      data = raw ? JSON.parse(raw) : {};
+    } catch {
+      data = raw ? { detail: raw.slice(0, 512) } : {};
+    }
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
     console.error("Studio sync proxy error:", error);

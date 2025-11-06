@@ -792,6 +792,9 @@
         "delete": "Remove Configuration",
         "update": "Update Key"
       },
+      "confirm": {
+        "delete": "Remove Vapi configuration?"
+      },
       "success": {
         "saved": "Vapi configuration saved successfully",
         "savedDesc": "Your API key is stored securely. You can now sync your assistants.",

@@ -789,6 +789,9 @@
         "delete": "Supprimer la configuration",
         "update": "Mettre à jour la clé"
       },
+      "confirm": {
+        "delete": "Supprimer la configuration Vapi ?"
+      },
       "success": {
         "saved": "Configuration Vapi enregistrée avec succès",
         "savedDesc": "Votre clé API est sauvegardée. Vous pouvez maintenant synchroniser vos assistants.",

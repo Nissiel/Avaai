@@ -34,7 +34,13 @@ async function proxyRequest(request: NextRequest, init: RequestInit) {
       return NextResponse.json({ success: true }, { status: 204 });
     }
 
-    const data = await response.json().catch(() => ({}));
+    const raw = await response.text();
+    let data: unknown;
+    try {
+      data = raw ? JSON.parse(raw) : {};
+    } catch {
+      data = raw ? { detail: raw.slice(0, 512) } : {};
+    }
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
     console.error("Twilio settings proxy error:", error);
