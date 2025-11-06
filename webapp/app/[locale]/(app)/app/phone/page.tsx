@@ -1,4 +1,5 @@
 import { PhoneNumbers } from "@/components/app/phone-numbers";
+import { CallsTable } from "@/components/app/calls-table";
 import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +17,7 @@ export default function PhonePage() {
         <Button variant="outline">Run WebRTC test</Button>
       </header>
       <PhoneNumbers />
+      <CallsTable />
       <Card>
         <CardContent className="space-y-4 p-6">
           <div className="flex flex-col gap-2">

@@ -9,6 +9,7 @@ from datetime import datetime, timedelta, timezone
 from math import sqrt
 from statistics import mean
 from typing import Any, Dict, Iterable, List, Optional, Sequence
+from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -63,13 +64,24 @@ def _parse_datetime(value: Any) -> datetime:
     return _now()
 
 
+def _normalize_tenant_id(value):
+    if isinstance(value, UUID):
+        return value
+    if isinstance(value, str):
+        try:
+            return UUID(value)
+        except ValueError:
+            return value
+    return value
+
+
 def _as_call_record(raw: dict[str, Any], tenant_id) -> CallRecord:
     started_at = _parse_datetime(raw.get("startedAt"))
     ended_at = _parse_datetime(raw.get("endedAt")) if raw.get("endedAt") else None
     record = CallRecord(
         id=str(raw.get("id")),
         assistant_id=str(raw.get("assistantId", "")),
-        tenant_id=tenant_id,
+        tenant_id=_normalize_tenant_id(tenant_id),
         customer_number=str(raw.get("customer", {}).get("number", "")) if isinstance(raw.get("customer"), dict) else None,
         status=str(raw.get("status", "unknown")),
         started_at=started_at,
@@ -114,8 +126,9 @@ async def synchronise_calls_from_vapi(
 ) -> Sequence[CallRecord]:
     """Fetch latest calls from Vapi and persist them locally."""
 
+    tenant_key = _normalize_tenant_id(tenant_id)
     raw_calls = await vapi_client.list_calls(limit=limit)
-    records = [_as_call_record(raw, tenant_id) for raw in raw_calls if raw.get("id")]
+    records = [_as_call_record(raw, tenant_key) for raw in raw_calls if raw.get("id")]
     await upsert_calls(session, records)
     return records
 
@@ -130,7 +143,8 @@ async def compute_overview_metrics(
 
     end = _now()
     start = end - timedelta(days=lookback_days)
-    calls = await get_calls_in_range(session, tenant_id=tenant_id, start=start, end=end)
+    tenant_key = _normalize_tenant_id(tenant_id)
+    calls = await get_calls_in_range(session, tenant_id=tenant_key, start=start, end=end)
 
     total_calls = len(calls)
     active_now = sum(1 for call in calls if call.status in {"in-progress", "ringing", "queued"})
@@ -161,7 +175,8 @@ async def compute_time_series(
 ) -> Sequence[Dict[str, Any]]:
     end = _now()
     start = end - timedelta(days=lookback_days)
-    calls = await get_calls_in_range(session, tenant_id=tenant_id, start=start, end=end)
+    tenant_key = _normalize_tenant_id(tenant_id)
+    calls = await get_calls_in_range(session, tenant_id=tenant_key, start=start, end=end)
 
     day_buckets: Dict[datetime, Dict[str, Any]] = defaultdict(
         lambda: {

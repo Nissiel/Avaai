@@ -14,7 +14,8 @@ Events processed:
 
 from fastapi import APIRouter, Request, HTTPException, Header, status
 from datetime import datetime
-from typing import Optional, Dict
+from typing import Optional, Dict, Any, Tuple
+from uuid import UUID, uuid4
 import hmac
 import hashlib
 import json
@@ -25,6 +26,8 @@ from api.src.infrastructure.email import get_email_service
 from api.src.core.settings import get_settings
 from api.src.infrastructure.database.session import get_session
 from api.src.infrastructure.persistence.models.call import CallRecord
+from api.src.infrastructure.persistence.models.studio_config import StudioConfig as StudioConfigModel
+from api.src.infrastructure.persistence.models.tenant import Tenant
 from api.src.infrastructure.persistence.models.user import User
 from twilio.request_validator import RequestValidator
 
@@ -137,7 +140,8 @@ async def handle_call_ended(event: dict):
     # Call metadata
     started_at = call_data.get("startedAt")
     ended_at = call_data.get("endedAt")
-    duration = call_data.get("duration", 0)  # seconds
+    duration_value = call_data.get("durationSeconds") or call_data.get("duration")
+    duration = _safe_int(duration_value)
 
     # Participants
     customer_data = call_data.get("customer", {})
@@ -149,63 +153,59 @@ async def handle_call_ended(event: dict):
 
     # Assistant info (to find org)
     assistant_id = call_data.get("assistantId")
+    metadata = _extract_call_metadata(call_data)
 
     # Recording URL
     recording_url = call_data.get("recordingUrl")
 
     # Cost
-    cost = call_data.get("cost")
+    cost = _safe_float(call_data.get("cost"))
 
     print(f"   Call ID: {vapi_call_id}")
     print(f"   Duration: {duration}s")
     print(f"   Caller: {caller_phone}")
 
     # Prepare caller info
-    caller_name = customer_data.get("name", "Unknown Caller")
-    business_name = "AVA Business"  # TODO: Get from org
+    caller_name = customer_data.get("name", metadata.get("caller_name", "Unknown Caller"))
+    business_name = metadata.get("organization") or metadata.get("organizationName") or "AVA Business"
     org_email = "nissieltb@gmail.com"  # Fallback for MVP
 
     # Save call to database
     try:
         async for db in get_session():
-            # Find first user and their tenant (MVP: single user)
-            result = await db.execute(select(User).limit(1))
-            user = result.scalar_one_or_none()
+            user, config = await _resolve_user_and_config(db, assistant_id, metadata)
 
-            if user:
-                # Get user's tenant (or create default one)
-                result = await db.execute(select(Tenant).limit(1))
-                tenant = result.scalar_one_or_none()
+            if not user:
+                print("   ⚠️  No user found, skipping DB save")
+                break
 
-                if tenant:
-                    # Create call record
-                    new_call = CallRecord(
-                        id=vapi_call_id,
-                        assistant_id=assistant_id or "unknown",
-                        tenant_id=tenant.id,
-                        customer_number=caller_phone,
-                        status="completed",
-                        started_at=datetime.fromisoformat(started_at.replace("Z", "+00:00")) if started_at else datetime.utcnow(),
-                        ended_at=datetime.fromisoformat(ended_at.replace("Z", "+00:00")) if ended_at else None,
-                        duration_seconds=duration,
-                        cost=cost,
-                        transcript=transcript_text,
-                        meta={
-                            "caller_name": caller_name,
-                            "recording_url": recording_url
-                        }
-                    )
+            tenant = await _ensure_tenant_for_user(db, user)
+            business_name = config.organization_name if config else business_name
+            org_email = user.email or org_email
 
-                    db.add(new_call)
-                    await db.commit()
+            new_call = CallRecord(
+                id=vapi_call_id,
+                assistant_id=assistant_id or "unknown",
+                tenant_id=tenant.id,
+                customer_number=caller_phone,
+                status="completed",
+                started_at=_parse_iso_datetime(started_at),
+                ended_at=_parse_iso_datetime(ended_at) if ended_at else None,
+                duration_seconds=duration,
+                cost=cost,
+                transcript=transcript_text,
+                meta={
+                    "caller_name": caller_name,
+                    "recording_url": recording_url,
+                    "assistant_id": assistant_id,
+                    "vapi": call_data,
+                },
+            )
 
-                    print(f"   ✅ Call saved to database (ID: {new_call.id})")
-                    org_email = user.email  # Use user's email
-                else:
-                    print(f"   ⚠️  No tenant found, skipping DB save")
-            else:
-                print(f"   ⚠️  No user found, skipping DB save")
+            db.add(new_call)
+            await db.commit()
 
+            print(f"   ✅ Call saved to database (ID: {new_call.id})")
             break  # Exit async generator
     except Exception as e:
         print(f"   ❌ Failed to save call to DB: {e}")
@@ -388,6 +388,102 @@ def _map_twilio_status(status_value: Optional[str]) -> str:
     return status_map.get((status_value or "").lower(), "unknown")
 
 
+def _extract_call_metadata(call_data: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    if not isinstance(call_data, dict):
+        return {}
+
+    for key in ("metadata", "assistantMetadata"):
+        meta = call_data.get(key)
+        if isinstance(meta, dict) and meta:
+            return meta
+
+    assistant = call_data.get("assistant")
+    if isinstance(assistant, dict):
+        for key in ("metadata", "meta"):
+            meta = assistant.get(key)
+            if isinstance(meta, dict) and meta:
+                return meta
+
+    return {}
+
+
+async def _resolve_user_and_config(
+    db,
+    assistant_id: Optional[str],
+    metadata: Dict[str, Any],
+) -> Tuple[Optional[User], Optional[StudioConfigModel]]:
+    user: Optional[User] = None
+    config: Optional[StudioConfigModel] = None
+
+    candidate_user_id = metadata.get("user_id") or metadata.get("userId")
+    if candidate_user_id:
+        user = await db.get(User, str(candidate_user_id))
+
+    if not user and assistant_id:
+        result = await db.execute(
+            select(StudioConfigModel).where(StudioConfigModel.vapi_assistant_id == assistant_id)
+        )
+        config = result.scalar_one_or_none()
+        if config:
+            user = await db.get(User, config.user_id)
+
+    if user and config is None:
+        result = await db.execute(select(StudioConfigModel).where(StudioConfigModel.user_id == user.id))
+        config = result.scalar_one_or_none()
+
+    if not user:
+        fallback = await db.execute(select(User).limit(1))
+        user = fallback.scalar_one_or_none()
+        if user and config is None:
+            result = await db.execute(select(StudioConfigModel).where(StudioConfigModel.user_id == user.id))
+            config = result.scalar_one_or_none()
+
+    return user, config
+
+
+async def _ensure_tenant_for_user(db, user: User) -> Tenant:
+    try:
+        tenant_id = UUID(str(user.id))
+    except ValueError:
+        tenant_id = uuid4()
+
+    tenant = await db.get(Tenant, tenant_id)
+    if tenant:
+        return tenant
+
+    tenant = Tenant(id=tenant_id, name=user.name or user.email or "Ava Tenant")
+    db.add(tenant)
+    await db.flush()
+    return tenant
+
+
+def _parse_iso_datetime(value: Optional[str]) -> datetime:
+    if not value:
+        return datetime.utcnow()
+    try:
+        return datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return datetime.utcnow()
+
+
+def _safe_int(value: Any) -> Optional[int]:
+    try:
+        if value is None:
+            return None
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _safe_float(value: Any) -> Optional[float]:
+    try:
+        if value is None:
+            return None
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
 @router.post("/twilio/status")
 async def twilio_status_webhook(request: Request):
     """
@@ -424,25 +520,22 @@ async def twilio_status_webhook(request: Request):
 
         if not record:
             # Find associated user/tenant based on destination number
-            result = None
+            user = None
             if to_number:
                 result = await db.execute(select(User).where(User.twilio_phone_number == to_number))
-            user = result.scalar_one_or_none() if result else None
+                user = result.scalar_one_or_none()
 
-            tenant = None
-            if user:
-                tenant_query = await db.execute(select(Tenant).limit(1))
-                tenant = tenant_query.scalar_one_or_none()
-
-            # Fallback: use first available tenant/user like legacy logic
-            if not tenant:
+            if not user:
                 fallback_user = await db.execute(select(User).limit(1))
                 user = fallback_user.scalar_one_or_none()
-                tenant_query = await db.execute(select(Tenant).limit(1))
-                tenant = tenant_query.scalar_one_or_none()
 
-            if not tenant:
-                raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="No tenant configured")
+            if not user:
+                raise HTTPException(
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    detail="No user configured for Twilio status webhook",
+                )
+
+            tenant = await _ensure_tenant_for_user(db, user)
 
             record = CallRecord(
                 id=call_sid,
@@ -457,6 +550,7 @@ async def twilio_status_webhook(request: Request):
                     "twilio": form_data,
                     "twilio_call_sid": call_sid,
                     "direction": form_data.get("Direction"),
+                    "user_id": user.id,
                 },
             )
             db.add(record)
@@ -469,13 +563,14 @@ async def twilio_status_webhook(request: Request):
                 record.started_at = record.started_at or timestamp
             if duration_value and duration_value.isdigit():
                 record.duration_seconds = int(duration_value)
-            twilio_meta = record.meta.get("twilio_status_history", []) if record.meta else []
+            meta = record.meta or {}
+            twilio_meta = meta.get("twilio_status_history", [])
             twilio_meta.append({
                 "status": twilio_status,
                 "timestamp": timestamp.isoformat(),
             })
             record.meta = {
-                **(record.meta or {}),
+                **meta,
                 "twilio": form_data,
                 "twilio_status_history": twilio_meta,
                 "twilio_call_sid": call_sid,

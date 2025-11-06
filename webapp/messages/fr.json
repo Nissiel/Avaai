@@ -713,7 +713,29 @@
       "any": "All statuses",
       "in-progress": "In progress",
       "ended": "Ended",
-      "failed": "Failed"
+      "failed": "Failed",
+      "completed": "Completed",
+      "queued": "Queued",
+      "ringing": "Ringing",
+      "no-answer": "No answer",
+      "busy": "Busy",
+      "canceled": "Canceled"
+    },
+    "table": {
+      "title": "Recent calls",
+      "subtitle": "Monitor the latest conversations and outcomes.",
+      "refresh": "Refresh",
+      "loading": "Loading calls…",
+      "error": "Unable to load calls. Please try again.",
+      "empty": "No calls recorded yet. Launch a test call to populate this feed.",
+      "unknown": "Unknown",
+      "columns": {
+        "contact": "Contact",
+        "status": "Status",
+        "startedAt": "Started",
+        "duration": "Duration",
+        "cost": "Cost"
+      }
     }
   },
   "analyticsPage": {

@@ -7,10 +7,27 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 from typing import Iterable, Optional, Sequence
 
+from uuid import UUID
+
 from sqlalchemy import Select, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.src.infrastructure.persistence.models.call import CallRecord
+
+
+def _coerce_tenant_id(value):
+    """Normalize tenant identifiers so UUID columns can be filtered reliably."""
+
+    if value is None:
+        return None
+    if isinstance(value, UUID):
+        return value
+    if isinstance(value, str):
+        try:
+            return UUID(value)
+        except ValueError:
+            return value
+    return value
 
 
 async def upsert_calls(session: AsyncSession, calls: Iterable[CallRecord]) -> None:
@@ -36,8 +53,9 @@ async def get_recent_calls(
     """Return recent calls ordered by start time."""
 
     query: Select[tuple[CallRecord]] = select(CallRecord).order_by(CallRecord.started_at.desc())
-    if tenant_id:
-        query = query.where(CallRecord.tenant_id == tenant_id)
+    tenant_filter = _coerce_tenant_id(tenant_id)
+    if tenant_filter:
+        query = query.where(CallRecord.tenant_id == tenant_filter)
     if since:
         query = query.where(CallRecord.started_at >= since)
     if limit:
@@ -56,9 +74,10 @@ async def get_calls_in_range(
 ) -> Sequence[CallRecord]:
     """Return calls within a date range for analytics."""
 
+    tenant_filter = _coerce_tenant_id(tenant_id)
     query: Select[tuple[CallRecord]] = (
         select(CallRecord)
-        .where(CallRecord.tenant_id == tenant_id)
+        .where(CallRecord.tenant_id == tenant_filter)
         .where(CallRecord.started_at >= start)
         .where(CallRecord.started_at <= end)
     )
