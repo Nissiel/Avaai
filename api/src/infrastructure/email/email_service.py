@@ -1,37 +1,41 @@
-"""
-Resend Email Client - Infrastructure Layer
-DIVINE Level: 5/5
-
-Handles email sending using Resend.com API.
-Beautiful HTML templates for call summaries.
-"""
+"""Unified email delivery service with SMTP + Resend fallback."""
 
 from __future__ import annotations
 
-import resend
+import asyncio
+import logging
+from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional
+from typing import Iterable, Optional, Sequence
+
+import resend
+
 from api.src.core.settings import get_settings
+from api.src.infrastructure.email.smtp_client import SMTPClient, SMTPConfig
+
+logger = logging.getLogger("ava.email")
+
+
+@dataclass(frozen=True)
+class EmailRequest:
+    to: Sequence[str]
+    subject: str
+    html: str
+    sender: Optional[str] = None
 
 
 class EmailService:
-    """
-    Service for sending emails using Resend.
+    """Dispatch emails via user-provided SMTP or Resend fallback."""
 
-    Features:
-    - Beautiful HTML templates
-    - Call summary notifications
-    - Transcript delivery
-    - Error handling
-    """
-
-    def __init__(self):
-        """Initialize Resend client with API key"""
+    def __init__(self, smtp_config: Optional[SMTPConfig] = None):
         settings = get_settings()
-        if not settings.resend_api_key:
-            raise ValueError("RESEND_API_KEY not configured in settings")
+        self._smtp_config = smtp_config if smtp_config and smtp_config.is_complete() else None
+        self._smtp_client = SMTPClient() if self._smtp_config else None
 
-        resend.api_key = settings.resend_api_key
+        self._resend_enabled = bool(settings.resend_api_key)
+        self._resend_from = f"AVA <onboarding@{settings.resend_domain or 'resend.dev'}>"
+        if self._resend_enabled:
+            resend.api_key = settings.resend_api_key
 
     async def send_call_summary(
         self,
@@ -42,104 +46,79 @@ class EmailService:
         duration: int,
         call_date: datetime,
         call_id: str,
-        business_name: str = "Your Business"
+        business_name: str = "Your Business",
     ) -> bool:
-        """
-        Send beautiful call summary email.
+        subject = f"📞 New call from {caller_name}"
+        html = self._build_call_summary_html(
+            caller_name=caller_name,
+            caller_phone=caller_phone,
+            transcript=transcript,
+            duration=self._format_duration(duration),
+            call_date=call_date.strftime("%B %d, %Y at %H:%M"),
+            call_id=call_id,
+            business_name=business_name,
+        )
 
-        Args:
-            to_email: Recipient email address
-            caller_name: Name of the person who called
-            caller_phone: Phone number of caller
-            transcript: Full conversation transcript
-            duration: Call duration in seconds
-            call_date: When the call happened
-            call_id: Call ID for dashboard link
-            business_name: Name of the business
-
-        Returns:
-            True if email sent successfully
-        """
-        try:
-            # Format duration nicely
-            minutes = duration // 60
-            seconds = duration % 60
-            duration_str = f"{minutes}m {seconds}s" if minutes > 0 else f"{seconds}s"
-
-            # Format date nicely
-            date_str = call_date.strftime("%B %d, %Y at %H:%M")
-
-            # Get settings
-            settings = get_settings()
-
-            # Build HTML email
-            html_content = self._build_call_summary_html(
-                caller_name=caller_name,
-                caller_phone=caller_phone,
-                transcript=transcript,
-                duration=duration_str,
-                call_date=date_str,
-                call_id=call_id,
-                business_name=business_name,
-                settings=settings
-            )
-
-            # Send email
-            # Using Resend's verified sandbox domain for testing
-            params = {
-                "from": "AVA <onboarding@resend.dev>",
-                "to": [to_email],
-                "subject": f"📞 New call from {caller_name}",
-                "html": html_content,
-            }
-
-            result = resend.Emails.send(params)
-
-            return bool(result.get("id"))
-
-        except Exception as e:
-            print(f"❌ Failed to send email: {str(e)}")
-            return False
+        response = await self.send_email(
+            to=[to_email],
+            subject=subject,
+            html=html,
+        )
+        return bool(response.get("id"))
 
     async def send_email(
         self,
-        to: str | list[str],
+        to: Sequence[str] | str,
         subject: str,
         html: str,
-        from_email: str = "AVA <onboarding@resend.dev>"
+        sender: Optional[str] = None,
     ) -> dict:
-        """
-        Send a generic email (DIVINE method for dashboard).
+        recipients = [to] if isinstance(to, str) else list(to)
+        request = EmailRequest(to=recipients, subject=subject, html=html, sender=sender)
 
-        Args:
-            to: Recipient email(s)
-            subject: Email subject
-            html: HTML content
-            from_email: Sender email (defaults to verified sandbox)
+        smtp_error: Optional[Exception] = None
+        if self._smtp_client and self._smtp_config:
+            try:
+                message_id = await self._smtp_client.send_email(
+                    self._smtp_config,
+                    recipients=request.to,
+                    subject=request.subject,
+                    html=request.html,
+                )
+                return {"id": message_id or "smtp_delivery"}
+            except Exception as exc:  # pragma: no cover - network failure
+                smtp_error = exc
+                logger.warning(
+                    "SMTP delivery failed, attempting Resend fallback.",
+                    extra={"error": str(exc), "recipients": recipients},
+                )
 
-        Returns:
-            Resend API response with email ID
+        if not self._resend_enabled:
+            if smtp_error:
+                raise smtp_error
+            raise RuntimeError("No email delivery backend is configured.")
 
-        Raises:
-            Exception: If email sending fails
-        """
-        try:
-            # Normalize to list
-            to_list = [to] if isinstance(to, str) else to
+        result = await asyncio.to_thread(
+            resend.Emails.send,
+            {
+                "from": request.sender or self._smtp_config.sender if self._smtp_config else self._resend_from,
+                "to": request.to,
+                "subject": request.subject,
+                "html": request.html,
+            },
+        )
+        return result
 
-            params = {
-                "from": from_email,
-                "to": to_list,
-                "subject": subject,
-                "html": html,
-            }
+    # --------------------------------------------------------------------- #
+    # Helpers
+    # --------------------------------------------------------------------- #
 
-            result = resend.Emails.send(params)
-            return result
-
-        except Exception as e:
-            print(f"❌ Failed to send email: {str(e)}")
-            raise
+    @staticmethod
+    def _format_duration(duration_seconds: int) -> str:
+        minutes, seconds = divmod(duration_seconds, 60)
+        if minutes:
+            return f"{minutes}m {seconds}s"
+        return f"{seconds}s"
 
     def _build_call_summary_html(
         self,
@@ -150,22 +129,12 @@ class EmailService:
         call_date: str,
         call_id: str,
         business_name: str,
-        settings
     ) -> str:
-        """
-        Build beautiful HTML email template.
-
-        Returns:
-            HTML string ready to send
-        """
-        # Format transcript with line breaks
         formatted_transcript = transcript.replace("\n", "<br>")
-
-        # Dashboard link
+        settings = get_settings()
         dashboard_url = f"{settings.app_url}/dashboard/calls/{call_id}"
 
-        return f"""
-<!DOCTYPE html>
+        return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -266,15 +235,11 @@ class EmailService:
 </head>
 <body>
     <div class="container">
-        <!-- Header -->
         <div class="header">
             <h1>📞 New Call Received</h1>
             <p>{call_date}</p>
         </div>
-
-        <!-- Content -->
         <div class="content">
-            <!-- Caller Info -->
             <div class="section">
                 <h2>Caller Information</h2>
                 <div class="info-row">
@@ -290,41 +255,30 @@ class EmailService:
                     <div class="info-value">{duration}</div>
                 </div>
             </div>
-
-            <!-- Transcript -->
             <div class="section">
                 <h2>Call Transcript</h2>
                 <div class="transcript">{formatted_transcript}</div>
             </div>
-
-            <!-- CTA -->
             <div style="text-align: center; margin-top: 32px;">
                 <a href="{dashboard_url}" class="cta-button">
                     View in Dashboard →
                 </a>
             </div>
         </div>
-
-        <!-- Footer -->
         <div class="footer">
             <p>
-                This email was sent by <strong>AVA</strong> - Your AI Receptionist<br>
+                This email was sent by <strong>{business_name}</strong><br>
                 <a href="{settings.app_url}">Visit Dashboard</a>
             </p>
         </div>
     </div>
 </body>
-</html>
-        """
+</html>"""
 
 
-# Singleton instance - created lazily
-_email_service_instance = None
+def get_email_service(smtp_config: Optional[SMTPConfig] = None) -> EmailService:
+    """Factory preserving legacy signature while enabling SMTP overrides."""
+    return EmailService(smtp_config=smtp_config)
 
 
-def get_email_service() -> EmailService:
-    """Get or create the email service singleton"""
-    global _email_service_instance
-    if _email_service_instance is None:
-        _email_service_instance = EmailService()
-    return _email_service_instance
+__all__ = ["EmailService", "get_email_service"]

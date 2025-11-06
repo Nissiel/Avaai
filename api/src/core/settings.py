@@ -33,6 +33,7 @@ class Settings(BaseSettings):
 
     # Backend URL (for webhook configuration)
     backend_url: str = "https://ava-api-production.onrender.com"
+    smtp_encryption_key: str = ""
 
     @field_validator("allowed_origins", mode="before")
     @classmethod

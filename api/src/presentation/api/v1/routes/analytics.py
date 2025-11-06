@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
+import logging
+
+from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.src.application.services.analytics import (
@@ -14,16 +19,17 @@ from api.src.application.services.analytics import (
     recent_calls_with_transcripts,
     synchronise_calls_from_vapi,
 )
+from api.src.application.services.email import get_user_email_service
 from api.src.application.services.tenant import ensure_tenant_for_user
 from api.src.infrastructure.external.vapi_client import VapiApiError, VapiClient
 from api.src.infrastructure.database.session import get_session
-from api.src.infrastructure.email import get_email_service
 from api.src.infrastructure.persistence.models.call import CallRecord
+from api.src.infrastructure.persistence.models.studio_config import StudioConfig as StudioConfigModel
 from api.src.infrastructure.persistence.models.user import User
 from api.src.presentation.dependencies.auth import get_current_user
-from sqlalchemy import select
 
 router = APIRouter(prefix="/analytics", tags=["Analytics"])
+logger = logging.getLogger("ava.analytics")
 
 
 def _client(user: User) -> VapiClient:
@@ -33,6 +39,13 @@ def _client(user: User) -> VapiClient:
         return VapiClient(token=token)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
+
+
+async def _load_studio_config(session: AsyncSession, user_id: str) -> Optional[StudioConfigModel]:
+    result = await session.execute(
+        select(StudioConfigModel).where(StudioConfigModel.user_id == user_id)
+    )
+    return result.scalar_one_or_none()
 
 
 async def _sync_calls(session: AsyncSession, tenant_id, client: VapiClient) -> None:
@@ -145,6 +158,8 @@ async def send_call_transcript_email(
             detail=f"Call {call_id} not found"
         )
 
+    studio_config = await _load_studio_config(session, user.id)
+
     # Parse transcript into lines
     transcript_lines = []
     if call.transcript:
@@ -250,13 +265,20 @@ async def send_call_transcript_email(
 
     # Send email
     try:
-        email_service = get_email_service()
+        email_service = get_user_email_service(studio_config)
 
-        # Use verified email for testing (Resend sandbox restriction)
-        recipient_email = "nissieltb@gmail.com"  # TODO: Get from current.user when auth is wired
+        recipient_email = (
+            (studio_config.fallback_email or studio_config.summary_email) if studio_config else None
+        ) or user.email
+
+        if not recipient_email:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No recipient email configured for transcript delivery.",
+            )
 
         result = await email_service.send_email(
-            to=recipient_email,
+            to=[recipient_email],
             subject=f"📞 Call Transcript - {call.customer_number or call_id[:8]}",
             html=html_content
         )
@@ -268,6 +290,7 @@ async def send_call_transcript_email(
         }
 
     except Exception as exc:
+        logger.exception("Failed to send call transcript email.", extra={"call_id": call_id})
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to send email: {str(exc)}"

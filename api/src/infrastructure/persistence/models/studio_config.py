@@ -45,6 +45,53 @@ class StudioConfig(Base):
         default="My Organization",
         nullable=False,
     )
+    admin_email: Mapped[Optional[str]] = mapped_column(
+        String(255),
+        nullable=True,
+    )
+    timezone: Mapped[str] = mapped_column(
+        String(64),
+        default="Europe/Paris",
+        nullable=False,
+    )
+    phone_number: Mapped[str] = mapped_column(
+        String(50),
+        default="",
+        nullable=False,
+    )
+    business_hours: Mapped[str] = mapped_column(
+        String(255),
+        default="09:00-18:00",
+        nullable=False,
+    )
+    fallback_email: Mapped[Optional[str]] = mapped_column(
+        String(255),
+        nullable=True,
+    )
+    summary_email: Mapped[Optional[str]] = mapped_column(
+        String(255),
+        nullable=True,
+    )
+    smtp_server: Mapped[str] = mapped_column(
+        String(255),
+        default="",
+        nullable=False,
+    )
+    smtp_port: Mapped[str] = mapped_column(
+        String(10),
+        default="587",
+        nullable=False,
+    )
+    smtp_username: Mapped[str] = mapped_column(
+        String(255),
+        default="",
+        nullable=False,
+    )
+    smtp_password_encrypted: Mapped[str] = mapped_column(
+        Text,
+        default="",
+        nullable=False,
+    )
 
     # Vapi Assistant
     vapi_assistant_id: Mapped[Optional[str]] = mapped_column(

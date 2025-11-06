@@ -17,6 +17,7 @@ from api.src.presentation.schemas.studio_config import (
 )
 from api.src.infrastructure.external.vapi_client import VapiApiError, VapiClient
 from api.src.core.settings import get_settings
+from api.src.core.crypto import get_smtp_encryptor, EncryptionError
 
 router = APIRouter(prefix="/studio", tags=["Studio"])
 
@@ -41,6 +42,16 @@ async def get_or_create_user_config(
         config = StudioConfigModel(
             user_id=user.id,
             organization_name=DEFAULT_STUDIO_CONFIG.organizationName,
+            admin_email=DEFAULT_STUDIO_CONFIG.adminEmail,
+            timezone=DEFAULT_STUDIO_CONFIG.timezone,
+            phone_number=DEFAULT_STUDIO_CONFIG.phoneNumber,
+            business_hours=DEFAULT_STUDIO_CONFIG.businessHours,
+            fallback_email=DEFAULT_STUDIO_CONFIG.fallbackEmail,
+            summary_email=DEFAULT_STUDIO_CONFIG.summaryEmail,
+            smtp_server=DEFAULT_STUDIO_CONFIG.smtpServer,
+            smtp_port=DEFAULT_STUDIO_CONFIG.smtpPort,
+            smtp_username=DEFAULT_STUDIO_CONFIG.smtpUsername,
+            smtp_password_encrypted="",
             voice_provider=DEFAULT_STUDIO_CONFIG.voiceProvider,
             voice_id=DEFAULT_STUDIO_CONFIG.voiceId,
             voice_speed=DEFAULT_STUDIO_CONFIG.voiceSpeed,
@@ -70,6 +81,16 @@ def db_to_schema(db_config: StudioConfigModel) -> StudioConfig:
     """Convert database model to Pydantic schema."""
     return StudioConfig(
         organizationName=db_config.organization_name,
+        adminEmail=db_config.admin_email,
+        timezone=db_config.timezone,
+        phoneNumber=db_config.phone_number,
+        businessHours=db_config.business_hours,
+        fallbackEmail=db_config.fallback_email,
+        summaryEmail=db_config.summary_email,
+        smtpServer=db_config.smtp_server,
+        smtpPort=db_config.smtp_port,
+        smtpUsername=db_config.smtp_username,
+        smtpPassword="",
         vapiAssistantId=db_config.vapi_assistant_id,
         voiceProvider=db_config.voice_provider,
         voiceId=db_config.voice_id,
@@ -143,6 +164,15 @@ async def update_studio_config(
     # Map Pydantic fields to database columns (camelCase → snake_case)
     field_mapping = {
         "organizationName": "organization_name",
+        "adminEmail": "admin_email",
+        "timezone": "timezone",
+        "phoneNumber": "phone_number",
+        "businessHours": "business_hours",
+        "fallbackEmail": "fallback_email",
+        "summaryEmail": "summary_email",
+        "smtpServer": "smtp_server",
+        "smtpPort": "smtp_port",
+        "smtpUsername": "smtp_username",
         "vapiAssistantId": "vapi_assistant_id",
         "voiceProvider": "voice_provider",
         "voiceId": "voice_id",
@@ -163,6 +193,17 @@ async def update_studio_config(
         "askForEmail": "ask_for_email",
         "askForPhone": "ask_for_phone",
     }
+
+    if "smtpPassword" in data:
+        password_value = data.pop("smtpPassword") or ""
+        encryptor = get_smtp_encryptor()
+        try:
+            db_config.smtp_password_encrypted = encryptor.encrypt(password_value) if password_value else ""
+        except EncryptionError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=str(exc),
+            ) from exc
 
     for camel_key, value in data.items():
         snake_key = field_mapping.get(camel_key, camel_key)

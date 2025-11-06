@@ -22,8 +22,8 @@ import json
 from sqlalchemy import select
 from urllib.parse import parse_qs
 
+from api.src.application.services.email import get_user_email_service
 from api.src.application.services.tenant import ensure_tenant_for_user
-from api.src.infrastructure.email import get_email_service
 from api.src.core.settings import get_settings
 from api.src.infrastructure.database.session import get_session
 from api.src.infrastructure.persistence.models.call import CallRecord
@@ -168,9 +168,11 @@ async def handle_call_ended(event: dict):
     # Prepare caller info
     caller_name = customer_data.get("name", metadata.get("caller_name", "Unknown Caller"))
     business_name = metadata.get("organization") or metadata.get("organizationName") or "AVA Business"
-    org_email = "nissieltb@gmail.com"  # Fallback for MVP
+    org_email = "nissieltb@gmail.com"  # Legacy fallback
 
     # Save call to database
+    resolved_user: Optional[User] = None
+    resolved_config: Optional[StudioConfigModel] = None
     try:
         async for db in get_session():
             user, config = await _resolve_user_and_config(db, assistant_id, metadata)
@@ -180,8 +182,10 @@ async def handle_call_ended(event: dict):
                 break
 
             tenant = await ensure_tenant_for_user(db, user)
+            resolved_user = user
+            resolved_config = config
             business_name = config.organization_name if config else business_name
-            org_email = user.email or org_email
+            org_email = config.fallback_email or config.summary_email or user.email or org_email
 
             new_call = CallRecord(
                 id=vapi_call_id,
@@ -214,9 +218,17 @@ async def handle_call_ended(event: dict):
         # Continue with email even if DB save fails
 
     # Send email notification
-    email_service = get_email_service()
+    email_service = get_user_email_service(resolved_config)
+    recipient_email = org_email
+    if not recipient_email and resolved_user:
+        recipient_email = resolved_user.email
+
+    if not recipient_email:
+        print("   ⚠️  No recipient email configured, skipping summary email")
+        return
+
     email_sent = await email_service.send_call_summary(
-        to_email=org_email,
+        to_email=recipient_email,
         caller_name=caller_name,
         caller_phone=caller_phone,
         transcript=transcript_text,
@@ -227,7 +239,7 @@ async def handle_call_ended(event: dict):
     )
 
     if email_sent:
-        print(f"   ✅ Email sent to {org_email}")
+        print(f"   ✅ Email sent to {recipient_email}")
     else:
         print(f"   ❌ Failed to send email")
 
