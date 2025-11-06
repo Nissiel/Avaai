@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from api.src.core.middleware.observability import ObservabilityMiddleware
+from api.src.core.middleware_observability import ObservabilityMiddleware
 
 
 app = FastAPI()

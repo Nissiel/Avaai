@@ -37,7 +37,10 @@ class ObservabilityMiddleware(BaseHTTPMiddleware):
         start = time.perf_counter()
 
         if await self._is_duplicate(request, method, path):
-            self.logger.warning("Duplicate request detected; short-circuiting", extra={"request_id": request_id, "method": method, "path": path})
+            self.logger.warning(
+                "Duplicate request detected; short-circuiting",
+                extra={"request_id": request_id, "method": method, "path": path},
+            )
             return JSONResponse({"detail": "Duplicate request"}, status_code=409, headers={"X-Request-ID": request_id})
 
         try:
@@ -49,7 +52,7 @@ class ObservabilityMiddleware(BaseHTTPMiddleware):
                 extra={"request_id": request_id, "method": method, "path": path, "duration_ms": duration_ms},
             )
             return JSONResponse({"detail": "Request timed out"}, status_code=504, headers={"X-Request-ID": request_id})
-        except Exception as exc:  # pragma: no cover - pass-through for FastAPI to handle
+        except Exception as exc:  # pragma: no cover - pass-through
             duration_ms = (time.perf_counter() - start) * 1000
             self.logger.exception(
                 "Request crashed",
@@ -83,7 +86,6 @@ class ObservabilityMiddleware(BaseHTTPMiddleware):
         now = time.time()
 
         async with self._lock:
-            # cleanup
             while self._seen and now - self._seen[0][1] > self.dedupe_ttl:
                 expired_key, _ = self._seen.popleft()
                 self._seen_index.pop(expired_key, None)

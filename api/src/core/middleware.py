@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.cors import ALL_METHODS
 
 from api.src.core.settings import get_settings
-from api.src.core.middleware.observability import ObservabilityMiddleware
+from api.src.core.middleware_observability import ObservabilityMiddleware
 
 
 def _normalize_origin(origin: str | None) -> str | None:
