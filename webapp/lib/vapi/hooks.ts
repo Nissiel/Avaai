@@ -136,10 +136,10 @@ export function useVapi(options: UseVapiOptions): UseVapiReturn {
           off?: (event: string, handler: (...args: unknown[]) => void) => void;
           removeAllListeners?: () => void;
         };
-        anyVapi.off?.('call-start', handleCallStart);
-        anyVapi.off?.('call-end', handleCallEnd);
-        anyVapi.off?.('message', handleMessage);
-        anyVapi.off?.('error', handleError);
+        anyVapi.off?.('call-start', handleCallStart as (...args: unknown[]) => void);
+        anyVapi.off?.('call-end', handleCallEnd as (...args: unknown[]) => void);
+        anyVapi.off?.('message', handleMessage as (...args: unknown[]) => void);
+        anyVapi.off?.('error', handleError as (...args: unknown[]) => void);
         anyVapi.removeAllListeners?.();
         vapi.stop();
         vapiRef.current = null;
