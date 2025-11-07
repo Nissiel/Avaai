@@ -164,7 +164,7 @@ export function useVapi(options: UseVapiOptions): UseVapiReturn {
       setMessages([]);
       await vapiRef.current.start(assistantId);
       toast.success('Call connected!');
-      return assistantId;
+      return undefined;
     },
     {
       onError: (err) => {
@@ -180,7 +180,9 @@ export function useVapi(options: UseVapiOptions): UseVapiReturn {
   );
 
   const startCall = useCallback(
-    (assistantId: string) => runStartCall(assistantId),
+    async (assistantId: string) => {
+      await runStartCall(assistantId);
+    },
     [runStartCall],
   );
 
