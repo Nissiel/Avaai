@@ -91,8 +91,10 @@ export function useSingleAction<T extends (...args: any[]) => any>(
             if (!globalObject.__AVA_METRICS__) {
               globalObject.__AVA_METRICS__ = { actions: {} };
             }
+            const previous = (globalObject.__AVA_METRICS__.actions?.[options.metricsLabel] ??
+              {}) as { runs?: number; lastDurationMs?: number; ts?: string };
             globalObject.__AVA_METRICS__.actions[options.metricsLabel] = {
-              runs: (globalObject.__AVA_METRICS__.actions?.[options.metricsLabel]?.runs ?? 0) + 1,
+              runs: (previous.runs ?? 0) + 1,
               lastDurationMs: durationMs,
               ts: new Date().toISOString(),
             };
