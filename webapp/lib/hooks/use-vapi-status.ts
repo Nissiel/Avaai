@@ -1,42 +1,27 @@
 "use client";
 
-import { useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuthToken } from "@/lib/hooks/use-auth-token";
 import { useSessionStore } from "@/stores/session-store";
 import { getVapiSettings, type VapiSettings } from "@/lib/api/vapi-settings";
 
-function buildIdentityKey(userId: string | null, token: string | null): string {
-  if (userId) {
-    return `user:${userId}`;
-  }
-  if (!token) {
-    return "anonymous";
-  }
-  let hash = 0;
-  for (let i = 0; i < token.length; i += 1) {
-    hash = (hash * 31 + token.charCodeAt(i)) | 0;
-  }
-  return `token:${Math.abs(hash)}`;
-}
-
 /**
  * 🔥 DIVINE: Hook to check if user has configured their Vapi API key
  *
- * Key principles:
- * - Cache is namespaced per user to avoid leaking status between accounts
- * - Token is optional; cookies can authenticate requests, so we don't block if it's missing
- * - Query only runs once we know the user is authenticated (userId or token present)
+ * ARCHITECTURE:
+ * - Backend isolates data per-user via JWT token (in Authorization header or cookie)
+ * - Simple query key prevents race conditions when userId loads async
+ * - Runs when EITHER userId OR token is present (supports HTTP-only cookies)
+ * - Cache invalidation works via base key ["vapi-settings"]
  */
 export function useVapiStatus() {
   const token = useAuthToken();
   const userId = useSessionStore((state) => state.session?.user?.id ?? null);
   const isAuthenticated = Boolean(userId || token);
-  const identityKey = useMemo(() => buildIdentityKey(userId, token), [userId, token]);
   const queryClient = useQueryClient();
 
   const { data, isLoading, refetch } = useQuery<VapiSettings>({
-    queryKey: ["vapi-settings", identityKey],
+    queryKey: ["vapi-settings"],
     queryFn: getVapiSettings,
     enabled: isAuthenticated,
     staleTime: 10_000,

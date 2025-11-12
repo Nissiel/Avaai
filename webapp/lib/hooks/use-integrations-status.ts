@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { useAuthToken } from "@/lib/hooks/use-auth-token";
+import { useSessionStore } from "@/stores/session-store";
 import { getVapiSettings } from "@/lib/api/vapi-settings";
 import { getTwilioSettings } from "@/lib/api/twilio-settings";
 
@@ -20,22 +21,20 @@ interface IntegrationsStatus {
  * 🔥 DIVINE: Hook to check status of all integrations (Vapi + Twilio)
  * 
  * ARCHITECTURE:
- * - Backend isolates data per-user via JWT token
- * - No need for client-side per-user cache keys
- * - Simple query key prevents race conditions
- * - Token-gated fetching ensures auth before request
+ * - Backend isolates data per-user via JWT token (in Authorization header or cookie)
+ * - Simple query key prevents race conditions when userId loads async
+ * - Runs when EITHER userId OR token is present (supports HTTP-only cookies)
+ * - Cache invalidation works via base key ["integrations-status"]
  */
 export function useIntegrationsStatus() {
   const token = useAuthToken();
+  const userId = useSessionStore((state) => state.session?.user?.id ?? null);
+  const isAuthenticated = Boolean(userId || token);
   const queryClient = useQueryClient();
 
   const query = useQuery<IntegrationsStatus>({
     queryKey: ["integrations-status"],
     queryFn: async () => {
-      if (!token) {
-        throw new Error("No access token");
-      }
-
       const [vapiData, twilioData] = await Promise.all([
         getVapiSettings(),
         getTwilioSettings(),
@@ -53,7 +52,7 @@ export function useIntegrationsStatus() {
         },
       };
     },
-    enabled: !!token,
+    enabled: isAuthenticated,
     staleTime: 5 * 60 * 1000,
     retry: 1,
   });
