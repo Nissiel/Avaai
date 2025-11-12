@@ -278,10 +278,10 @@ export function OnboardingWizard() {
     }
   }, [configQuery.data]);
 
-  // 🌟 DIVINE: Log errors gracefully (React Query v5 pattern)
+  // Silently handle config load errors
   useEffect(() => {
     if (configQuery.error) {
-      console.warn("Failed to load config from backend, using local draft:", configQuery.error);
+      // Error handled - using local draft
     }
   }, [configQuery.error]);
 
@@ -317,15 +317,7 @@ export function OnboardingWizard() {
         }
       }
 
-      // 🎯 DIVINE: Log détaillé + feedback utilisateur clair
-      console.error("❌ Failed to update config:", {
-        error,
-        message: error instanceof Error ? error.message : String(error),
-        variables,
-        timestamp: new Date().toISOString(),
-      });
-
-      // Afficher l'erreur réelle à l'utilisateur
+      // Error handled via toast notification
       const errorMessage = error instanceof Error ? error.message : "Erreur inconnue";
       toast.error(`Sauvegarde échouée: ${errorMessage}`, {
         description: "Vos modifications sont sauvegardées localement et seront synchronisées plus tard.",

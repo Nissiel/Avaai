@@ -45,8 +45,7 @@ export function ConfigurationPanel() {
         setConfig((prev) => ({ ...prev, ...data }));
       }
     } catch (error) {
-      console.error("Error loading config:", error);
-      toast.error("Erreur lors du chargement de la configuration");
+      // Error silently handled
     } finally {
       setLoading(false);
     }
@@ -67,7 +66,7 @@ export function ConfigurationPanel() {
         throw new Error("Save failed");
       }
     } catch (error) {
-      console.error("Error saving config:", error);
+      // Error handled by toast notification
       toast.error("❌ Erreur lors de la sauvegarde");
     } finally {
       setSaving(false);
