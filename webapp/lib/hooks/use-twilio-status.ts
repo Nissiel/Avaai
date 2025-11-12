@@ -1,35 +1,22 @@
-import { useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuthToken } from "@/lib/hooks/use-auth-token";
-import { useSessionStore } from "@/stores/session-store";
 import { getTwilioSettings, type TwilioSettingsResponse } from "@/lib/api/twilio-settings";
-
-function buildIdentityKey(userId: string | null, token: string | null): string {
-  if (userId) {
-    return `user:${userId}`;
-  }
-  if (!token) {
-    return "anonymous";
-  }
-  let hash = 0;
-  for (let i = 0; i < token.length; i += 1) {
-    hash = (hash * 31 + token.charCodeAt(i)) | 0;
-  }
-  return `token:${Math.abs(hash)}`;
-}
 
 /**
  * 🔥 DIVINE: Hook to check Twilio credentials status
- * Uses centralized API with automatic token refresh on 401
+ * 
+ * ARCHITECTURE:
+ * - Backend isolates data per-user via JWT token
+ * - No need for client-side per-user cache keys
+ * - Simple query key prevents race conditions
+ * - Token-gated fetching ensures auth before request
  */
 export function useTwilioStatus() {
   const token = useAuthToken();
-  const userId = useSessionStore((state) => state.session?.user?.id ?? null);
   const queryClient = useQueryClient();
-  const identityKey = useMemo(() => buildIdentityKey(userId, token), [userId, token]);
 
   const { data, isLoading, refetch, error } = useQuery<TwilioSettingsResponse>({
-    queryKey: ["twilio-settings", identityKey],
+    queryKey: ["twilio-settings"],
     queryFn: async () => {
       if (!token) {
         throw new Error("No access token");
