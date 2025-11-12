@@ -40,4 +40,7 @@ def configure_logging() -> None:
     root_logger.setLevel(logging.INFO)
 
 
-__all__ = ["configure_logging"]
+# 🔥 DIVINE FIX: Export request_logger for middleware
+request_logger = logging.getLogger("ava.request")
+
+__all__ = ["configure_logging", "request_logger"]
