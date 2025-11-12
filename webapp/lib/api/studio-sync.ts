@@ -1,3 +1,7 @@
+import { apiFetch } from "@/lib/api/client";
+import { safeJsonParse } from "@/lib/utils/safe-json";
+import type { VapiSyncResult } from "@/lib/types/studio-update";
+
 const SYNC_ROUTE = "/api/studio/sync-vapi";
 
 /**
@@ -26,35 +30,32 @@ async function retryWithBackoff<T>(
   throw lastError;
 }
 
-function withTimeout(init: RequestInit = {}, timeoutMs = 20_000) {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
-  return {
-    ...init,
-    signal: controller.signal,
-    cleanup: () => clearTimeout(timeout),
-  } as RequestInit & { cleanup: () => void };
-}
-
 export async function syncStudioConfigToVapi() {
   return retryWithBackoff(async () => {
-    const request = withTimeout({
+    const response = await apiFetch(SYNC_ROUTE, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: "{}",
+      baseUrl: "relative",
+      timeoutMs: 20_000,
+      metricsLabel: "studio.config.sync",
     });
 
-    try {
-      const response = await fetch(SYNC_ROUTE, request);
+    const text = await response.text();
+    const payload =
+      safeJsonParse<(VapiSyncResult & { detail?: string; message?: string }) | null>(text, {
+        context: "studio.config.sync",
+        fallback: null,
+      }) ?? null;
 
-      if (!response.ok) {
-        const detail = await response.json().catch(() => ({}));
-        throw new Error(detail.detail || detail.error || `HTTP ${response.status}`);
-      }
-
-      return response.json();
-    } finally {
-      request.cleanup();
+    if (!response.ok || !payload) {
+      const errorMessage = payload?.detail ?? payload?.message ?? `HTTP ${response.status}`;
+      throw new Error(errorMessage);
     }
+
+    if (payload.success === false) {
+      throw new Error(payload.error ?? "Vapi sync failed");
+    }
+
+    return payload;
   });
 }

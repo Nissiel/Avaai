@@ -21,9 +21,9 @@ import { GlassCard } from "@/components/ui/glass-card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { LabeledSlider } from "@/components/ui/labeled-slider";
 import { createStudioConfigSchema, type StudioConfigInput } from "@/lib/validations/config";
+import type { StudioConfig } from "@/lib/dto";
 import { Badge } from "@/components/ui/badge";
-import { backendConfig } from "@/services/backend-service";
-import { refreshAccessToken } from "@/lib/auth/session-client";
+import { getStudioConfig } from "@/lib/api/config";
 import { updateStudioConfiguration } from "@/lib/api/studio-orchestrator";
 import type { StudioUpdateResult } from "@/lib/types/studio-update";
 import {
@@ -84,8 +84,6 @@ const PRICING = {
   platform: 0.05, // Vapi platform fee per minute
 } as const;
 
-type StudioConfigResponse = StudioConfigInput;
-
 export interface StudioSettingsFormProps {
   linkedAssistantId?: string | null;
   onLinkedAssistantChange?: (assistantId: string | null) => void;
@@ -105,58 +103,9 @@ export function StudioSettingsForm({
     [t],
   );
 
-  const configQuery = useQuery<StudioConfigResponse>({
+  const configQuery = useQuery<StudioConfig>({
     queryKey: ["studio-config"],
-    queryFn: async () => {
-      // 🎯 DIVINE: Get token from localStorage for authenticated request
-      const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
-
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-      };
-
-      if (token) {
-        headers.Authorization = `Bearer ${token}`;
-      }
-
-      const response = await fetch("/api/config", {
-        headers,
-      });
-
-      // 🎯 DIVINE: If 401, try to refresh token automatically
-      if (response.status === 401) {
-        console.log("⚠️ Studio Config: 401 Unauthorized - Attempting token refresh...");
-
-        const refreshToken = typeof window !== "undefined" ? localStorage.getItem("refresh_token") : null;
-        if (refreshToken) {
-          const newAccessToken = await refreshAccessToken(refreshToken);
-
-          if (newAccessToken) {
-            console.log("✅ Studio Config: Token refreshed! Retrying...");
-
-            // Retry the request with new token
-            const retryResponse = await fetch("/api/config", {
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${newAccessToken}`,
-              },
-            });
-
-            if (retryResponse.ok) {
-              return retryResponse.json();
-            }
-          }
-        }
-
-        throw new Error("Session expired. Please login again.");
-      }
-
-      if (!response.ok) {
-        const detail = await response.json().catch(() => ({}));
-        throw new Error(detail.error ?? tMessages("error"));
-      }
-      return response.json();
-    },
+    queryFn: getStudioConfig,
     staleTime: 60_000,
   });
 

@@ -7,8 +7,9 @@
  * 3. Orchestrate both operations
  */
 
-import { refreshAccessToken } from "@/lib/auth/session-client";
+import { apiFetch } from "@/lib/api/client";
 import { syncStudioConfigToVapi } from "@/lib/api/studio-sync";
+import { safeJsonParse } from "@/lib/utils/safe-json";
 import type {
   DbSaveResult,
   VapiSyncResult,
@@ -25,78 +26,36 @@ import type { StudioConfig } from "@/services/config-service";
 export async function saveStudioConfigToDb(
   values: Partial<StudioConfig>
 ): Promise<DbSaveResult> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 20_000);
   try {
-    // Get token from localStorage
-    let token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
-
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-    };
-
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
-    }
-
-    // Save to database
-    let response = await fetch("/api/config", {
+    const response = await apiFetch("/api/config", {
       method: "POST",
-      headers,
+      baseUrl: "relative",
       body: JSON.stringify(values),
-      signal: controller.signal,
+      timeoutMs: 20_000,
+      metricsLabel: "studio.config.save",
     });
 
-    // Handle 401 - try token refresh
-    if (response.status === 401) {
-      console.log("⚠️ DB Save: 401 Unauthorized - Attempting token refresh...");
+    const text = await response.text();
+    const payload =
+      safeJsonParse<{ config?: StudioConfig; detail?: string; error?: string }>(text, {
+        context: "studio.config.save",
+        fallback: null,
+      }) ?? null;
 
-      const refreshToken = typeof window !== "undefined" ? localStorage.getItem("refresh_token") : null;
-      if (refreshToken) {
-        const newAccessToken = await refreshAccessToken(refreshToken);
-
-        if (newAccessToken) {
-          console.log("✅ DB Save: Token refreshed! Retrying...");
-
-          // Retry with new token
-          response = await fetch("/api/config", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${newAccessToken}`,
-            },
-            body: JSON.stringify(values),
-            signal: controller.signal,
-          });
-        }
-      }
-
-      // If still 401, return error
-      if (response.status === 401) {
-        return {
-          success: false,
-          error: "Session expired. Please login again.",
-        };
-      }
-    }
-
-    // Handle other errors
-    if (!response.ok) {
-      const detail = await response.json().catch(() => ({ error: "Unknown error" }));
-      console.error("❌ DB Save Failed:", detail);
+    if (!response.ok || !payload?.config) {
+      const errorMessage = payload?.detail ?? payload?.error ?? `HTTP ${response.status}`;
+      console.error("❌ DB Save Failed:", { status: response.status, payload, values });
       return {
         success: false,
-        error: detail.error || `HTTP ${response.status}`,
+        error: errorMessage,
       };
     }
 
-    // Success!
-    const data = await response.json();
-    console.log("✅ DB Save Success:", data);
+    console.log("✅ DB Save Success:", payload);
 
     return {
       success: true,
-      config: data.config,
+      config: payload.config,
     };
   } catch (error: any) {
     console.error("❌ DB Save Exception:", error);
@@ -107,8 +66,6 @@ export async function saveStudioConfigToDb(
           ? "Save timed out. Please check your connection and try again."
           : error.message || "Failed to save configuration",
     };
-  } finally {
-    clearTimeout(timeout);
   }
 }
 

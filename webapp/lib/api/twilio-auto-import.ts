@@ -16,6 +16,7 @@
 import { listAssistants } from "./assistants";
 import { getAuthHeaders } from "./auth-helper";
 import { getBackendUrl as resolveBackendUrl } from "@/lib/config/env";
+import { safeJsonParse } from "@/lib/utils/safe-json";
 
 /**
  * Prerequisites needed for auto-import
@@ -158,37 +159,46 @@ export async function autoImportTwilioNumber(
   try {
     console.log("✅ AUTO-IMPORT: Prerequisites met, importing...");
 
-    const response = await fetch(
-      `${resolveBackendUrl()}/api/v1/phone-numbers/import-twilio`,
-      {
-        method: "POST",
-        headers: getAuthHeaders(),
-        body: JSON.stringify({
-          twilio_account_sid: twilioAccountSid,
-          twilio_auth_token: twilioAuthToken,
-          phone_number: phoneNumber,
-          assistant_id: prereqs.assistantId ?? undefined,
-          org_id: "default", // TODO: Get from user context
-        }),
-      }
-    );
+    const response = await fetch(`${resolveBackendUrl()}/api/v1/phone-numbers/import-twilio`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({
+        twilio_account_sid: twilioAccountSid,
+        twilio_auth_token: twilioAuthToken,
+        phone_number: phoneNumber,
+        assistant_id: prereqs.assistantId ?? undefined,
+        org_id: "default", // TODO: Get from user context
+      }),
+    });
+
+    const raw = await response.text();
+    const data =
+      safeJsonParse<
+        (AutoImportResult & {
+          detail?: string;
+          auto_linked?: boolean;
+          assistant_id?: string;
+          webhook_configured?: boolean;
+          webhook_url?: string | null;
+        }) | null
+      >(raw, {
+        context: "twilio.autoImport",
+        fallback: null,
+        onError: () => null,
+      }) ?? null;
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({
-        detail: "Import failed",
-      }));
-      throw new Error(error.detail || "Failed to import number");
+      const detail = data?.detail ?? data?.error ?? raw || "Failed to import number";
+      throw new Error(detail);
     }
-
-    const data = await response.json();
 
     console.log("✅ AUTO-IMPORT: Success!", data);
 
     // 🔥 DIVINE: Better feedback for auto-linked numbers
-    let message = data.message || "✅ Number imported successfully! Ready to receive calls.";
+    let message = data?.message || "✅ Number imported successfully! Ready to receive calls.";
     let description = undefined;
 
-    if (data.auto_linked) {
+    if (data?.auto_linked) {
       message = "✅ Number imported and automatically linked!";
       description = "Your number is ready to receive calls";
     }
@@ -196,9 +206,9 @@ export async function autoImportTwilioNumber(
     return {
       success: true,
       imported: true,
-      auto_linked: data.auto_linked,
-      assistant_id: data.assistant_id,
-      webhookConfigured: data.webhook_configured,
+      auto_linked: data?.auto_linked,
+      assistant_id: data?.assistant_id,
+      webhookConfigured: data?.webhook_configured ?? data?.webhookConfigured,
       message,
       description,
     };
