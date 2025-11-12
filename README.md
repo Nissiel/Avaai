@@ -117,6 +117,27 @@ Puis ouvre **http://localhost:3000**
 - `.env.example` — Phase 2-4 configuration documented
 - `requirements.txt` — prometheus-client added
 
+### 🔧 Environment Configuration
+
+**CRITICAL:** These environment variables MUST be set for production:
+
+```bash
+# Feature Flags (Production Safety)
+INTEGRATIONS_STUB_MODE=false         # REQUIRED: Disable stubs in production
+AVA_API_ENVIRONMENT=production       # Set environment
+
+# Circuit Breaker Configuration
+CIRCUIT_BREAKER_ENABLED=true         # Enable circuit breaker protection
+CIRCUIT_BREAKER_THRESHOLD=3          # Failures before opening circuit
+CIRCUIT_BREAKER_RECOVERY_TIMEOUT=30  # Seconds before retry
+
+# Rate Limiting (DDoS Protection)
+RATE_LIMIT_PER_MINUTE=60            # Requests per IP per minute (30-60 recommended)
+```
+
+📋 **Complete Configuration:** See [`.env.example`](./.env.example) for all settings  
+⚠️ **Deployment Checklist:** Impossible to miss configs with documented defaults
+
 📚 **Full Architecture:** [ADR-001: Phase 2-4 Resilience](./ADR-001-PHASE2_4_RESILIENCE.md)  
 📚 **Deployment Guide:** [15-Minute Production Rollout](./DEPLOYMENT_GUIDE_PHASE2_4.md)  
 📚 **King's Feedback:** [Divine Gaps Exposed](./DIVINE_GAPS_EXPOSED.md)
