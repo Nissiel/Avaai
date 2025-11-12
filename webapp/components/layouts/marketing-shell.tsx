@@ -76,7 +76,7 @@ export function MarketingShell({ children }: { children: React.ReactNode }) {
         <div className="mx-auto flex h-16 w-full max-w-screen-xl items-center justify-between px-6">
           {/* Logo */}
           <Link href={routes.home as any} className="transition-opacity hover:opacity-80">
-            <AvaLogoWordmark glow={false} subtitle="Studio" />
+            <AvaLogoWordmark subtitle="Studio" />
           </Link>
 
           {/* Navigation centrale */}

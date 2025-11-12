@@ -63,7 +63,7 @@ export function Sidebar({ className }: SidebarProps) {
     >
       <div className="flex items-center justify-between px-5 py-6">
         <Link href={homeHref as Route} className="transition-opacity hover:opacity-90">
-          <AvaLogoWordmark glow={false} subtitle="Studio" />
+          <AvaLogoWordmark subtitle="Studio" />
         </Link>
       </div>
       <nav className="flex-1 space-y-1 px-3 pb-6">

@@ -32,7 +32,9 @@ export interface AssistantsResult {
   configured?: boolean;
 }
 
-const BASE_PATH = "/api/v1/assistants";
+// 🔥 DIVINE FIX: Use frontend proxy route instead of direct backend path
+// Frontend has /api/assistants proxy → Backend /api/v1/assistants
+const BASE_PATH = "/api/assistants";
 
 interface BackendResponse<T> {
   response: Response;
@@ -49,7 +51,7 @@ async function backendRequest<T>(
     ...fetchInit,
     metricsLabel,
     timeoutMs,
-    baseUrl: "backend",
+    baseUrl: "relative", // 🔥 DIVINE FIX: Use relative for frontend proxy routes
   });
 
   const raw = await response.text();

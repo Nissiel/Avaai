@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { AvaLogoMark } from "@/components/brand/logo";
+import { AvaLogoIcon } from "@/components/brand/logo";
 
 const LoginForm = dynamic(() => import("@/components/auth/login-form").then((mod) => ({ default: mod.LoginForm })), {
   ssr: false,
@@ -39,12 +39,8 @@ function LoginPageContent({ locale }: { locale: string }) {
           </Link>
 
           <div className="mb-8 space-y-5 text-center">
-            <div className="relative mx-auto flex h-20 w-20 items-center justify-center">
-              <span
-                aria-hidden
-                className="absolute inset-0 rounded-[28px] bg-gradient-to-br from-primary/40 via-secondary/40 to-secondary/70 opacity-80 blur-xl"
-              />
-              <AvaLogoMark className="relative h-16 w-16 p-2 shadow-[0_18px_45px_-20px_rgba(79,70,229,0.9)]" />
+            <div className="mx-auto flex h-20 w-20 items-center justify-center">
+              <AvaLogoIcon size={72} />
             </div>
             <div className="space-y-3">
               <h1 className="text-4xl font-bold tracking-tight">

@@ -10,6 +10,9 @@ export const inter = localFont({
   ],
   variable: "--font-inter",
   display: "swap",
+  preload: true,
+  fallback: ["system-ui", "arial"],
+  adjustFontFallback: "Arial", // 🔥 DIVINE FIX: Reduce CLS with font fallback matching
 });
 
 export const jetbrains = localFont({
@@ -22,4 +25,7 @@ export const jetbrains = localFont({
   ],
   variable: "--font-jetbrains",
   display: "swap",
+  preload: true,
+  fallback: ["Monaco", "Courier New", "monospace"],
+  adjustFontFallback: false, // 🔥 DIVINE FIX: Disable auto-fallback for monospace fonts
 });
