@@ -1,17 +1,15 @@
 import { apiFetch } from "@/lib/api/client";
+import { safeJsonParse } from "@/lib/utils/safe-json";
 import type { StudioConfig, StudioConfigUpdate } from "@/lib/dto";
 
 function parseResponse<T>(status: number, text: string | null, fallback: string): T {
-  if (!text) {
+  const parsed = safeJsonParse<T>(text, {
+    context: `config:${status}`,
+  });
+  if (!parsed) {
     throw new Error(fallback);
   }
-
-  try {
-    return JSON.parse(text) as T;
-  } catch (error) {
-    console.error("Failed to parse studio config response", error);
-    throw new Error(fallback);
-  }
+  return parsed;
 }
 
 export async function getStudioConfig(): Promise<StudioConfig> {
@@ -24,14 +22,10 @@ export async function getStudioConfig(): Promise<StudioConfig> {
   const text = await response.text();
 
   if (!response.ok) {
-    let payload: { detail?: string } = {};
-    if (text) {
-      try {
-        payload = JSON.parse(text);
-      } catch (error) {
-        console.error("Failed to parse studio config error payload", error);
-      }
-    }
+    const payload = safeJsonParse<{ detail?: string }>(text, {
+      fallback: {},
+      context: "config.getStudioConfig",
+    }) ?? {};
     const errorMessage = payload.detail ?? `HTTP ${response.status}`;
     console.error("❌ getStudioConfig failed:", { status: response.status, payload });
     throw new Error(`Impossible de charger la configuration: ${errorMessage}`);
@@ -54,14 +48,11 @@ export async function updateStudioConfigClient(payload: StudioConfigUpdate): Pro
   const text = await response.text();
 
   if (!response.ok) {
-    let errorPayload: { detail?: string } = {};
-    if (text) {
-      try {
-        errorPayload = JSON.parse(text);
-      } catch (error) {
-        console.error("Failed to parse studio config error payload", error);
-      }
-    }
+    const errorPayload =
+      safeJsonParse<{ detail?: string }>(text, {
+        fallback: {},
+        context: "config.updateStudioConfigClient",
+      }) ?? {};
     const errorMessage = errorPayload.detail ?? `HTTP ${response.status}`;
     console.error("❌ updateStudioConfigClient failed:", {
       status: response.status,

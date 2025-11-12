@@ -1,4 +1,5 @@
 import { apiFetch } from "@/lib/api/client";
+import { safeJsonParse } from "@/lib/utils/safe-json";
 
 export type RemoteVapiSetting = {
   key: string;
@@ -23,17 +24,15 @@ function normalizeSetting(payload: any): RemoteVapiSetting {
   };
 }
 
-async function parseJson(response: Response) {
+async function parseJson(response: Response, context: string) {
   const raw = await response.text();
-  if (!raw) {
-    return {};
-  }
-
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return { detail: raw.slice(0, 512) };
-  }
+  return (
+    safeJsonParse<any>(raw, {
+      fallback: {},
+      context,
+      onError: (_, text) => ({ detail: text.slice(0, 512) }),
+    }) ?? {}
+  );
 }
 
 export async function listRemoteVapiSettings(): Promise<RemoteVapiSetting[]> {
@@ -43,7 +42,7 @@ export async function listRemoteVapiSettings(): Promise<RemoteVapiSetting[]> {
     metricsLabel: "vapi.remote.list",
   });
 
-  const payload = (await parseJson(response)) as RemoteListPayload & { detail?: string };
+  const payload = (await parseJson(response, "vapi.remote.list")) as RemoteListPayload & { detail?: string };
 
   if (!response.ok) {
     throw new Error(payload?.detail ?? "Unable to load Vapi settings");
@@ -71,7 +70,10 @@ export async function updateRemoteVapiSetting(key: string, value: unknown): Prom
     metricsLabel: "vapi.remote.update",
   });
 
-  const payload = (await parseJson(response)) as { setting?: RemoteVapiSetting; detail?: string };
+  const payload = (await parseJson(response, "vapi.remote.update")) as {
+    setting?: RemoteVapiSetting;
+    detail?: string;
+  };
 
   if (!response.ok) {
     throw new Error(payload?.detail ?? "Unable to update Vapi setting");

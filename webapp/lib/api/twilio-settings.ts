@@ -1,4 +1,5 @@
 import { apiFetch } from "@/lib/api/client";
+import { safeJsonParse } from "@/lib/utils/safe-json";
 
 const NEXT_ROUTE = "/api/twilio-settings";
 
@@ -49,7 +50,11 @@ async function requestTwilioSettings(
   });
 
   const text = await response.text();
-  const payload = text ? (JSON.parse(text) as RawTwilioSettingsResponse | { detail?: string }) : null;
+  const payload = safeJsonParse<RawTwilioSettingsResponse | { detail?: string }>(text, {
+    fallback: null,
+    context: `twilio-settings:${fetchInit.method ?? "GET"}`,
+    onError: (_, raw) => ({ detail: raw.slice(0, 200) }),
+  });
   return { response, text, payload };
 }
 
@@ -60,7 +65,7 @@ export async function getTwilioSettings(): Promise<TwilioSettingsResponse> {
   });
 
   if (!response.ok) {
-    const detail = (payload as { detail?: string } | null)?.detail ?? `Twilio settings request failed (${response.status})`;
+    const detail = formatDetail((payload as { detail?: unknown } | null)?.detail, `Twilio settings request failed (${response.status})`);
     throw new Error(detail);
   }
 
@@ -76,7 +81,7 @@ export async function saveTwilioSettings(payload: SaveTwilioSettingsPayload): Pr
   });
 
   if (!response.ok) {
-    const detail = (raw as { detail?: string } | null)?.detail ?? `Failed to save Twilio settings (${response.status})`;
+    const detail = formatDetail((raw as { detail?: unknown } | null)?.detail, `Failed to save Twilio settings (${response.status})`);
     throw new Error(detail);
   }
 
@@ -90,7 +95,22 @@ export async function deleteTwilioSettings(): Promise<void> {
   });
 
   if (!response.ok) {
-    const detail = (payload as { detail?: string } | null)?.detail ?? `Failed to delete Twilio settings (${response.status})`;
+    const detail = formatDetail((payload as { detail?: unknown } | null)?.detail, `Failed to delete Twilio settings (${response.status})`);
     throw new Error(detail);
+  }
+}
+function formatDetail(detail: unknown, fallback: string): string {
+  if (!detail || (typeof detail === "string" && detail.trim().length === 0)) {
+    return fallback;
+  }
+
+  if (typeof detail === "string") {
+    return detail;
+  }
+
+  try {
+    return JSON.stringify(detail);
+  } catch {
+    return fallback;
   }
 }

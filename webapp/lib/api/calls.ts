@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import type { CallDetail, CallListResponse, CallSummary } from "@/lib/dto";
 import { apiFetch } from "@/lib/api/client";
+import { safeJsonParse } from "@/lib/utils/safe-json";
 
 const CallSummaryApiSchema = z.object({
   id: z.string(),
@@ -109,12 +110,26 @@ export async function sendCallTranscriptEmail(callId: string): Promise<SendTrans
     baseUrl: "relative",
   });
 
+  const text = await res.text();
+  const payload = safeJsonParse<SendTranscriptEmailResponse & { detail?: string }>(text, {
+    fallback: null,
+    context: "calls.sendTranscript",
+  });
+
   if (!res.ok) {
-    const error = await res.json().catch(() => ({ detail: "Failed to send email" }));
-    throw new Error(error.detail || `Failed to send transcript email`);
+    const detail =
+      (payload as { detail?: string } | null)?.detail ??
+      (payload && "message" in payload ? payload.message : null) ??
+      text ||
+      "Failed to send email";
+    throw new Error(detail);
   }
 
-  return res.json();
+  if (!payload) {
+    throw new Error("Failed to parse transcript response");
+  }
+
+  return payload;
 }
 
 export async function deleteCall(callId: string): Promise<void> {

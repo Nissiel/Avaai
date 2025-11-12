@@ -1,6 +1,7 @@
 "use client";
 
 import { apiFetch } from "@/lib/api/client";
+import { safeJsonParse } from "@/lib/utils/safe-json";
 
 const NEXT_ROUTE = "/api/vapi-settings";
 
@@ -23,6 +24,20 @@ function normalize(payload?: VapiSettings | null): VapiSettings {
   };
 }
 
+function formatVapiDetail(detail: unknown, fallback: string): string {
+  if (typeof detail === "string" && detail.trim().length > 0) {
+    return detail;
+  }
+  if (!detail) {
+    return fallback;
+  }
+  try {
+    return JSON.stringify(detail);
+  } catch {
+    return fallback;
+  }
+}
+
 async function fetchSettings(
   method: "GET" | "POST" | "DELETE",
   body?: unknown,
@@ -37,10 +52,14 @@ async function fetchSettings(
   });
 
   const text = await response.text();
-  const payload = text ? (JSON.parse(text) as VapiSettings | { detail?: string }) : null;
+  const payload = safeJsonParse<VapiSettings | { detail?: string }>(text, {
+    fallback: null,
+    context: `vapi-settings:${method}`,
+    onError: (_, raw) => ({ detail: raw.slice(0, 200) }),
+  });
 
   if (!response.ok) {
-    const detail = (payload as { detail?: string } | null)?.detail ?? "Failed to process Vapi settings request";
+    const detail = formatVapiDetail((payload as { detail?: unknown } | null)?.detail, "Failed to process Vapi settings request");
     throw new Error(detail);
   }
 

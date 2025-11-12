@@ -1,4 +1,5 @@
 import { apiFetch } from "@/lib/api/client";
+import { safeJsonParse } from "@/lib/utils/safe-json";
 import type {
   AnalyticsAnomaly,
   AnalyticsHeatmapCell,
@@ -15,7 +16,11 @@ async function fetchInternalJson<T>(path: string, metricsLabel: string): Promise
   });
 
   const text = await response.text();
-  const payload = text ? (JSON.parse(text) as T & { detail?: string; error?: string; success?: boolean }) : ({} as T);
+  const payload =
+    safeJsonParse<T & { detail?: string; error?: string; success?: boolean }>(text, {
+      fallback: {} as T,
+      context: `analytics:${metricsLabel}`,
+    }) ?? ({} as T);
 
   if (!response.ok) {
     const detail = (payload as { detail?: string; error?: string }).detail ?? (payload as { error?: string }).error;

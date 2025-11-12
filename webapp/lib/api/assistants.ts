@@ -1,4 +1,5 @@
 import { apiFetch } from "@/lib/api/client";
+import { safeJsonParse } from "@/lib/utils/safe-json";
 import type {
   AssistantDetail,
   AssistantDetailResponse,
@@ -58,11 +59,10 @@ async function backendRequest<T>(
   let data: T | null = null;
 
   if (raw) {
-    try {
-      data = JSON.parse(raw) as T;
-    } catch (error) {
-      console.warn(`[assistants] failed to parse payload for ${path}`, error);
-    }
+    data =
+      safeJsonParse<T>(raw, {
+        context: `assistants:${path}`,
+      }) ?? null;
   }
 
   return { response, data, raw };
