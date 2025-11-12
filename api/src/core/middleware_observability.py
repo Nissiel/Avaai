@@ -1,113 +1,83 @@
-"""Request ID, logging and deduplication middleware."""
+"""Middleware for observability and request correlation."""
 
 from __future__ import annotations
 
 import asyncio
-import logging
+import sys
 import time
-from collections import deque
-from typing import Deque, Tuple
+from typing import Callable
 from uuid import uuid4
 
+from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.requests import Request
-from starlette.responses import JSONResponse, Response
 
-RequestKey = Tuple[str, str]
+from api.src.core.logging import request_logger
 
 
-class ObservabilityMiddleware(BaseHTTPMiddleware):
-    """Adds request IDs, structured logs, timeouts and duplicate detection."""
+class RequestCorrelationMiddleware(BaseHTTPMiddleware):
+    """
+    Injects a unique X-Request-ID into every request/response.
+    Sets request.state.request_id for downstream use.
+    Logs request start and end with duration.
+    🔥 DIVINE FIX: 20-second timeout (enough for cold Supabase database to wake up)
+    """
 
-    def __init__(self, app, *, timeout_seconds: int = 8, dedupe_ttl: int = 300, dedupe_max: int = 2000):
-        """
-        🔥 DIVINE FIX: Reduced timeout from 10s to 8s
-        
-        This matches our database query timeout (8s) to fail fast on cold DB
-        instead of letting requests hang for 10 seconds. Better UX: fast failure
-        with proper error message vs. long hang.
-        """
-        super().__init__(app)
-        self.timeout_seconds = timeout_seconds
-        self.dedupe_ttl = dedupe_ttl
-        self.logger = logging.getLogger("ava.request")
-        self._lock = asyncio.Lock()
-        self._seen: Deque[tuple[RequestKey, float]] = deque()
-        self._seen_index: dict[RequestKey, float] = {}
-        self.dedupe_max = dedupe_max
-
-    async def dispatch(self, request: Request, call_next):
+    async def dispatch(self, request: Request, call_next: Callable) -> Response:
         request_id = request.headers.get("x-request-id") or str(uuid4())
         request.state.request_id = request_id
-        method = request.method.upper()
-        path = request.url.path
-        start = time.perf_counter()
 
-        if await self._is_duplicate(request, method, path):
-            self.logger.warning(
-                "Duplicate request detected; short-circuiting",
-                extra={"request_id": request_id, "method": method, "path": path},
-            )
-            return JSONResponse({"detail": "Duplicate request"}, status_code=409, headers={"X-Request-ID": request_id})
-
-        try:
-            response = await asyncio.wait_for(call_next(request), timeout=self.timeout_seconds)
-        except asyncio.TimeoutError:
-            duration_ms = (time.perf_counter() - start) * 1000
-            self.logger.error(
-                "Request timed out",
-                extra={"request_id": request_id, "method": method, "path": path, "duration_ms": duration_ms},
-            )
-            return JSONResponse({"detail": "Request timed out"}, status_code=504, headers={"X-Request-ID": request_id})
-        except Exception as exc:  # pragma: no cover - pass-through
-            duration_ms = (time.perf_counter() - start) * 1000
-            self.logger.exception(
-                "Request crashed",
-                extra={"request_id": request_id, "method": method, "path": path, "duration_ms": duration_ms},
-            )
-            raise exc
-
-        duration_ms = (time.perf_counter() - start) * 1000
-        response.headers["X-Request-ID"] = request_id
-        self.logger.info(
-            "Request completed",
-            extra={
-                "request_id": request_id,
-                "method": method,
-                "path": path,
-                "status": response.status_code,
-                "duration_ms": round(duration_ms, 2),
-            },
+        start_time = time.time()
+        request_logger.info(
+            "Request started: %s %s",
+            request.method,
+            request.url.path,
+            extra={"method": request.method, "path": request.url.path}
         )
+
+        # 🔥 DIVINE FIX: 20-second timeout to handle cold database starts
+        try:
+            response = await asyncio.wait_for(call_next(request), timeout=20.0)
+            duration_ms = (time.time() - start_time) * 1000
+            request_logger.info(
+                "Request completed: %s %s - %s",
+                request.method,
+                request.url.path,
+                response.status_code,
+                extra={
+                    "method": request.method,
+                    "path": request.url.path,
+                }
+            )
+        except asyncio.TimeoutError:
+            duration_ms = (time.time() - start_time) * 1000
+            request_logger.error(
+                "Request timed out",
+                extra={
+                    "request_id": request_id,
+                    "method": request.method,
+                    "path": request.url.path,
+                    "duration_ms": duration_ms,
+                },
+            )
+            response = Response(
+                content='{"detail":"Request timeout"}',
+                status_code=504,
+                media_type="application/json",
+            )
+            sys.stdout.flush()
+        except Exception as exc:
+            duration_ms = (time.time() - start_time) * 1000
+            request_logger.error(
+                "Request failed with exception: %s",
+                exc,
+                extra={
+                    "request_id": request_id,
+                    "method": request.method,
+                    "path": request.url.path,
+                    "duration_ms": duration_ms,
+                },
+            )
+            raise
+
+        response.headers["X-Request-ID"] = request_id
         return response
-
-    async def _is_duplicate(self, request: Request, method: str, path: str) -> bool:
-        """Only treat as duplicate when client supplied X-Request-ID for mutating requests."""
-        if method not in {"POST", "PUT", "PATCH", "DELETE"}:
-            return False
-        if "x-request-id" not in request.headers:
-            return False
-
-        request_id = request.headers["x-request-id"]
-        key: RequestKey = (path, request_id)
-        now = time.time()
-
-        async with self._lock:
-            while self._seen and now - self._seen[0][1] > self.dedupe_ttl:
-                expired_key, _ = self._seen.popleft()
-                self._seen_index.pop(expired_key, None)
-
-            if key in self._seen_index:
-                return True
-
-            self._seen.append((key, now))
-            self._seen_index[key] = now
-
-            while len(self._seen) > self.dedupe_max:
-                expired_key, _ = self._seen.popleft()
-                self._seen_index.pop(expired_key, None)
-
-        return False
-
-
-__all__ = ["ObservabilityMiddleware"]

@@ -2,7 +2,7 @@ import { randomUUID } from "crypto";
 import { getBackendUrl } from "@/lib/config/env";
 import { serverLogger } from "@/lib/logging/server-logger";
 
-const DEFAULT_TIMEOUT_MS = 10_000;
+const DEFAULT_TIMEOUT_MS = 25_000; // 🔥 DIVINE FIX: 25 seconds to handle cold Supabase database
 
 export interface ServerRequestOptions {
   method?: string;
