@@ -185,14 +185,12 @@ export async function autoImportTwilioNumber(
         context: "twilio.autoImport",
         fallback: null,
         onError: () => null,
-      }) ?? null;
+    }) ?? null;
 
-    if (!response.ok) {
-      const detail = data?.detail ?? data?.error ?? raw || "Failed to import number";
-      throw new Error(detail);
-    }
-
-    console.log("✅ AUTO-IMPORT: Success!", data);
+  if (!response.ok) {
+    const detail = (data?.detail ?? data?.error ?? raw) || "Failed to import number";
+    throw new Error(detail);
+  }    console.log("✅ AUTO-IMPORT: Success!", data);
 
     // 🔥 DIVINE: Better feedback for auto-linked numbers
     let message = data?.message || "✅ Number imported successfully! Ready to receive calls.";
