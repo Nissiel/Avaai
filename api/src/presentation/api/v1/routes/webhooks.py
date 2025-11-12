@@ -24,6 +24,7 @@ from urllib.parse import parse_qs
 
 from api.src.application.services.email import get_user_email_service
 from api.src.application.services.tenant import ensure_tenant_for_user
+from api.src.application.services.twilio import resolve_twilio_credentials
 from api.src.core.settings import get_settings
 from api.src.infrastructure.database.session import get_session
 from api.src.infrastructure.persistence.models.call import CallRecord
@@ -497,14 +498,6 @@ async def twilio_status_webhook(request: Request):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Missing CallSid")
 
     # Signature validation
-    signature = request.headers.get("X-Twilio-Signature")
-    if settings.twilio_auth_token:
-        if not signature:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing Twilio signature")
-        validator = RequestValidator(settings.twilio_auth_token)
-        if not validator.validate(str(request.url), form_data, signature):
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid Twilio signature")
-
     twilio_status = _map_twilio_status(form_data.get("CallStatus"))
     timestamp = _parse_twilio_timestamp(form_data.get("Timestamp") or form_data.get("CallTimestamp"))
     from_number = _normalize_phone(form_data.get("From"))
@@ -512,14 +505,29 @@ async def twilio_status_webhook(request: Request):
     duration_value = form_data.get("CallDuration") or form_data.get("DialCallDuration")
 
     async for db in get_session():
+        user_for_number = None
+        if to_number:
+            result = await db.execute(select(User).where(User.twilio_phone_number == to_number))
+            user_for_number = result.scalar_one_or_none()
+
+        signature = request.headers.get("X-Twilio-Signature")
+        try:
+            token_for_signature = resolve_twilio_credentials(user_for_number, allow_env_fallback=True).auth_token
+        except HTTPException:
+            token_for_signature = None
+
+        if token_for_signature:
+            if not signature:
+                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing Twilio signature")
+            validator = RequestValidator(token_for_signature)
+            if not validator.validate(str(request.url), form_data, signature):
+                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid Twilio signature")
+
         record = await db.get(CallRecord, call_sid)
 
         if not record:
             # Find associated user/tenant based on destination number
-            user = None
-            if to_number:
-                result = await db.execute(select(User).where(User.twilio_phone_number == to_number))
-                user = result.scalar_one_or_none()
+            user = user_for_number
 
             if not user:
                 fallback_user = await db.execute(select(User).limit(1))

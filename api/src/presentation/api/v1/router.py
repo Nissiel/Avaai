@@ -9,6 +9,7 @@ from api.src.presentation.api.v1.routes import (
     assistants,
     auth,
     calls,
+    integrations,
     phone_numbers,
     runtime,
     studio_config,
@@ -16,6 +17,7 @@ from api.src.presentation.api.v1.routes import (
     twilio,
     twilio_settings,
     user_onboarding,
+    vapi_remote_settings,
     vapi_settings,
     voices,
     webhooks,
@@ -32,7 +34,9 @@ api_v1_router.include_router(voices.router)
 api_v1_router.include_router(twilio.router)
 api_v1_router.include_router(phone_numbers.router)
 api_v1_router.include_router(tenant_profile.router)
+api_v1_router.include_router(integrations.router)
 api_v1_router.include_router(vapi_settings.router)
+api_v1_router.include_router(vapi_remote_settings.router)
 api_v1_router.include_router(twilio_settings.router)
 api_v1_router.include_router(user_onboarding.router)
 api_v1_router.include_router(webhooks.router)

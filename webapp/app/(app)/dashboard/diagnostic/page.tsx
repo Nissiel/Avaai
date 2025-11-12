@@ -5,12 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, RefreshCw, AlertCircle, CheckCircle2, XCircle } from "lucide-react";
-
-const BACKEND_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL ??
-  process.env.APP_BACKEND_URL ??
-  process.env.NEXT_PUBLIC_APP_BACKEND_URL ??
-  "http://localhost:8000";
+import { apiFetch } from "@/lib/api/client";
 
 interface DiagnosticResponse {
   status: string;
@@ -69,7 +64,10 @@ export default function DiagnosticPage() {
     setError(null);
 
     try {
-      const response = await fetch(`${BACKEND_BASE_URL}/api/v1/studio/diagnostic`);
+      const response = await apiFetch("/api/v1/studio/diagnostic", {
+        method: "GET",
+        baseUrl: "backend",
+      });
 
       if (!response.ok) {
         throw new Error(`Erreur ${response.status}: ${await response.text()}`);

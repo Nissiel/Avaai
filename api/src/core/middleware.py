@@ -9,6 +9,7 @@ from starlette.middleware.cors import ALL_METHODS
 
 from api.src.core.settings import get_settings
 from api.src.core.middleware_observability import ObservabilityMiddleware
+from api.src.presentation.middleware.correlation import CorrelationIdMiddleware
 
 
 def _normalize_origin(origin: str | None) -> str | None:
@@ -52,6 +53,9 @@ def configure_middleware(app: FastAPI) -> None:
     for origin in allowed_origins:
         print(f"  • {origin}", file=sys.stdout, flush=True)
     print("=" * 80, flush=True)
+
+    # Add correlation ID middleware FIRST (before CORS)
+    app.add_middleware(CorrelationIdMiddleware)
 
     app.add_middleware(
         CORSMiddleware,

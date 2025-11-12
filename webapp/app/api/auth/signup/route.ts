@@ -1,31 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+import { NextRequest } from "next/server";
+import { proxyBackend } from "../../_lib/backend-client";
 
 export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
-
-    const response = await fetch(`${API_URL}/api/v1/auth/signup`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      return NextResponse.json(data, { status: response.status });
-    }
-
-    return NextResponse.json(data);
-  } catch (error) {
-    console.error("Signup proxy error:", error);
-    return NextResponse.json(
-      { detail: "Signup service unavailable" },
-      { status: 503 }
-    );
-  }
+  const body = await request.text();
+  return proxyBackend(request, {
+    path: "/api/v1/auth/signup",
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: body && body.trim() ? body : "{}",
+  });
 }

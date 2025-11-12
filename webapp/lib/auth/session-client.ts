@@ -2,6 +2,7 @@
 
 import type { Session } from "next-auth";
 import { emitTokenChange } from "@/lib/hooks/use-auth-token";
+import { getBackendUrl } from "@/lib/config/env";
 
 export interface AuthUserPayload {
   id: string;
@@ -41,7 +42,7 @@ export type AvaSession = Session & {
 export const SESSION_STORAGE_KEY = "ava_active_session";
 
 export function getBackendBaseUrl(): string {
-  return process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+  return getBackendUrl();
 }
 
 export function createSessionFromTokenResponse(response: AuthTokenResponse): AvaSession {

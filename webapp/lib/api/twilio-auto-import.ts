@@ -15,17 +15,7 @@
 
 import { listAssistants } from "./assistants";
 import { getAuthHeaders } from "./auth-helper";
-
-/**
- * 🎯 DIVINE: Get backend API base URL
- */
-function getBackendUrl(): string {
-  return (
-    process.env.NEXT_PUBLIC_API_URL ||
-    process.env.APP_BACKEND_URL ||
-    "http://localhost:8000"
-  );
-}
+import { getBackendUrl as resolveBackendUrl } from "@/lib/config/env";
 
 /**
  * Prerequisites needed for auto-import
@@ -169,7 +159,7 @@ export async function autoImportTwilioNumber(
     console.log("✅ AUTO-IMPORT: Prerequisites met, importing...");
 
     const response = await fetch(
-      `${getBackendUrl()}/api/v1/phone-numbers/import-twilio`,
+      `${resolveBackendUrl()}/api/v1/phone-numbers/import-twilio`,
       {
         method: "POST",
         headers: getAuthHeaders(),

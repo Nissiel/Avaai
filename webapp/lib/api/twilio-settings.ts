@@ -1,6 +1,6 @@
 import { apiFetch } from "@/lib/api/client";
 
-const NEXT_ROUTE = "/api/twilio-settings";
+const BACKEND_ROUTE = "/api/v1/twilio-settings";
 
 interface RawTwilioSettingsResponse {
   has_twilio_credentials: boolean;
@@ -43,7 +43,7 @@ async function requestTwilioSettings(
 
   const response = await apiFetch(NEXT_ROUTE, {
     ...fetchInit,
-    baseUrl: "relative",
+    baseUrl: "backend",
     metricsLabel,
     timeoutMs,
   });

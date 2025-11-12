@@ -1,6 +1,3 @@
-// Remove "server-only" - this file is used by Next.js API routes
-// which run on the server but need proper module resolution
-
 import type {
   AnalyticsAnomaly,
   AnalyticsHeatmapCell,
@@ -8,16 +5,10 @@ import type {
   AnalyticsTopic,
   DashboardAnalytics,
 } from "@/lib/dto";
-import { backendConfig } from "@/services/backend-service";
+import { serverFetchBackend } from "@/lib/http/server-client";
 
-const ANALYTICS_BASE = `${backendConfig.baseUrl}/api/v1/analytics`;
-
-function createHeaders(token: string): HeadersInit {
-  return {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${token}`,
-  };
-}
+const ANALYTICS_BASE = "/api/v1/analytics";
+const JSON_HEADERS: HeadersInit = { "Content-Type": "application/json" };
 
 /**
  * Returns empty analytics data for graceful degradation
@@ -46,10 +37,10 @@ function getEmptyAnalytics(): DashboardAnalytics {
 
 export async function fetchAnalyticsOverview(token: string): Promise<DashboardAnalytics> {
   try {
-    const response = await fetch(`${ANALYTICS_BASE}/overview`, {
+    const response = await serverFetchBackend(`${ANALYTICS_BASE}/overview`, {
       method: "GET",
-      headers: createHeaders(token),
-      cache: "no-store",
+      headers: JSON_HEADERS,
+      authToken: token,
     });
 
     if (!response.ok) {
@@ -66,10 +57,10 @@ export async function fetchAnalyticsOverview(token: string): Promise<DashboardAn
 
 async function fetchAnalyticsEndpoint<T>(path: string, fallback: T, token: string): Promise<T> {
   try {
-    const response = await fetch(`${ANALYTICS_BASE}/${path}`, {
+    const response = await serverFetchBackend(`${ANALYTICS_BASE}/${path}`, {
       method: "GET",
-      headers: createHeaders(token),
-      cache: "no-store",
+      headers: JSON_HEADERS,
+      authToken: token,
     });
 
     if (!response.ok) {

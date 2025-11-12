@@ -1316,36 +1316,36 @@ export function StudioSettingsForm({
                 </div>
               )}
               <div className="flex items-center justify-between gap-4">
-              {/* Cost Calculator Display */}
-              <div className="flex items-center gap-2">
-                <Badge variant="outline" className="px-3 py-1.5 text-sm font-medium">
-                  💰 ~${estimatedCost.total}/min
-                </Badge>
-                <div className="text-xs text-muted-foreground">
-                  (AI: ${estimatedCost.breakdown.model} + Voice: ${estimatedCost.breakdown.voice} + Platform: ${estimatedCost.breakdown.platform})
+                {/* Cost Calculator Display */}
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="px-3 py-1.5 text-sm font-medium">
+                    💰 ~${estimatedCost.total}/min
+                  </Badge>
+                  <div className="text-xs text-muted-foreground">
+                    (AI: ${estimatedCost.breakdown.model} + Voice: ${estimatedCost.breakdown.voice} + Platform: ${estimatedCost.breakdown.platform})
+                  </div>
                 </div>
-              </div>
 
-              {/* Save Button */}
-              <Button
-                type="submit"
-                size="lg"
-                disabled={updateMutation.isPending}
-                className="gap-2"
-              >
-                {updateMutation.isPending ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span className="font-semibold">Saving...</span>
-                  </>
-                ) : (
-                  <>
-                    <Save className="h-4 w-4" />
-                    <span className="font-semibold">Save & Sync to Vapi</span>
-                  </>
-                )}
-              </Button>
-            </div>
+                {/* Save Button */}
+                <Button
+                  type="submit"
+                  size="lg"
+                  disabled={updateMutation.isPending}
+                  className="gap-2"
+                >
+                  {updateMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span className="font-semibold">Saving...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4" />
+                      <span className="font-semibold">Save & Sync to Vapi</span>
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           </div>
         </form>

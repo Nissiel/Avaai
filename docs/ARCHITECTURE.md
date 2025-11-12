@@ -41,8 +41,7 @@ Avaai/
 ├── webapp/          # Frontend Next.js
 │   ├── app/         # Pages Next.js (App Router)
 │   ├── components/  # Composants React réutilisables
-│   ├── lib/         # Utilitaires frontend
-│   └── prisma/      # Schema Prisma (ORM)
+│   ├── lib/         # Utilitaires frontend (API clients, hooks, stores)
 │
 ├── api/             # Backend FastAPI
 │   ├── src/
@@ -64,7 +63,7 @@ Avaai/
 - **Auth:** NextAuth.js (credentials + JWT)
 - **UI:** Tailwind CSS + shadcn/ui components
 - **État:** React hooks + Server Components
-- **DB Client:** Prisma (schema uniquement, données via API)
+- **Data Access:** REST calls vers FastAPI (plus de Prisma embarqué)
 - **Routing:** App Router (Next.js 14)
 
 ### Backend (FastAPI)
@@ -73,6 +72,9 @@ Avaai/
 - **Auth:** JWT tokens
 - **Multi-tenant:** Isolation par `tenant_id`
 - **API:** REST (auto-documentation Swagger/OpenAPI)
+- **Vapi Gateway:** `/api/v1/vapi/settings` (key/value) + `/api/v1/assistants` délèguent directement au Vapi client tout en respectant les clés utilisateur.
+- **Twilio Service:** `api/src/application/services/twilio.py` résout les identifiants (user → fallback env), alimente `/api/v1/twilio/*` et sécurise les webhooks via signature.
+- **Email/Calendar Stubs:** `/api/v1/integrations/email/test` et `/api/v1/integrations/calendar/{provider}/events` offrent des endpoints prêts à brancher pour Phase 4 (validation payload + TODO OAuth).
 
 ### Services Externes
 - **Vapi.ai:** Gestion complète des appels vocaux

@@ -1,19 +1,15 @@
+'use client';
+
 /**
  * Phone Numbers API Service
- * 
+ *
  * Provides methods to interact with the backend phone numbers API.
  * Handles US number creation via Vapi and Twilio number import.
  */
 
-import { getAuthHeaders } from "@/lib/api/auth-helper";
+import { apiFetch } from "@/lib/api/client";
 
-const BACKEND_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL ??
-  process.env.APP_BACKEND_URL ??
-  process.env.NEXT_PUBLIC_APP_BACKEND_URL ??
-  "http://localhost:8000";
-
-const PUBLIC_JSON_HEADERS = {
+const JSON_HEADERS = {
   "Content-Type": "application/json",
 };
 
@@ -56,9 +52,10 @@ export async function createUSNumber(
   areaCode?: string
 ): Promise<PhoneNumberResponse> {
   try {
-    const response = await fetch(`${BACKEND_BASE_URL}/api/v1/phone-numbers/create-us`, {
+    const response = await apiFetch("/api/v1/phone-numbers/create-us", {
       method: "POST",
-      headers: getAuthHeaders(),
+      baseUrl: "backend",
+      headers: JSON_HEADERS,
       body: JSON.stringify({
         assistant_id: assistantId,
         org_id: orgId,
@@ -103,9 +100,10 @@ export async function importTwilioNumber(
   orgId: string
 ): Promise<PhoneNumberResponse> {
   try {
-    const response = await fetch(`${BACKEND_BASE_URL}/api/v1/phone-numbers/import-twilio`, {
+    const response = await apiFetch("/api/v1/phone-numbers/import-twilio", {
       method: "POST",
-      headers: getAuthHeaders(),
+      baseUrl: "backend",
+      headers: JSON_HEADERS,
       body: JSON.stringify({
         twilio_account_sid: twilioAccountSid,
         twilio_auth_token: twilioAuthToken,
@@ -146,9 +144,11 @@ export async function verifyTwilioCredentials(
   phoneNumber: string
 ): Promise<TwilioVerifyResponse> {
   try {
-    const response = await fetch(`${BACKEND_BASE_URL}/api/v1/phone-numbers/twilio/verify`, {
+    const response = await apiFetch("/api/v1/phone-numbers/twilio/verify", {
       method: "POST",
-      headers: PUBLIC_JSON_HEADERS,
+      auth: false,
+      baseUrl: "backend",
+      headers: JSON_HEADERS,
       body: JSON.stringify({
         account_sid: accountSid,
         auth_token: authToken,
@@ -179,13 +179,10 @@ export async function verifyTwilioCredentials(
  */
 export async function getPhoneNumbers(orgId: string): Promise<any[]> {
   try {
-    const response = await fetch(
-      `${BACKEND_BASE_URL}/api/v1/phone-numbers/my-numbers?org_id=${orgId}`,
-      {
-        method: "GET",
-        headers: getAuthHeaders(),
-      }
-    );
+    const response = await apiFetch(`/api/v1/phone-numbers/my-numbers?org_id=${orgId}`, {
+      method: "GET",
+      baseUrl: "backend",
+    });
 
     if (!response.ok) {
       const errorPayload = await response.json().catch(() => ({}));

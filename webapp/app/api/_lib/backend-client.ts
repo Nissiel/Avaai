@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
-const DEFAULT_TIMEOUT_MS = 15_000;
+import { serverFetchBackend } from "@/lib/http/server-client";
 
 function resolveAuthToken(request: NextRequest): string | undefined {
   const header = request.headers.get("authorization");
@@ -9,18 +7,6 @@ function resolveAuthToken(request: NextRequest): string | undefined {
     return header.slice(7);
   }
   return request.cookies.get("access_token")?.value ?? undefined;
-}
-
-type AbortLikeError = Error & { name: string };
-
-function createAbortError(message: string): AbortLikeError {
-  try {
-    return new DOMException(message, "AbortError");
-  } catch {
-    const error = new Error(message) as AbortLikeError;
-    error.name = "AbortError";
-    return error;
-  }
 }
 
 export interface ProxyOptions {
@@ -38,15 +24,12 @@ export async function proxyBackend(request: NextRequest, options: ProxyOptions):
     method = request.method,
     body = null,
     headers: extraHeaders,
-    timeoutMs = DEFAULT_TIMEOUT_MS,
+    timeoutMs,
     passThroughHeaders = ["content-type", "content-length"],
   } = options;
 
-  const requestId = request.headers.get("x-request-id") ?? crypto.randomUUID();
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(createAbortError("Backend request timeout")), timeoutMs);
-
   const headers = new Headers(extraHeaders);
+  const requestId = request.headers.get("x-request-id") ?? crypto.randomUUID();
   headers.set("X-Request-ID", requestId);
 
   const token = resolveAuthToken(request);
@@ -58,17 +41,14 @@ export async function proxyBackend(request: NextRequest, options: ProxyOptions):
     headers.set("Content-Type", "application/json");
   }
 
-  let backendResponse: Response;
-  try {
-    backendResponse = await fetch(`${BACKEND_URL}${path}`, {
-      method,
-      headers,
-      body: body ?? undefined,
-      signal: controller.signal,
-    });
-  } finally {
-    clearTimeout(timeoutId);
-  }
+  const backendResponse = await serverFetchBackend(path, {
+    method,
+    headers,
+    body,
+    authToken: token,
+    timeoutMs,
+    requestId,
+  });
 
   const responseHeaders = new Headers();
   passThroughHeaders.forEach((header) => {

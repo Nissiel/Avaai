@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     vapi_base_url: str = "https://api.vapi.ai"
     vapi_api_key: Optional[str] = None
     jwt_secret_key: str = "CHANGE_ME_IN_PRODUCTION_USE_ENV_VAR"
+    twilio_account_sid: Optional[str] = None
     twilio_auth_token: Optional[str] = None
 
     # Email settings (Resend)
@@ -34,6 +35,9 @@ class Settings(BaseSettings):
     # Backend URL (for webhook configuration)
     backend_url: str = "https://ava-api-production.onrender.com"
     smtp_encryption_key: str = ""
+
+    # Feature flags
+    integrations_stub_mode: bool = True  # Enable stub integrations (disable in production)
 
     @field_validator("allowed_origins", mode="before")
     @classmethod

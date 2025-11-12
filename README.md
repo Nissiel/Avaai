@@ -200,6 +200,12 @@ Avaai/
 - **UI** : aucun appel direct côté client, tout passe par les actions serveur / API FastAPI.
 - **Tests** : `python3.11 -m pytest api/tests/test_twilio_service.py` valide la résolution des credentials et protège la régression sur l’intégration Twilio.
 
+## ✉️ Phase 4 — Email & Calendar Stubs
+- **Test Email API** : `/api/v1/integrations/email/test` valide la charge utile et confirme si Resend/SMTP sont configurés sans envoyer d’email (prêt à brancher quand les secrets seront fournis).
+- **Calendrier** : `/api/v1/integrations/calendar/{google|microsoft}/events` renvoie des événements factices + les scopes OAuth requis (`calendar.events.readonly` / `Calendars.Read`).
+- **Server Actions** : les stubs sont logués côté serveur pour garantir l’observabilité (corrélation ready).
+- **Tests** : `python3.11 -m pytest api/tests/test_integrations_stubs.py` couvre les endpoints et garantit leur stabilité.
+
 ## 🔧 Scripts Disponibles
 
 ```bash

@@ -9,10 +9,19 @@ from typing import Any, Dict, Optional, Sequence
 import httpx
 
 from api.src.core.settings import get_settings
+from api.src.infrastructure.external.circuit_breaker import with_circuit_breaker
 
 
 class VapiApiError(RuntimeError):
     """Raised when the Vapi API responds with an error."""
+
+
+class VapiRateLimitError(VapiApiError):
+    """Raised when Vapi API returns 429 Too Many Requests."""
+
+
+class VapiAuthError(VapiApiError):
+    """Raised when Vapi API returns 401 Unauthorized."""
 
 
 class VapiClient:
@@ -31,13 +40,27 @@ class VapiClient:
             "Content-Type": "application/json",
         }
 
-    async def _request(self, method: str, path: str, *, params: dict | None = None, json: dict | None = None) -> Any:
+    @with_circuit_breaker("vapi")
+    async def _request(
+        self,
+        method: str,
+        path: str,
+        *,
+        params: dict | None = None,
+        json: Any | None = None,
+    ) -> Any:
         url = f"{self._base_url}{path}"
         async with httpx.AsyncClient(timeout=10.0) as client:
             response = await client.request(method, url, headers=self._headers, params=params, json=json)
 
+        # Raise specific exceptions for better error handling
+        if response.status_code == 429:
+            raise VapiRateLimitError(f"Vapi rate limit exceeded: {response.text}")
+        if response.status_code == 401:
+            raise VapiAuthError(f"Vapi authentication failed: {response.text}")
         if response.status_code >= 400:
             raise VapiApiError(f"Vapi error {response.status_code}: {response.text}")
+            
         if response.headers.get("content-type", "").startswith("application/json"):
             return response.json()
         return response.text
@@ -437,6 +460,24 @@ class VapiClient:
             f"/phone-number/{phone_id}",
             json={"assistantId": assistant_id}
         )
+
+    async def list_settings(self) -> Sequence[dict[str, Any]]:
+        """Return the list of configurable Vapi settings."""
+        data = await self._request("GET", "/settings")
+        if isinstance(data, dict) and isinstance(data.get("settings"), list):
+            return data["settings"]
+        if isinstance(data, list):
+            return data
+        return []
+
+    async def get_setting(self, key: str) -> dict[str, Any]:
+        """Retrieve a single Vapi setting."""
+        return await self._request("GET", f"/settings/{key}")
+
+    async def update_setting(self, key: str, value: Any) -> dict[str, Any]:
+        """Update or upsert a Vapi setting."""
+        payload = value if isinstance(value, dict) and set(value.keys()) == {"value"} else {"value": value}
+        return await self._request("PUT", f"/settings/{key}", json=payload)
 
 
 __all__ = ["VapiClient", "VapiApiError"]

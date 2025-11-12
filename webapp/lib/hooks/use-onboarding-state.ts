@@ -1,6 +1,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAuthToken } from "@/lib/hooks/use-auth-token";
+import { getBackendBaseUrl } from "@/lib/auth/session-client";
 
 export interface OnboardingStep {
   id: string;
@@ -40,6 +41,8 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     optional: false,
   },
 ];
+
+const backendBaseUrl = getBackendBaseUrl();
 
 /**
  * Hook to manage onboarding flow state
@@ -86,12 +89,16 @@ export function useOnboardingState() {
   const skipStep = async (stepId: string) => {
     // Mark step as skipped in backend
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/auth/profile`, {
+      const headers: HeadersInit = {
+        "Content-Type": "application/json",
+      };
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
+      await fetch(`${backendBaseUrl}/api/v1/auth/profile`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers,
         body: JSON.stringify({
           [`onboarding_${stepId}_skipped`]: true,
         }),
@@ -105,12 +112,16 @@ export function useOnboardingState() {
 
   const completeOnboarding = async () => {
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/auth/profile`, {
+      const headers: HeadersInit = {
+        "Content-Type": "application/json",
+      };
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
+      await fetch(`${backendBaseUrl}/api/v1/auth/profile`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers,
         body: JSON.stringify({
           onboarding_completed: true,
         }),

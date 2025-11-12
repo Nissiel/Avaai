@@ -8,7 +8,8 @@ from typing import Any, Optional
 from pydantic import BaseModel, Field
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from api.src.infrastructure.external.vapi_client import VapiApiError, VapiClient
+from api.src.application.services.vapi import get_vapi_client_for_user
+from api.src.infrastructure.external.vapi_client import VapiApiError
 from api.src.infrastructure.persistence.models.user import User
 from api.src.presentation.dependencies.auth import get_current_user
 from api.src.core.settings import get_settings
@@ -61,17 +62,6 @@ class UpdateAssistantRequest(BaseModel):
 logger = logging.getLogger(__name__)
 
 
-def _client(user: User) -> VapiClient:
-    """🎯 DIVINE: Create VapiClient with user's personal API key (multi-tenant)."""
-    try:
-        return VapiClient(token=user.vapi_api_key)  # 🔥 DIVINE: Correct parameter name!
-    except ValueError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Vapi API key not configured. Please add your Vapi key in Settings."
-        ) from exc
-
-
 async def _auto_link_twilio_number(user: User, assistant_id: Optional[str]) -> Optional[dict[str, Any]]:
     """
     Automatically import or assign the user's Twilio number to the newly created assistant.
@@ -93,12 +83,12 @@ async def _auto_link_twilio_number(user: User, assistant_id: Optional[str]) -> O
         return None
 
     try:
-        phone_client = VapiClient(token=user.vapi_api_key)
-    except ValueError as exc:
-        logger.warning("Skipping Twilio auto-link for user %s: %s", user.id, exc)
+        phone_client = get_vapi_client_for_user(user)
+    except HTTPException:
+        logger.warning("Skipping Twilio auto-link for user %s: missing Vapi key", user.id)
         return {
             "status": "vapi_key_missing",
-            "message": str(exc),
+            "message": "Vapi API key not configured",
         }
 
     try:
@@ -199,7 +189,7 @@ async def list_assistants(
     user: User = Depends(get_current_user),
     limit: int = Query(default=50, ge=1, le=200),
 ) -> dict[str, object]:
-    client = _client(user)
+    client = get_vapi_client_for_user(user)
     try:
         assistants = await client.list_assistants(limit=limit)
         # 🎯 DIVINE: Return format compatible with frontend expectations
@@ -217,7 +207,7 @@ async def get_assistant(
     assistant_id: str,
     user: User = Depends(get_current_user),
 ) -> dict[str, object]:
-    client = _client(user)
+    client = get_vapi_client_for_user(user)
     try:
         assistant = await client.get_assistant(assistant_id)
         # 🎯 DIVINE: Return format compatible with frontend expectations
@@ -245,7 +235,7 @@ async def create_assistant(
     During onboarding: No auth required (user creates assistant before signup)
     After onboarding: Should validate tenant ownership
     """
-    client = _client(user)
+    client = get_vapi_client_for_user(user)
     settings = get_settings()
 
     # DIVINE: Safe metadata handling - use empty dict if None
@@ -312,7 +302,7 @@ async def update_assistant(
 
     Only provided fields will be updated. Omitted fields remain unchanged.
     """
-    client = _client(user)
+    client = get_vapi_client_for_user(user)
 
     try:
         # 🔥 DIVINE: Build COMPLETE update payload - ALL fields!
@@ -413,7 +403,7 @@ async def configure_webhook(
             "message": "Webhook configured successfully"
         }
     """
-    client = _client(user)
+    client = get_vapi_client_for_user(user)
     settings = get_settings()
 
     webhook_url = f"{settings.backend_url}/api/v1/webhooks/vapi"

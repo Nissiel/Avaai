@@ -1,6 +1,6 @@
 import "server-only";
 
-import { backendConfig } from "@/services/backend-service";
+import { serverFetchBackend } from "@/lib/http/server-client";
 
 export interface StudioConfig {
   // Organization
@@ -45,7 +45,7 @@ export interface StudioConfig {
 
 export type StudioConfigUpdate = Partial<StudioConfig>;
 
-const CONFIG_ENDPOINT = `${backendConfig.baseUrl}/api/v1/studio/config`;
+const CONFIG_ENDPOINT = "/api/v1/studio/config";
 
 export async function fetchStudioConfig(token?: string): Promise<StudioConfig> {
   console.log("🔥 Fetching studio config from:", CONFIG_ENDPOINT);
@@ -58,10 +58,10 @@ export async function fetchStudioConfig(token?: string): Promise<StudioConfig> {
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  const response = await fetch(CONFIG_ENDPOINT, {
+  const response = await serverFetchBackend(CONFIG_ENDPOINT, {
     method: "GET",
     headers,
-    cache: "no-store",
+    authToken: token,
   });
 
   console.log("🔥 Studio config response:", response.status, response.statusText);
@@ -86,11 +86,11 @@ export async function updateStudioConfig(payload: StudioConfigUpdate, token?: st
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  const response = await fetch(CONFIG_ENDPOINT, {
+  const response = await serverFetchBackend(CONFIG_ENDPOINT, {
     method: "PATCH",
     headers,
     body: JSON.stringify(payload),
-    cache: "no-store",
+    authToken: token,
   });
 
   if (!response.ok) {
