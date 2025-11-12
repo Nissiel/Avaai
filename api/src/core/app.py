@@ -57,7 +57,7 @@ def create_app() -> FastAPI:
     async def warmup_database() -> None:
         """🔥 DIVINE FIX: Warmup database on startup to prevent first-request timeouts"""
         try:
-            from api.src.infrastructure.database.session import engine
+            from src.infrastructure.database.session import engine
             from sqlalchemy import text
             import asyncio
             import time
