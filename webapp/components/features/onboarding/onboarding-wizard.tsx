@@ -104,7 +104,7 @@ function mapConfigToFormValues(config: StudioConfig): Partial<OnboardingValues> 
   const locale = localeFromLanguage(config.language);
   return {
     name: config.organizationName,
-    email: config.adminEmail,
+    // ✨ DIVINE: Email no longer in form - comes from session
     timezone: config.timezone,
     locale,
     persona: (config.persona as OnboardingValues["persona"]) ?? "secretary",
@@ -117,7 +117,7 @@ function mapConfigToFormValues(config: StudioConfig): Partial<OnboardingValues> 
   };
 }
 
-function buildConfigUpdate(step: StepId, values: OnboardingValues): StudioConfigUpdate {
+function buildConfigUpdate(step: StepId, values: OnboardingValues, userEmail?: string): StudioConfigUpdate {
   const update: StudioConfigUpdate = {};
 
   const assign = <K extends keyof StudioConfigUpdate>(key: K, value: StudioConfigUpdate[K]) => {
@@ -128,7 +128,8 @@ function buildConfigUpdate(step: StepId, values: OnboardingValues): StudioConfig
 
   if (step === "profile" || step === "ava" || step === "plan") {
     assign("organizationName", values.name);
-    assign("adminEmail", values.email);
+    // ✨ DIVINE: Use email from session instead of form
+    if (userEmail) assign("adminEmail", userEmail);
     assign("timezone", values.timezone);
     assign("language", languageFromLocale(values.locale as LocaleCode));
   }
@@ -228,7 +229,7 @@ export function OnboardingWizard() {
     resolver: zodResolver(onboardingSchema.partial()),
     defaultValues: {
       name: "",
-      email: "",
+      // ✨ DIVINE: Email from session - no need to ask again
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       locale: locale === "fr" || locale === "he" ? (locale as "fr" | "he") : "en",
       marketingOptIn: true,
@@ -410,7 +411,8 @@ export function OnboardingWizard() {
 
     try {
       // 🌟 DIVINE: Optimistic update - save locally first, sync in background
-      const updatePayload = buildConfigUpdate(current, values);
+      const userEmail = session?.user?.email ?? undefined;
+      const updatePayload = buildConfigUpdate(current, values, userEmail);
 
       if (Object.keys(updatePayload).length > 0) {
         // Save to localStorage immediately (offline-first)
@@ -614,19 +616,7 @@ function ProfileStep({ form }: { form: UseFormReturn<OnboardingValues> }) {
           </FormItem>
         )}
       />
-      <FormField
-        control={form.control}
-        name="email"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Admin email</FormLabel>
-            <FormControl>
-              <Input type="email" placeholder="team@acme.com" {...field} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
+      {/* ✨ DIVINE: Email removed - already captured during signup */}
       <div className="grid gap-4 sm:grid-cols-2">
         <FormField
           control={form.control}

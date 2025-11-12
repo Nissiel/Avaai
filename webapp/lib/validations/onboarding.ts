@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const onboardingProfileSchema = z.object({
   name: z.string().min(2),
-  email: z.string().email(),
+  // ✨ DIVINE: Email removed - captured during signup, available in session
   timezone: z.string(),
   locale: z.enum(["en", "fr", "he"]),
   marketingOptIn: z.boolean().optional(),
