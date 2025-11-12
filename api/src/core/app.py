@@ -56,11 +56,12 @@ def create_app() -> FastAPI:
     @app.on_event("startup")
     async def warmup_database() -> None:
         """🔥 DIVINE FIX: Warmup database on startup to prevent first-request timeouts"""
+        import asyncio
+        import time
+        
         try:
-            from src.infrastructure.database.session import engine
+            from api.src.infrastructure.database.session import engine
             from sqlalchemy import text
-            import asyncio
-            import time
             
             print("🔥 Warming up database connection pool...", flush=True)
             async with engine.connect() as conn:
