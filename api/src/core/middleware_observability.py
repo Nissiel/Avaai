@@ -11,7 +11,7 @@ from uuid import uuid4
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from src.core.logging import request_logger
+from api.src.core.logging import request_logger
 
 
 class RequestCorrelationMiddleware(BaseHTTPMiddleware):
