@@ -60,7 +60,7 @@ export default function ContactDetailPage({ params }: ContactDetailPageProps) {
 
   const { data, isFetching } = useQuery({
     queryKey: ["calls", "all"],
-    queryFn: () => listCalls({ limit: 400 }),
+    queryFn: () => listCalls({ limit: 200 }),
   });
 
   const contactAggregate = React.useMemo(() => {

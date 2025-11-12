@@ -21,11 +21,8 @@ function negotiateLocale(requested?: string[] | string | null): Locale {
   return matched;
 }
 
-export default getRequestConfig(async (context) => {
-  const localeFromContext = context?.locale;
-  const resolvedLocale = isLocale(localeFromContext)
-    ? localeFromContext
-    : negotiateLocale(localeFromContext);
+export default getRequestConfig(async ({ locale }) => {
+  const resolvedLocale = isLocale(locale) ? locale : negotiateLocale(locale);
   try {
     const messages = (await import(`@/messages/${resolvedLocale}.json`)).default;
     return {

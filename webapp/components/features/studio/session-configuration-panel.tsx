@@ -15,6 +15,7 @@ import { toolTemplates } from "@/lib/tool-templates";
 import { ToolConfigurationDialog } from "./tool-configuration-dialog";
 import { BackendTag } from "./backend-tag";
 import { useBackendTools } from "@/lib/use-backend-tools";
+import { Label } from "@/components/ui/label";
 
 interface SessionConfigurationPanelProps {
   callStatus: string;
@@ -176,10 +177,11 @@ const SessionConfigurationPanel: React.FC<SessionConfigurationPanelProps> = ({
         <ScrollArea className="h-full">
           <div className="space-y-4 sm:space-y-6 m-1">
             <div className="space-y-2">
-              <label className="text-sm font-medium leading-none">
+              <Label htmlFor="session-instructions" className="text-sm font-medium leading-none">
                 Instructions
-              </label>
+              </Label>
               <Textarea
+                id="session-instructions"
                 placeholder="Enter instructions"
                 className="min-h-[100px] resize-none"
                 value={instructions}
@@ -188,9 +190,11 @@ const SessionConfigurationPanel: React.FC<SessionConfigurationPanelProps> = ({
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium leading-none">Voice</label>
+              <Label htmlFor="session-voice" className="text-sm font-medium leading-none">
+                Voice
+              </Label>
               <Select value={voice} onValueChange={setVoice}>
-                <SelectTrigger className="w-full">
+                <SelectTrigger id="session-voice" className="w-full">
                   <SelectValue placeholder="Select voice" />
                 </SelectTrigger>
                 <SelectContent>
@@ -204,7 +208,7 @@ const SessionConfigurationPanel: React.FC<SessionConfigurationPanelProps> = ({
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium leading-none">Tools</label>
+              <h4 className="text-sm font-medium leading-none">Tools</h4>
               <div className="space-y-2">
                 {tools.map((tool, index) => {
                   const name = getToolNameFromSchema(tool);

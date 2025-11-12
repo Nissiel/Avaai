@@ -15,6 +15,10 @@ type ApiRequestOptions = RequestInit & {
   metricsLabel?: string;
 };
 
+type MetricsStore = {
+  requests: Record<string, unknown>;
+};
+
 const inflightControllers = new Map<string, AbortController>();
 let refreshPromise: Promise<string | null> | null = null;
 let isRefreshing = false; // 🎯 DIVINE: Prevent concurrent refreshes
@@ -146,16 +150,24 @@ async function singleFlightRefresh(): Promise<string | null> {
 
 function recordMetrics(label: string, data: Record<string, unknown>) {
   if (typeof window !== "undefined") {
-    const globalObject = window as unknown as {
-      __AVA_METRICS__?: { requests: Record<string, unknown> };
-    };
-    if (!globalObject.__AVA_METRICS__) {
-      globalObject.__AVA_METRICS__ = { requests: {} };
+    try {
+      const globalObject = window as unknown as {
+        __AVA_METRICS__?: MetricsStore;
+      };
+      const metricsStore = (globalObject.__AVA_METRICS__ ??= { requests: {} });
+      if (!metricsStore.requests) {
+        metricsStore.requests = {};
+      }
+      metricsStore.requests[label] = {
+        ...data,
+        ts: new Date().toISOString(),
+      };
+    } catch (error) {
+      // 🎯 DIVINE: Silently fail metrics recording, never crash user experience
+      if (process.env.NODE_ENV === "development") {
+        console.warn("[Metrics] Failed to record:", label, error);
+      }
     }
-    globalObject.__AVA_METRICS__.requests[label] = {
-      ...data,
-      ts: new Date().toISOString(),
-    };
   }
 }
 
