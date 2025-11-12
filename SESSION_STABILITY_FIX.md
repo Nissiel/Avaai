@@ -1,125 +1,264 @@
-# 🔐 SESSION STABILITY FIX - Priority 1 COMPLETED
+# 🔐 SESSION STABILITY FIX - Priority 1 COMPLETED ✅
 
-**Status:** ✅ DEPLOYED TO PRODUCTION  
-**Deployment:** https://webapp-cherwmbgp-nissiel-thomas-projects.vercel.app  
-**Commit:** 8d7cfbd
-
----
-
-## 🐛 THE PROBLEM
-
-**User Report:**
-> "The app is disconnecting itself alone from the web. Like you are connected but suddenly it is not working, and I have to do hard refresh ten times until it works."
-
-**Root Cause:**
-1. Backend access tokens expire after **15 minutes**
-2. Frontend middleware only checks if token **EXISTS**, not if it's **VALID**
-3. Expired tokens pass middleware but fail at API level
-4. User experiences API failures as "random disconnect"
-5. Hard refresh temporarily works because it triggers re-authentication
-6. **Missing: Automatic token refresh mechanism**
+**Status:** ✅ FULLY DEPLOYED - ENHANCED VERSION  
+**Production:** https://app.avafirstai.com  
+**Deployment:** https://webapp-b04mb62a7-nissiel-thomas-projects.vercel.app  
+**Commits:** 
+- 8d7cfbd (Initial fix)
+- 1543037 (Enhanced with circuit breaker)
 
 ---
 
-## 🎯 THE SOLUTION
+## 🐛 THE PROBLEM (EXPANDED)
+
+**User Reports:**
+1. > "The app is disconnecting itself after 15 minutes"
+2. > "When I click on too many buttons it disconnects"
+3. > "When I make a manipulation that creates an error, then after it disconnects and I need to hard refresh"
+
+**Root Causes Identified:**
+1. ❌ Backend access tokens expire after **15 minutes**
+2. ❌ **Rapid button clicks** → multiple 401s → cascading failures
+3. ❌ **Errors during operations** → state corruption → session killed
+4. ❌ **Backend 5xx errors** → false assumption of session death
+5. ❌ **No request deduplication** → button mashing creates chaos
+6. ❌ **No circuit breaker** → repeated failures cascade
+7. ❌ **Missing visual feedback** → user doesn't know what's happening
+
+---
+
+## 🎯 THE SOLUTION (ENHANCED)
+
+### Phase 1: Automatic Token Refresh ✅
+Implemented comprehensive token refresh system with:
+- Background refresh every 10 minutes
+- Refresh on tab visibility change
+- Secure HTTP-only cookies
+
+### Phase 2: DIVINE Resilience Enhancements ✅
+
+#### 1. **Smart Token Refresh with Exponential Backoff**
+**File:** `webapp/lib/api/client.ts`
+
+- Atomic refresh lock (prevents concurrent attempts)
+- Exponential backoff: 1s → 2s → 4s delays
+- Max 3 retry attempts before forcing logout
+- Auto-reset counter on successful refresh
+- Detailed logging for debugging
+
+#### 2. **Circuit Breaker Pattern** 🔴 (NEW)
+**File:** `webapp/lib/api/client.ts`
+
+- Monitors backend health (failure threshold: 5)
+- Opens circuit for 30 seconds on repeated failures
+- Prevents request cascades during outages
+- Auto-recovers when backend becomes healthy
+- Emits events for user notifications
+
+#### 3. **Intelligent Error Categorization** 🎯 (NEW)
+**Different errors = Different actions:**
+
+| Error Type | Status | Action | Disconnect? |
+|------------|--------|--------|-------------|
+| Token expired | 401 | Refresh + retry | ❌ NO |
+| Permission denied | 403 | Show message | ❌ NO |
+| Server error | 5xx | Log + retry | ❌ NO |
+| Network error | N/A | Offline mode | ❌ NO |
+| Timeout | N/A | Retry request | ❌ NO |
+
+**Key Insight:** Only force logout after 3 failed refresh attempts, NEVER on first error.
+
+#### 4. **Backend Health Monitor** 🔔 (NEW)
+**File:** `webapp/components/auth/backend-health-monitor.tsx`
+
+- Listens for circuit breaker events
+- Shows user-friendly toast notifications:
+  - ⚠️ "Connection issue - We're having trouble connecting. Retrying..."
+  - ✅ "Connection restored - You're back online!"
+- Integrated into main app layout
+- Zero UI footprint when healthy
+
+#### 5. **Request Deduplication** (ENHANCED)
+**File:** `webapp/lib/api/client.ts`
+
+- Existing deduplication improved
+- Rapid button clicks = single network call
+- Prevents cascading 401 errors
+- Preserves UI responsiveness
+
+#### 6. **Session State Preservation** (ENHANCED)
+**File:** `webapp/lib/auth/session-client.ts`
+
+- Errors during operations don't corrupt session
+- Failed requests retry after refresh
+- UI state preserved during backend issues
+- Only logout on unrecoverable errors
+
+---
 
 ### Architecture Changes
 
-#### 1. **Frontend Refresh Endpoint** (NEW)
-**File:** `webapp/app/api/auth/refresh/route.ts`
+#### Initial Implementation:
+- ✅ Frontend refresh endpoint (`/api/auth/refresh`)
+- ✅ Automatic token refresh hook (`useTokenRefresh`)
+- ✅ SessionManager component
+- ✅ Updated API client with 401 retry
+- ✅ Updated session client for cookies
 
-- Proxies to backend `/api/v1/auth/refresh`
-- Uses HTTP-only cookies (secure, no localStorage exposure)
-- Auto-clears invalid tokens on failure
-- Returns new access_token and updates cookie
-
-#### 2. **Automatic Token Refresh Hook** (NEW)
-**File:** `webapp/lib/hooks/use-token-refresh.ts`
-
-- Refreshes token every **10 minutes** (before 15min expiry)
-- Refreshes when tab becomes visible (after being hidden)
-- Runs silently in background
-- Prevents session expiration
-
-#### 3. **Session Manager Component** (NEW)
-**File:** `webapp/components/auth/session-manager.tsx`
-
-- Lightweight component that activates the refresh hook
-- Integrated into main app layout
-- Runs for all authenticated users
-- Zero UI footprint
-
-#### 4. **Updated API Client**
-**File:** `webapp/lib/api/client.ts`
-
-- Simplified refresh logic
-- Uses frontend API route (not direct backend)
-- Automatically retries failed requests with new token
-- Handles 401 errors gracefully
-
-#### 5. **Updated Session Client**
-**File:** `webapp/lib/auth/session-client.ts`
-
-- Changed from localStorage to HTTP-only cookies
-- Uses frontend API route for security
-- Redirects to login on refresh failure
-- Emits token change events for UI updates
-
-#### 6. **Integrated into App Layout**
-**File:** `webapp/app/[locale]/(app)/layout.tsx`
-
-- Added `<SessionManager />` component
-- Runs for all authenticated pages
-- Ensures continuous session management
+#### Enhanced Implementation:
+- ✅ Circuit breaker with health tracking
+- ✅ Exponential backoff retry logic
+- ✅ Error categorization (401/403/5xx/timeout)
+- ✅ BackendHealthMonitor with toast notifications
+- ✅ Request deduplication improvements
+- ✅ Session preservation during errors
 
 ---
 
 ## ✅ HOW IT WORKS
 
-### Before Fix:
+### Scenario 1: Token Expiration (FIXED)
 ```
 Time 0:00 → User logs in (token valid for 15min)
-Time 0:15 → Token expires
-Time 0:16 → User clicks button → API 401 error → "disconnect"
-Time 0:17 → User hard refreshes 10x → eventually triggers re-login
-```
-
-### After Fix:
-```
-Time 0:00 → User logs in (token valid for 15min)
-Time 0:10 → Auto-refresh in background (new token, valid for 15min)
-Time 0:20 → Auto-refresh in background (new token, valid for 15min)
-Time 0:30 → Auto-refresh in background (new token, valid for 15min)
+Time 0:10 → ✅ Auto-refresh in background (new token)
+Time 0:20 → ✅ Auto-refresh in background (new token)
+Time 0:30 → ✅ Auto-refresh in background (new token)
 ...continues indefinitely as long as user is active
 ```
 
+### Scenario 2: Rapid Button Clicking (FIXED)
+```
+User clicks button 10 times rapidly:
+Click 1 → API request sent
+Click 2-10 → ✅ Deduplicated (single request)
+If request returns 401:
+  → ✅ Atomic refresh lock activated
+  → ✅ Token refreshed once
+  → ✅ Request retried with new token
+  → ✅ User sees success, no disconnect
+```
+
+### Scenario 3: Error During Manipulation (FIXED)
+```
+User performs operation → API returns 500 error:
+  → ✅ Error logged, circuit breaker tracks
+  → ✅ Session stays alive (5xx ≠ auth failure)
+  → ✅ Toast shows: "Something went wrong, please try again"
+  → ✅ User can retry, no hard refresh needed
+```
+
+### Scenario 4: Backend Temporarily Down (FIXED)
+```
+5 consecutive API calls fail with 5xx:
+  → ✅ Circuit breaker OPENS
+  → ✅ Toast shows: "Connection issue - Retrying..."
+  → ✅ No new requests sent for 30 seconds
+  → ✅ Session preserved, no logout
+
+After 30 seconds:
+  → ✅ Circuit breaker attempts recovery
+  → ✅ If backend healthy: Circuit CLOSES
+  → ✅ Toast shows: "Connection restored!"
+  → ✅ Normal operations resume
+```
+
+### Scenario 5: Permission Denied (FIXED)
+```
+User accesses restricted resource → API returns 403:
+  → ✅ Recognized as permission issue, not auth failure
+  → ✅ Session stays alive
+  → ✅ Toast shows: "You don't have permission to access this"
+  → ✅ User remains logged in, can navigate elsewhere
+```
+
 ### Additional Protection:
-- **Tab hidden then visible?** → Instant refresh
-- **API returns 401?** → Refresh + retry request
-- **Refresh fails?** → Clear tokens + redirect to login
+- **Tab hidden then visible?** → ✅ Instant refresh (2s delay)
+- **API returns 401?** → ✅ Refresh + retry request
+- **Refresh fails?** → ✅ Exponential backoff (3 attempts)
+- **3 refresh failures?** → ✅ Clear tokens + redirect to login
+- **Network timeout?** → ✅ Retry, don't kill session
+- **Computer sleep/wake?** → ✅ Auto-refresh on first API call
 
 ---
 
 ## 🧪 HOW TO VERIFY THE FIX
 
-### Manual Testing:
+### Test 1: Token Expiration (15+ minutes)
 1. **Log in to production:** https://app.avafirstai.com
 2. **Wait 16+ minutes** (past token expiry)
-3. **Navigate pages** (should work seamlessly, no disconnect)
+3. **Navigate pages** → ✅ Should work seamlessly
 4. **Check browser DevTools:**
-   - Console: Should see "✅ Token refreshed successfully" every 10min
-   - Network: Look for `POST /api/auth/refresh` calls
-   - Cookies: `access_token` should update automatically
+   - Console: "✅ Token refreshed successfully" every 10min
+   - Network: `POST /api/auth/refresh` calls every 10min
+   - Cookies: `access_token` updates automatically
+
+### Test 2: Rapid Button Clicking
+1. **Open any page with actions** (e.g., Dashboard)
+2. **Click same button 10+ times rapidly**
+3. **Check Network tab** → ✅ Single request sent (deduplicated)
+4. **Check result** → ✅ Action succeeds, no disconnect
+
+### Test 3: Backend Error Handling
+1. **Open browser console**
+2. **Trigger API call** (any action)
+3. **Simulate 500 error** (if testing locally, kill backend temporarily)
+4. **Check toast** → ✅ "Connection issue" appears
+5. **Restart backend** → ✅ "Connection restored!" appears
+6. **Check session** → ✅ Still logged in, no hard refresh needed
+
+### Test 4: Circuit Breaker
+```javascript
+// Run in browser console to simulate failures:
+for (let i = 0; i < 6; i++) {
+  fetch('/api/calls').catch(() => {});
+}
+// Expected: Circuit breaker opens, toast shows "Connection issue"
+```
+
+### Test 5: Permission Denied (403)
+1. **Try accessing restricted resource**
+2. **If 403 returned** → ✅ Session stays alive
+3. **Check toast** → ✅ Shows permission message
+4. **Navigate elsewhere** → ✅ Still logged in
+
+### Test 6: Computer Sleep/Wake
+1. **Put computer to sleep** (close laptop)
+2. **Wait 5 minutes**
+3. **Wake computer**
+4. **Return to app tab**
+5. **Navigate/click** → ✅ Auto-refreshes, works immediately
 
 ### Automated Testing:
-```bash
-# Open browser console and run:
+```javascript
+// Paste in browser console:
+console.log("🧪 Starting 20-minute session test...");
+
+// Test 1: Token refresh after 16 minutes
 setTimeout(() => {
-  console.log("Testing after 16 minutes...");
+  console.log("⏱️ Testing at 16 minutes (past token expiry)...");
   fetch("/api/calls").then(r => 
-    console.log("Status:", r.status, "Should be 200, not 401")
+    console.log("✅ Status:", r.status, "- Should be 200, not 401")
   );
 }, 16 * 60 * 1000);
+
+// Test 2: Rapid clicks
+console.log("🖱️ Testing rapid clicks...");
+for (let i = 0; i < 20; i++) {
+  fetch("/api/auth/me");
+}
+console.log("✅ Rapid click test sent");
+
+// Test 3: Monitor refresh calls
+let refreshCount = 0;
+const originalFetch = window.fetch;
+window.fetch = function(...args) {
+  if (args[0]?.includes('/auth/refresh')) {
+    refreshCount++;
+    console.log(`🔄 Token refresh #${refreshCount} at ${new Date().toISOString()}`);
+  }
+  return originalFetch.apply(this, args);
+};
+console.log("📊 Monitoring token refreshes...");
 ```
 
 ---
@@ -206,18 +345,34 @@ Fixed random disconnections with automatic token refresh
 ## 🚀 DEPLOYMENT INFO
 
 **Build:** ✅ Success (no TypeScript errors)  
-**Commit:** `8d7cfbd`  
-**Message:** "🔐 Fix session disconnection - implement automatic token refresh"  
-**Vercel:** https://webapp-cherwmbgp-nissiel-thomas-projects.vercel.app  
+**Commits:**
+- `8d7cfbd` - Initial token refresh mechanism
+- `1543037` - Enhanced with circuit breaker & error recovery
+
+**Messages:** 
+1. "🔐 Fix session disconnection - implement automatic token refresh"
+2. "🛡️ DIVINE: Enhanced session stability - circuit breaker & error recovery"
+
+**Vercel:**
+- Initial: https://webapp-cherwmbgp-nissiel-thomas-projects.vercel.app
+- Enhanced: https://webapp-b04mb62a7-nissiel-thomas-projects.vercel.app
+
 **Production:** https://app.avafirstai.com  
 
 **Files Changed:**
+
+**Phase 1 (Initial Fix):**
 - ✅ `webapp/app/api/auth/refresh/route.ts` (NEW)
 - ✅ `webapp/lib/auth/session-client.ts` (UPDATED)
 - ✅ `webapp/lib/api/client.ts` (UPDATED)
 - ✅ `webapp/lib/hooks/use-token-refresh.ts` (NEW)
 - ✅ `webapp/components/auth/session-manager.tsx` (NEW)
 - ✅ `webapp/app/[locale]/(app)/layout.tsx` (UPDATED)
+
+**Phase 2 (Enhanced Resilience):**
+- ✅ `webapp/lib/api/client.ts` (ENHANCED - circuit breaker)
+- ✅ `webapp/components/auth/backend-health-monitor.tsx` (NEW)
+- ✅ `webapp/app/[locale]/(app)/layout.tsx` (UPDATED - added monitor)
 
 ---
 
