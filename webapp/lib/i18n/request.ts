@@ -1,5 +1,5 @@
 import { match } from "@formatjs/intl-localematcher";
-import { getRequestConfig } from "next-intl/server";
+import { getRequestConfig, requestLocale } from "next-intl/server";
 import Negotiator from "negotiator";
 import { headers } from "next/headers";
 import { fallbackLocale, isLocale, locales, type Locale } from "./locales";
@@ -21,8 +21,11 @@ function negotiateLocale(requested?: string[] | string | null): Locale {
   return matched;
 }
 
-export default getRequestConfig(async ({ locale }) => {
-  const resolvedLocale = isLocale(locale) ? locale : negotiateLocale(locale);
+export default getRequestConfig(async () => {
+  const localeFromRequest = await requestLocale();
+  const resolvedLocale = isLocale(localeFromRequest)
+    ? localeFromRequest
+    : negotiateLocale(localeFromRequest);
   try {
     const messages = (await import(`@/messages/${resolvedLocale}.json`)).default;
     return {

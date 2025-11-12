@@ -28,6 +28,7 @@ engine = create_async_engine(
     pool_recycle=300,  # Recycle connections every 5 minutes
     connect_args={
         "statement_cache_size": 0,  # 🔥 CRITICAL: Disable prepared statements (PgBouncer compatibility)
+        "prepared_statement_cache_size": 0,  # 🔥 SQLAlchemy asyncpg cache off (PgBouncer transaction/statement mode safe)
         "timeout": 10.0,  # 🔥 10-second connection timeout (give Supabase time to wake)
         "command_timeout": 15.0,  # 🔥 15-second query timeout (enough for cold starts)
         "server_settings": {
