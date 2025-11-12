@@ -37,7 +37,7 @@ def create_app() -> FastAPI:
 
     @app.get("/healthz", tags=["Health"])
     async def healthcheck() -> dict[str, str]:  # pragma: no cover - trivial
-        return {"status": "ok"}
+        return {"status": "healthy"}
 
     app.include_router(api_v1_router, prefix=settings.api_prefix)
 
