@@ -60,16 +60,17 @@ def create_app() -> FastAPI:
             from api.src.infrastructure.database.session import engine
             from sqlalchemy import text
             import asyncio
+            import time
             
             print("🔥 Warming up database connection pool...", flush=True)
             async with engine.connect() as conn:
                 # Simple ping query with generous timeout for cold Supabase
-                start = asyncio.get_event_loop().time()
+                start = time.time()
                 await asyncio.wait_for(
                     conn.execute(text("SELECT 1")),
                     timeout=20.0  # 🔥 Give Supabase 20s to wake from sleep
                 )
-                elapsed = asyncio.get_event_loop().time() - start
+                elapsed = time.time() - start
                 print(f"✅ Database warmed up in {elapsed:.2f}s (cold start handled)", flush=True)
         except asyncio.TimeoutError:
             print(f"⚠️  Database warmup timed out after 20s (continuing anyway)", flush=True)
