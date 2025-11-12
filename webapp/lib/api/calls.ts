@@ -120,8 +120,7 @@ export async function sendCallTranscriptEmail(callId: string): Promise<SendTrans
     const detail =
       (payload as { detail?: string } | null)?.detail ??
       (payload && "message" in payload ? payload.message : null) ??
-      text ||
-      "Failed to send email";
+      (text || "Failed to send email");
     throw new Error(detail);
   }
 
