@@ -81,3 +81,7 @@ class RequestCorrelationMiddleware(BaseHTTPMiddleware):
 
         response.headers["X-Request-ID"] = request_id
         return response
+
+
+# Alias for backward compatibility
+ObservabilityMiddleware = RequestCorrelationMiddleware
