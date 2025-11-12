@@ -41,7 +41,7 @@ async function requestTwilioSettings(
 ): Promise<{ response: Response; text: string; payload: RawTwilioSettingsResponse | { detail?: string } | null }> {
   const { metricsLabel, timeoutMs = 10_000, ...fetchInit } = init;
 
-  const response = await apiFetch(NEXT_ROUTE, {
+  const response = await apiFetch(BACKEND_ROUTE, {
     ...fetchInit,
     baseUrl: "backend",
     metricsLabel,
