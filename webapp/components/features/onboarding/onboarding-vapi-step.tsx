@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useIntegrationsStatus } from "@/lib/hooks/use-integrations-status";
 import { saveVapiSettings } from "@/lib/api/vapi-settings";
+import { Label } from "@/components/ui/label";
 
 interface OnboardingVapiStepProps {
   onNext: () => void;
@@ -143,11 +144,12 @@ export function OnboardingVapiStep({ onNext, onSkip }: OnboardingVapiStepProps) 
 
             {/* Input */}
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-300">
+              <Label htmlFor="onboarding-vapi-key" className="block text-sm font-medium text-gray-300">
                 {t("option1.label")}
-              </label>
+              </Label>
               <div className="relative">
                 <input
+                  id="onboarding-vapi-key"
                   type={showKey ? "text" : "password"}
                   value={vapiKey}
                   onChange={(e) => setVapiKey(e.target.value)}

@@ -15,6 +15,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import {
   Form,
   FormControl,
@@ -741,26 +742,32 @@ function AvaStep({ form }: { form: UseFormReturn<OnboardingValues> }) {
           <FormItem>
             <FormLabel>Languages</FormLabel>
             <div className="flex flex-wrap gap-3">
-              {AVAILABLE_LOCALES.map((lang) => (
-                <label
-                  key={lang}
-                  className="flex items-center gap-2 rounded-full border border-border/60 px-4 py-2 text-sm"
-                >
-                  <Checkbox
-                    checked={field.value?.includes(lang)}
-                    onCheckedChange={(checked) => {
-                      const next = new Set<LocaleCode>((field.value as LocaleCode[] | undefined) ?? []);
-                      if (checked) {
-                        next.add(lang);
-                      } else {
-                        next.delete(lang);
-                      }
-                      field.onChange(Array.from(next));
-                    }}
-                  />
-                  {lang.toUpperCase()}
-                </label>
-              ))}
+              {AVAILABLE_LOCALES.map((lang) => {
+                const checkboxId = `onboarding-language-${lang}`;
+                return (
+                  <div
+                    key={lang}
+                    className="flex items-center gap-2 rounded-full border border-border/60 px-4 py-2 text-sm"
+                  >
+                    <Checkbox
+                      id={checkboxId}
+                      checked={field.value?.includes(lang)}
+                      onCheckedChange={(checked) => {
+                        const next = new Set<LocaleCode>((field.value as LocaleCode[] | undefined) ?? []);
+                        if (checked) {
+                          next.add(lang);
+                        } else {
+                          next.delete(lang);
+                        }
+                        field.onChange(Array.from(next));
+                      }}
+                    />
+                    <Label htmlFor={checkboxId} className="text-sm font-medium">
+                      {lang.toUpperCase()}
+                    </Label>
+                  </div>
+                );
+              })}
             </div>
             <FormMessage />
           </FormItem>
@@ -900,23 +907,32 @@ function IntegrationsStep({ form }: { form: UseFormReturn<OnboardingValues> }) {
           <FormItem>
             <FormLabel>Workspace apps</FormLabel>
             <div className="flex flex-wrap gap-3">
-              {integrations.map((integration) => (
-                <label key={integration} className="flex items-center gap-2 rounded-full border border-border/60 px-4 py-2 text-sm">
-                  <Checkbox
-                    checked={field.value?.includes(integration)}
-                    onCheckedChange={(checked) => {
-                      const next = new Set(field.value ?? []);
-                      if (checked) {
-                        next.add(integration);
-                      } else {
-                        next.delete(integration);
-                      }
-                      field.onChange(Array.from(next));
-                    }}
-                  />
-                  {integration.replace("-", " ")}
-                </label>
-              ))}
+              {integrations.map((integration) => {
+                const checkboxId = `onboarding-integration-${integration}`;
+                return (
+                  <div
+                    key={integration}
+                    className="flex items-center gap-2 rounded-full border border-border/60 px-4 py-2 text-sm"
+                  >
+                    <Checkbox
+                      id={checkboxId}
+                      checked={field.value?.includes(integration)}
+                      onCheckedChange={(checked) => {
+                        const next = new Set(field.value ?? []);
+                        if (checked) {
+                          next.add(integration);
+                        } else {
+                          next.delete(integration);
+                        }
+                        field.onChange(Array.from(next));
+                      }}
+                    />
+                    <Label htmlFor={checkboxId} className="text-sm font-medium">
+                      {integration.replace("-", " ")}
+                    </Label>
+                  </div>
+                );
+              })}
             </div>
           </FormItem>
         )}

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 export default function PhonePage() {
   return (
@@ -26,17 +27,21 @@ export default function PhonePage() {
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <label className="text-sm font-semibold">Business hours</label>
-              <Input defaultValue="Mon-Fri · 09:00-18:00" />
+              <Label htmlFor="phone-business-hours" className="text-sm font-semibold">Business hours</Label>
+              <Input id="phone-business-hours" defaultValue="Mon-Fri · 09:00-18:00" />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-semibold">Fallback email</label>
-              <Input defaultValue="ops@lexandco.com" type="email" />
+              <Label htmlFor="phone-fallback-email" className="text-sm font-semibold">Fallback email</Label>
+              <Input id="phone-fallback-email" defaultValue="ops@lexandco.com" type="email" />
             </div>
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-semibold">Voicemail prompt</label>
-            <Textarea rows={3} defaultValue="Thank you for calling Lex & Co. Leave your name and reason and Ava will follow up." />
+            <Label htmlFor="phone-voicemail" className="text-sm font-semibold">Voicemail prompt</Label>
+            <Textarea
+              id="phone-voicemail"
+              rows={3}
+              defaultValue="Thank you for calling Lex & Co. Leave your name and reason and Ava will follow up."
+            />
           </div>
           <div className="flex items-center justify-between rounded-2xl border border-border/60 bg-muted/20 px-4 py-3">
             <div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { RefreshCw } from "lucide-react";
 
@@ -8,7 +8,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { listVapiRemoteSettingsAction, updateVapiRemoteSettingAction, type RemoteVapiSetting } from "@/app/(app)/settings/vapi-actions";
+import {
+  listRemoteVapiSettings,
+  updateRemoteVapiSetting,
+  type RemoteVapiSetting,
+} from "@/lib/api/vapi-remote-settings";
 
 interface SettingEditorProps {
   setting: RemoteVapiSetting;
@@ -90,13 +94,25 @@ export function VapiRemoteSettings() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pendingKey, setPendingKey] = useState<string | null>(null);
-  const [isRefreshing, startTransition] = useTransition();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const coerceValue = useCallback((input: string): unknown => {
+    const trimmed = input.trim();
+    if (!trimmed) {
+      return "";
+    }
+    try {
+      return JSON.parse(trimmed);
+    } catch {
+      return input;
+    }
+  }, []);
 
   const loadSettings = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const result = await listVapiRemoteSettingsAction();
+      const result = await listRemoteVapiSettings();
       setSettings(result);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unable to load settings";
@@ -114,18 +130,21 @@ export function VapiRemoteSettings() {
   const handleSave = useCallback(
     (key: string, value: string) => {
       setPendingKey(key);
-      startTransition(async () => {
-        const result = await updateVapiRemoteSettingAction({ key, value });
-        setPendingKey(null);
-        if (!result.success) {
-          toast.error("Failed to update setting", { description: result.error });
-          return;
+      (async () => {
+        try {
+          await updateRemoteVapiSetting(key, coerceValue(value));
+          toast.success("Setting updated", { description: key });
+          await loadSettings();
+        } catch (err) {
+          const message = err instanceof Error ? err.message : "Failed to update setting";
+          toast.error("Failed to update setting", { description: message });
+          setError(message);
+        } finally {
+          setPendingKey(null);
         }
-        toast.success("Setting updated", { description: key });
-        await loadSettings();
-      });
+      })();
     },
-    [loadSettings],
+    [coerceValue, loadSettings],
   );
 
   const body = useMemo(() => {
@@ -178,7 +197,14 @@ export function VapiRemoteSettings() {
           size="sm"
           className="gap-2"
           disabled={isLoading || isRefreshing}
-          onClick={() => startTransition(() => { void loadSettings(); })}
+          onClick={async () => {
+            setIsRefreshing(true);
+            try {
+              await loadSettings();
+            } finally {
+              setIsRefreshing(false);
+            }
+          }}
         >
           {isRefreshing ? <RefreshCw className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
           Refresh

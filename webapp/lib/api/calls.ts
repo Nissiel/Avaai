@@ -102,11 +102,11 @@ export interface SendTranscriptEmailResponse {
  * @returns Promise resolving to email send result
  */
 export async function sendCallTranscriptEmail(callId: string): Promise<SendTranscriptEmailResponse> {
-  const res = await apiFetch(`/api/v1/analytics/calls/${encodeURIComponent(callId)}/email`, {
+  const res = await apiFetch(`/api/analytics/calls/${encodeURIComponent(callId)}/email`, {
     method: "POST",
     auth: true,
     dedupeKey: `email-${callId}`,
-    baseUrl: "backend",
+    baseUrl: "relative",
   });
 
   if (!res.ok) {

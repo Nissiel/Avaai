@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Toggle } from "@/components/ui/toggle";
 import { VOICE_TONES } from "@/lib/constants";
+import { Label } from "@/components/ui/label";
 
 const playbooks = [
   {
@@ -64,23 +65,24 @@ export default function AvaStudioPage() {
               </div>
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold">Display name</label>
-                  <Input defaultValue="Ava" placeholder="Assistant name" />
+                  <Label htmlFor="ava-display-name" className="text-sm font-semibold">Display name</Label>
+                  <Input id="ava-display-name" defaultValue="Ava" placeholder="Assistant name" />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold">Role</label>
-                  <Input defaultValue="Concierge" placeholder="e.g. Concierge" />
+                  <Label htmlFor="ava-role" className="text-sm font-semibold">Role</Label>
+                  <Input id="ava-role" defaultValue="Concierge" placeholder="e.g. Concierge" />
                 </div>
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-semibold">Opening line</label>
+                <Label htmlFor="ava-opening-line" className="text-sm font-semibold">Opening line</Label>
                 <Textarea
+                  id="ava-opening-line"
                   rows={2}
                   defaultValue="Hello! You're speaking with Ava, the assistant for Lex & Co. How may I help you today?"
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-semibold">Mandatory fields</label>
+                <p className="text-sm font-semibold">Mandatory fields</p>
                 <div className="flex flex-wrap gap-3">
                   {["Full name", "Email", "Phone", "Reason"].map((field) => (
                     <Badge key={field} variant="accent" className="bg-brand-500/10 text-brand-600">
