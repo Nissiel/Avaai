@@ -133,33 +133,35 @@ export async function refreshAccessToken(refreshToken: string): Promise<string |
     }, 10_000);
 
     try {
-      const response = await fetch(`${getBackendBaseUrl()}/api/v1/auth/refresh`, {
+      // 🎯 DIVINE: Use frontend API route (handles cookies automatically)
+      const response = await fetch("/api/auth/refresh", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "X-Request-ID": requestId,
         },
-        body: JSON.stringify({ refresh_token: refreshToken }),
+        credentials: "same-origin", // Include cookies
         signal: controller.signal,
       });
 
       if (!response.ok) {
         console.error("❌ Token refresh failed:", response.status, requestId);
         if (typeof window !== "undefined") {
+          // Clear localStorage (legacy)
           window.localStorage.removeItem("access_token");
           window.localStorage.removeItem("refresh_token");
           emitTokenChange();
         }
+        // Redirect to login if refresh fails
+        window.location.href = "/login";
         return null;
       }
 
       const data: AuthTokenResponse = await response.json();
 
+      // Cookie is set by the API route (HTTP-only, secure)
+      // Just emit token change event for in-memory updates
       if (typeof window !== "undefined") {
-        window.localStorage.setItem("access_token", data.access_token);
-        if (data.refresh_token) {
-          window.localStorage.setItem("refresh_token", data.refresh_token);
-        }
         emitTokenChange();
       }
 

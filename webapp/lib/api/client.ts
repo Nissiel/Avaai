@@ -78,13 +78,26 @@ async function singleFlightRefresh(): Promise<string | null> {
     return refreshPromise;
   }
 
-  const refreshToken =
-    typeof window !== "undefined" ? window.localStorage.getItem("refresh_token") : null;
-  if (!refreshToken) {
-    return null;
-  }
+  // 🎯 DIVINE: Call frontend API route (uses HTTP-only cookies)
+  refreshPromise = (async () => {
+    try {
+      const response = await fetch("/api/auth/refresh", {
+        method: "POST",
+        credentials: "same-origin",
+      });
 
-  refreshPromise = refreshAccessToken(refreshToken);
+      if (!response.ok) {
+        return null;
+      }
+
+      const data = await response.json();
+      return data.access_token;
+    } catch (error) {
+      clientLogger.error("Token refresh failed", { error });
+      return null;
+    }
+  })();
+
   try {
     return await refreshPromise;
   } finally {
