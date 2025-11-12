@@ -6,9 +6,10 @@ import logging
 from datetime import datetime, timedelta
 from enum import Enum
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, EmailStr, Field
 
+from api.src.core.rate_limiting import limiter, get_rate_limit_string
 from api.src.core.settings import get_settings
 from api.src.infrastructure.persistence.models.user import User
 from api.src.presentation.dependencies.auth import get_current_user
@@ -30,7 +31,9 @@ class TestEmailResponse(BaseModel):
 
 
 @router.post("/email/test", response_model=TestEmailResponse)
+@limiter.limit(get_rate_limit_string())
 async def send_test_email_stub(
+    request: Request,
     payload: TestEmailRequest,
     user: User = Depends(get_current_user),
 ):
@@ -103,7 +106,9 @@ def _generate_stub_events(provider: CalendarProvider, user: User) -> list[Calend
 
 
 @router.get("/calendar/{provider}/events", response_model=CalendarEventsResponse)
+@limiter.limit(get_rate_limit_string())
 async def list_calendar_events_stub(
+    request: Request,
     provider: CalendarProvider,
     user: User = Depends(get_current_user),
 ):

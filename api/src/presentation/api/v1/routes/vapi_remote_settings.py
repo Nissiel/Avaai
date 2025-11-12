@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Path, Request, status
 from pydantic import BaseModel, Field
 
 from api.src.application.services.vapi import get_vapi_client_for_user
+from api.src.core.rate_limiting import limiter, get_rate_limit_string
 from api.src.infrastructure.external.vapi_client import VapiApiError, VapiRateLimitError, VapiAuthError
 from api.src.infrastructure.persistence.models.user import User
 from api.src.presentation.dependencies.auth import get_current_user
@@ -60,6 +61,7 @@ def _normalize_list(payload: Any) -> list[RemoteSetting]:
 
 
 @router.get("", response_model=RemoteSettingsResponse)
+@limiter.limit(get_rate_limit_string())
 async def list_remote_settings(
     request: Request,
     user: User = Depends(get_current_user),
@@ -105,6 +107,7 @@ async def list_remote_settings(
 
 
 @router.get("/{setting_key}", response_model=RemoteSettingResponse)
+@limiter.limit(get_rate_limit_string())
 async def get_remote_setting(
     request: Request,
     setting_key: str = Path(..., description="Vapi setting key"),
@@ -143,6 +146,7 @@ async def get_remote_setting(
 
 
 @router.put("/{setting_key}", response_model=RemoteSettingResponse)
+@limiter.limit(get_rate_limit_string())
 async def update_remote_setting(
     request: Request,
     setting_key: str,

@@ -11,9 +11,44 @@ from typing import Any, Callable, TypeVar
 
 from fastapi import HTTPException, status
 
+try:
+    from prometheus_client import Counter, Gauge
+
+    METRICS_AVAILABLE = True
+except ImportError:
+    METRICS_AVAILABLE = False
+
 logger = logging.getLogger("ava.circuit_breaker")
 
 T = TypeVar("T")
+
+# Prometheus metrics (optional)
+if METRICS_AVAILABLE:
+    circuit_breaker_state_metric = Gauge(
+        "circuit_breaker_state",
+        "Current state of circuit breaker (0=closed, 1=half_open, 2=open)",
+        ["service"],
+    )
+    circuit_breaker_failures_metric = Counter(
+        "circuit_breaker_failures_total",
+        "Total failures recorded by circuit breaker",
+        ["service"],
+    )
+    circuit_breaker_opens_metric = Counter(
+        "circuit_breaker_opens_total",
+        "Total times circuit breaker opened",
+        ["service"],
+    )
+    circuit_breaker_closes_metric = Counter(
+        "circuit_breaker_closes_total",
+        "Total times circuit breaker closed (recovered)",
+        ["service"],
+    )
+else:
+    circuit_breaker_state_metric = None
+    circuit_breaker_failures_metric = None
+    circuit_breaker_opens_metric = None
+    circuit_breaker_closes_metric = None
 
 
 class CircuitState(str, Enum):
@@ -54,6 +89,19 @@ class CircuitBreaker:
         """Get current circuit state."""
         return self._state
 
+    def _emit_state_metric(self) -> None:
+        """Emit Prometheus metric for current state."""
+        if not METRICS_AVAILABLE or circuit_breaker_state_metric is None:
+            return
+
+        state_value = {
+            CircuitState.CLOSED: 0,
+            CircuitState.HALF_OPEN: 1,
+            CircuitState.OPEN: 2,
+        }[self._state]
+
+        circuit_breaker_state_metric.labels(service=self.name).set(state_value)
+
     def _should_attempt_reset(self) -> bool:
         """Check if enough time has passed to attempt recovery."""
         if self._state != CircuitState.OPEN:
@@ -85,6 +133,7 @@ class CircuitBreaker:
             )
             self._state = CircuitState.HALF_OPEN
             self._success_count = 0
+            self._emit_state_metric()
 
         # Reject if circuit is open
         if self._state == CircuitState.OPEN:
@@ -131,11 +180,18 @@ class CircuitBreaker:
                 )
                 self._state = CircuitState.CLOSED
                 self._success_count = 0
+                self._emit_state_metric()
+                if METRICS_AVAILABLE and circuit_breaker_closes_metric:
+                    circuit_breaker_closes_metric.labels(service=self.name).inc()
 
     def _on_failure(self, exc: Exception) -> None:
         """Handle failed call - increment counter and potentially open circuit."""
         self._failure_count += 1
         self._last_failure_time = time.time()
+
+        # Emit failure metric
+        if METRICS_AVAILABLE and circuit_breaker_failures_metric:
+            circuit_breaker_failures_metric.labels(service=self.name).inc()
 
         if self._failure_count >= self.config.failure_threshold:
             logger.error(
@@ -149,6 +205,9 @@ class CircuitBreaker:
                 },
             )
             self._state = CircuitState.OPEN
+            self._emit_state_metric()
+            if METRICS_AVAILABLE and circuit_breaker_opens_metric:
+                circuit_breaker_opens_metric.labels(service=self.name).inc()
 
 
 # Global registry of circuit breakers

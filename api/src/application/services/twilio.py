@@ -4,11 +4,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from functools import lru_cache
+from typing import Any
 
 from fastapi import HTTPException, status
 from twilio.rest import Client as TwilioRestClient
 
 from api.src.core.settings import get_settings
+from api.src.infrastructure.external.circuit_breaker import get_circuit_breaker
 from api.src.infrastructure.persistence.models.user import User
 
 
@@ -75,4 +77,75 @@ def get_twilio_client(
     return _get_cached_client(creds.account_sid, creds.auth_token)
 
 
-__all__ = ["TwilioCredentials", "resolve_twilio_credentials", "get_twilio_client"]
+async def make_twilio_call_with_circuit_breaker(
+    to: str,
+    from_: str,
+    url: str,
+    *,
+    user: User | None = None,
+    method: str = "POST",
+) -> Any:
+    """
+    Make a Twilio call with circuit breaker protection.
+    
+    Args:
+        to: Destination phone number
+        from_: Source phone number (Twilio number)
+        url: TwiML webhook URL
+        user: Optional user for credential resolution
+        method: HTTP method for webhook (default: POST)
+        
+    Returns:
+        Twilio call resource
+        
+    Raises:
+        HTTPException: If circuit is open or credentials invalid
+    """
+    breaker = get_circuit_breaker("twilio", config=None)
+    
+    async def _make_call():
+        client = get_twilio_client(user, allow_env_fallback=True)
+        # Note: Twilio SDK is synchronous, but we wrap it for circuit breaker compatibility
+        return client.calls.create(to=to, from_=from_, url=url, method=method)
+    
+    return await breaker.call(_make_call)
+
+
+async def send_twilio_sms_with_circuit_breaker(
+    to: str,
+    from_: str,
+    body: str,
+    *,
+    user: User | None = None,
+) -> Any:
+    """
+    Send Twilio SMS with circuit breaker protection.
+    
+    Args:
+        to: Destination phone number
+        from_: Source phone number (Twilio number)
+        body: Message content
+        user: Optional user for credential resolution
+        
+    Returns:
+        Twilio message resource
+        
+    Raises:
+        HTTPException: If circuit is open or credentials invalid
+    """
+    breaker = get_circuit_breaker("twilio", config=None)
+    
+    async def _send_sms():
+        client = get_twilio_client(user, allow_env_fallback=True)
+        return client.messages.create(to=to, from_=from_, body=body)
+    
+    return await breaker.call(_send_sms)
+
+
+__all__ = [
+    "TwilioCredentials",
+    "resolve_twilio_credentials",
+    "get_twilio_client",
+    "make_twilio_call_with_circuit_breaker",
+    "send_twilio_sms_with_circuit_breaker",
+]
