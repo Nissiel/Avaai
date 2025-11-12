@@ -461,23 +461,5 @@ class VapiClient:
             json={"assistantId": assistant_id}
         )
 
-    async def list_settings(self) -> Sequence[dict[str, Any]]:
-        """Return the list of configurable Vapi settings."""
-        data = await self._request("GET", "/settings")
-        if isinstance(data, dict) and isinstance(data.get("settings"), list):
-            return data["settings"]
-        if isinstance(data, list):
-            return data
-        return []
-
-    async def get_setting(self, key: str) -> dict[str, Any]:
-        """Retrieve a single Vapi setting."""
-        return await self._request("GET", f"/settings/{key}")
-
-    async def update_setting(self, key: str, value: Any) -> dict[str, Any]:
-        """Update or upsert a Vapi setting."""
-        payload = value if isinstance(value, dict) and set(value.keys()) == {"value"} else {"value": value}
-        return await self._request("PUT", f"/settings/{key}", json=payload)
-
 
 __all__ = ["VapiClient", "VapiApiError"]

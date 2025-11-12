@@ -10,7 +10,6 @@ import Link from "next/link";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProfileSettingsForm } from "@/components/features/settings/profile-settings-form";
 import { VapiSettingsForm } from "@/components/features/settings/vapi-settings-form";
-import { VapiRemoteSettings } from "@/components/features/settings/vapi-remote-settings";
 import { TwilioSettingsForm } from "@/components/features/settings/twilio-settings-form";
 import { EmailSettingsForm } from "@/components/features/settings/email-settings-form";
 import { GlassCard } from "@/components/ui/glass-card";
@@ -83,7 +82,6 @@ export function SettingsView() {
 
         <TabsContent value="vapi" className="space-y-6">
           <VapiSettingsForm />
-          <VapiRemoteSettings />
         </TabsContent>
 
         <TabsContent value="twilio" className="space-y-6">

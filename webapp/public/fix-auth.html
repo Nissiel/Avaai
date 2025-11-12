@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Fix Ava Auth</title>
+    <style>
+        body { 
+            font-family: system-ui; 
+            max-width: 600px; 
+            margin: 50px auto; 
+            padding: 20px;
+            background: #0a0a0a;
+            color: #fff;
+        }
+        button {
+            background: #0070f3;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover { background: #0051cc; }
+        .success { color: #00ff00; }
+        .error { color: #ff4444; }
+    </style>
+</head>
+<body>
+    <h1>🔥 DIVINE AUTH FIX</h1>
+    <p>Click the button below to clear all authentication state:</p>
+    
+    <button onclick="fixAuth()">Clear Auth & Reload</button>
+    
+    <div id="status"></div>
+    
+    <script>
+        function fixAuth() {
+            const status = document.getElementById('status');
+            status.innerHTML = '<p>Clearing...</p>';
+            
+            // Clear everything
+            localStorage.clear();
+            sessionStorage.clear();
+            
+            // Clear cookies
+            document.cookie.split(";").forEach(function(c) { 
+                document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+            });
+            
+            status.innerHTML = '<p class="success">✅ Cleared! Redirecting to login...</p>';
+            
+            setTimeout(() => {
+                window.location.href = '/login';
+            }, 1000);
+        }
+    </script>
+</body>
+</html>
