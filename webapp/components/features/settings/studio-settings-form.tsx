@@ -394,17 +394,7 @@ export function StudioSettingsForm({
                 </span>
               </div>
             )}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => configQuery.refetch()}
-              disabled={updateMutation.isPending}
-              className="gap-2"
-            >
-              <RefreshCcw className="h-4 w-4" />
-              {t("refresh")}
-            </Button>
+            {/* ✨ DIVINE: Removed redundant refresh - form auto-saves anyway */}
           </div>
         </div>
       </GlassCard>
@@ -494,10 +484,13 @@ export function StudioSettingsForm({
                       name="organizationName"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-sm font-medium">{t("form.organizationName")}</FormLabel>
+                          <FormLabel className="text-sm font-medium">✨ Assistant Name</FormLabel>
                           <FormControl>
-                            <Input {...field} disabled={isDisabled} />
+                            <Input {...field} disabled={isDisabled} placeholder="Ex: Ava - Secrétaire Cabinet Cohen" />
                           </FormControl>
+                          <FormDescription className="text-xs">
+                            Give your assistant a memorable name that reflects your business
+                          </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
