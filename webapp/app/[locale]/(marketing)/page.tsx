@@ -4,8 +4,10 @@ import { Pricing } from "@/components/marketing/pricing";
 import { Faq } from "@/components/marketing/faq";
 import { FinalCta } from "@/components/marketing/cta";
 
-export default function MarketingPage({ params }: { params: { locale: string } }) {
-  const { locale } = params;
+export default async function MarketingPage({ params }: { params: Promise<{ locale: string }> }) {
+  // 🔥 DIVINE FIX: await params in Next.js 15
+  const { locale } = await params;
+  
   return (
     <>
       <Hero locale={locale} />

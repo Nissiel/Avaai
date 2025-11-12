@@ -19,8 +19,8 @@ const SignupForm = dynamic(
   }
 );
 
-export default function SignupPage({ params }: { params: { locale: string } }) {
-  const { locale } = params;
+export default async function SignupPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-background via-background to-primary/5">

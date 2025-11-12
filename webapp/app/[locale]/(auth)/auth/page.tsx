@@ -3,8 +3,10 @@ import { Link } from "@/lib/i18n/routing";
 import { translate } from "@/lib/translation";
 import { fallbackLocale, isLocale, type Locale } from "@/lib/i18n/locales";
 
-export default function AuthPage({ params }: { params: { locale: string } }) {
-  const locale: Locale = isLocale(params.locale) ? params.locale : fallbackLocale;
+export default async function AuthPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale: localeParam } = await params;
+  const locale: Locale = isLocale(localeParam) ? localeParam : fallbackLocale;
+  
   return (
     <div className="space-y-6">
       <SignInForm />

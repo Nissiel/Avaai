@@ -64,11 +64,10 @@ def create_app() -> FastAPI:
             print("🔥 Warming up database connection...", flush=True)
             async with engine.connect() as conn:
                 # Simple ping query with timeout
-                result = await asyncio.wait_for(
+                await asyncio.wait_for(
                     conn.execute(text("SELECT 1")),
                     timeout=3.0
                 )
-                await result.close()
             print("✅ Database connection warmed up successfully", flush=True)
         except Exception as e:
             # Don't block startup if warmup fails - log and continue

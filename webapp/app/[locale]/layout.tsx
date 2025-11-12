@@ -16,11 +16,13 @@ export function generateStaticParams() {
 
 interface LocaleLayoutProps {
   children: ReactNode;
-  params: { locale: string };
+  params: Promise<{ locale: string }>;
 }
 
 export default async function LocaleLayout({ children, params }: LocaleLayoutProps) {
-  const localeParam = params.locale;
+  // 🔥 DIVINE FIX: await params in Next.js 15
+  const { locale: localeParam } = await params;
+  
   if (!isLocale(localeParam)) {
     notFound();
   }

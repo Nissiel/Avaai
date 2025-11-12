@@ -3,8 +3,9 @@ import { unstable_setRequestLocale } from "next-intl/server";
 
 import { ForgotPasswordForm } from "@/components/auth/forgot-password-form";
 
-export default function ForgotPasswordPage({ params }: { params: { locale: string } }) {
-  unstable_setRequestLocale(params.locale);
+export default async function ForgotPasswordPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  unstable_setRequestLocale(locale);
 
   return (
     <div className="flex min-h-screen items-center justify-center p-4">

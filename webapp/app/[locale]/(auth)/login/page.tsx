@@ -10,8 +10,9 @@ const LoginForm = dynamic(() => import("@/components/auth/login-form").then((mod
   ssr: false,
 });
 
-export async function generateMetadata({ params }: { params: { locale: string } }): Promise<Metadata> {
-  const t = await getTranslations({ locale: params.locale, namespace: "auth.login" });
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "auth.login" });
 
   return {
     title: t("title"),
@@ -73,8 +74,9 @@ function LoginPageContent({ locale }: { locale: string }) {
   );
 }
 
-export default function LoginPage({ params }: { params: { locale: string } }) {
-  unstable_setRequestLocale(params.locale);
+export default async function LoginPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  unstable_setRequestLocale(locale);
 
-  return <LoginPageContent locale={params.locale} />;
+  return <LoginPageContent locale={locale} />;
 }
