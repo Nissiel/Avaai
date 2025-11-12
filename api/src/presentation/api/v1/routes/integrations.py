@@ -1,10 +1,9 @@
 """Phase 4 stubs for Email + Calendar integrations."""
 
-from __future__ import annotations
-
 import logging
 from datetime import datetime, timedelta
 from enum import Enum
+from typing import Optional, List
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, EmailStr, Field
@@ -78,18 +77,18 @@ class CalendarEvent(BaseModel):
     title: str
     start: datetime
     end: datetime
-    location: str | None = None
-    attendees: list[str] = Field(default_factory=list)
+    location: Optional[str] = None
+    attendees: List[str] = Field(default_factory=list)
 
 
 class CalendarEventsResponse(BaseModel):
     provider: CalendarProvider
-    events: list[CalendarEvent]
+    events: List[CalendarEvent]
     status: str
     next_steps: str
 
 
-def _generate_stub_events(provider: CalendarProvider, user: User) -> list[CalendarEvent]:
+def _generate_stub_events(provider: CalendarProvider, user: User) -> List[CalendarEvent]:
     now = datetime.utcnow().replace(microsecond=0)
     base_title = "Discovery Call" if provider == CalendarProvider.google else "Project Sync"
     return [

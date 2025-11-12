@@ -38,6 +38,14 @@ class Settings(BaseSettings):
 
     # Feature flags
     integrations_stub_mode: bool = True  # Enable stub integrations (disable in production)
+    
+    # Circuit breaker configuration (Phase 2-4)
+    circuit_breaker_enabled: bool = True
+    circuit_breaker_threshold: int = 3
+    circuit_breaker_recovery_timeout: int = 30
+    
+    # Rate limiting configuration (Phase 2-4)
+    rate_limit_per_minute: int = 10  # 30-60 recommended for production
 
     @field_validator("allowed_origins", mode="before")
     @classmethod

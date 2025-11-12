@@ -1,9 +1,7 @@
 """Expose Vapi remote settings (list/get/update) for the UI."""
 
-from __future__ import annotations
-
 import logging
-from typing import Any, Iterable
+from typing import Any, Iterable, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Request, status
 from pydantic import BaseModel, Field
@@ -23,7 +21,7 @@ class RemoteSetting(BaseModel):
 
     key: str
     value: Any
-    updated_at: str | None = Field(default=None, alias="updatedAt")
+    updated_at: Optional[str] = Field(default=None, alias="updatedAt")
 
 
 class RemoteSettingsResponse(BaseModel):
