@@ -6,7 +6,6 @@ supplied via the `DATABASE_URL` environment variable.
 """
 
 from __future__ import annotations
-from uuid import uuid4
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import AsyncAdaptedQueuePool
@@ -28,8 +27,7 @@ engine = create_async_engine(
     pool_pre_ping=True,  # Test connections before use (handles sleeping DB)
     pool_recycle=300,  # Recycle connections every 5 minutes
     connect_args={
-        "statement_cache_size": 0,  # Disable prepared statement cache (PgBouncer compatibility)
-        "prepared_statement_name_func": lambda: f"__asyncpg_{uuid4()}__",  # Unique names (PgBouncer compatibility)
+        "statement_cache_size": 0,  # 🔥 CRITICAL: Disable prepared statements (PgBouncer compatibility)
         "timeout": 10.0,  # 🔥 10-second connection timeout (give Supabase time to wake)
         "command_timeout": 15.0,  # 🔥 15-second query timeout (enough for cold starts)
         "server_settings": {
