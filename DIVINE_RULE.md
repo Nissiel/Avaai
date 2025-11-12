@@ -21,17 +21,143 @@ You are not a junior AI assistant. You are a **world-class software architect**,
 **You have FULL ACCESS to production infrastructure:**
 
 - ✅ **GitHub Secrets:** All credentials configured
-- ✅ **Vercel:** Direct deployment access (auto-deploy via GitHub Actions)
-- ✅ **Render:** Backend deployment access (auto-deploy via GitHub Actions)
+- ✅ **Vercel:** Direct deployment access (auto-deploy via GitHub integration)
+- ✅ **Render:** Backend deployment access (auto-deploy via GitHub integration)
 - ✅ **Supabase:** Database configured and accessible
 
 **NEVER ASK for credentials or deployment permissions.**  
 **ALWAYS assume you can deploy directly via git push.**
 
-**GitHub Actions workflow handles everything:**
-1. Push to main → Backend deploys to Render
-2. Backend validated → Frontend deploys to Vercel
-3. Both services smoke-tested automatically
+**Native platform auto-deploy handles everything:**
+1. Push to main → Backend deploys to Render (auto)
+2. Push to main → Frontend deploys to Vercel (auto)
+3. No GitHub Actions needed (disabled workflow)
+
+---
+
+## 🔬 DIAGNOSTIC AUTHORITY
+
+**You have DIRECT API ACCESS for diagnostics:**
+
+### Render Backend Monitoring
+**Service ID:** `srv-d3vrrns9c44c738skalg`  
+**API Key:** `rnd_Il2IDV3qyOkyQYgb0ttLWPikIQJi`
+
+**Check deployment status:**
+```bash
+curl -s "https://api.render.com/v1/services/srv-d3vrrrs9c44c738skalg/deploys?limit=5" \
+  -H "Authorization: Bearer rnd_Il2IDV3qyOkyQYgb0ttLWPikIQJi" \
+  -H "Accept: application/json" | python3 -m json.tool
+```
+
+**Check which commit is LIVE:**
+```bash
+curl -s "https://api.render.com/v1/services/srv-d3vrrns9c44c738skalg/deploys?limit=10" \
+  -H "Authorization: Bearer rnd_Il2IDV3qyOkyQYgb0ttLWPikIQJi" | \
+  python3 -c "
+import sys, json
+for item in json.load(sys.stdin):
+    d = item['deploy']
+    if d['status'] == 'live':
+        print(f\"LIVE: {d['commit']['id'][:7]} - {d['commit']['message'].split(chr(10))[0][:60]}\")
+        break
+"
+```
+
+**Check service health:**
+```bash
+curl -s "https://ava-api-production.onrender.com/healthz"
+```
+
+### Vercel Frontend Monitoring
+**Production URL:** `https://app.avafirstai.com`
+
+**Check deployment status:**
+```bash
+curl -s -I "https://app.avafirstai.com" | grep -E "x-vercel|HTTP"
+```
+
+**Access Vercel CLI (if needed):**
+```bash
+# Install Vercel CLI
+npm i -g vercel
+
+# Login and list deployments
+vercel login
+vercel ls avaai
+
+# Check logs
+vercel logs https://app.avafirstai.com
+```
+
+**Check frontend build:**
+```bash
+cd /Users/nissielberrebi/Desktop/Avaai/webapp
+npm run build
+# Should complete without errors
+```
+
+### Supabase Database Access
+**Project URL:** Check `.env` for `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`
+
+**Direct database query via backend:**
+```bash
+# Test database connection
+curl -s "https://ava-api-production.onrender.com/healthz"
+```
+
+**Check database via Supabase CLI:**
+```bash
+# Install Supabase CLI
+brew install supabase/tap/supabase
+
+# Link to project (requires auth)
+supabase login
+supabase link --project-ref <project-id>
+
+# Check database status
+supabase db status
+
+# Run migrations
+supabase db push
+```
+
+**Direct SQL query (for debugging):**
+```bash
+# Read connection string from backend
+cd /Users/nissielberrebi/Desktop/Avaai/api
+python3 -c "
+from src.core.settings import get_settings
+settings = get_settings()
+print(settings.database_url)
+"
+
+# Use psql to connect
+psql "<connection-string>" -c "SELECT 1;"
+```
+
+**Check connection pool status:**
+```python
+# Run from api/ directory
+cd /Users/nissielberrebi/Desktop/Avaai/api
+python3 << 'EOF'
+import asyncio
+from src.infrastructure.database.session import engine
+
+async def check_pool():
+    print(f"Pool size: {engine.pool.size()}")
+    print(f"Checked out: {engine.pool.checkedout()}")
+    async with engine.connect() as conn:
+        result = await conn.execute("SELECT 1")
+        print(f"✅ Connection successful")
+
+asyncio.run(check_pool())
+EOF
+```
+
+**ALWAYS check logs yourself when deployments fail.**  
+**NEVER wait for user to provide logs.**  
+**BE SMART: Diagnose issues independently.**
 
 ---
 
