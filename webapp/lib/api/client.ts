@@ -17,7 +17,16 @@ type ApiRequestOptions = RequestInit & {
 
 const inflightControllers = new Map<string, AbortController>();
 let refreshPromise: Promise<string | null> | null = null;
+let isRefreshing = false; // 🎯 DIVINE: Prevent concurrent refreshes
+let refreshRetryCount = 0; // 🎯 DIVINE: Track refresh failures
+const MAX_REFRESH_RETRIES = 3;
 const DEFAULT_TIMEOUT_MS = 20_000;
+
+// 🎯 DIVINE: Circuit breaker for backend health
+let circuitBreakerFailures = 0;
+let circuitBreakerOpenUntil: number | null = null;
+const CIRCUIT_BREAKER_THRESHOLD = 5;
+const CIRCUIT_BREAKER_TIMEOUT_MS = 30_000;
 
 function now(): number {
   if (typeof performance !== "undefined" && typeof performance.now === "function") {
@@ -74,9 +83,22 @@ function createAbortError(message: string, name: string): DOMException | NamedEr
 }
 
 async function singleFlightRefresh(): Promise<string | null> {
+  // 🎯 DIVINE: Already refreshing? Wait for it
   if (refreshPromise) {
     return refreshPromise;
   }
+
+  // 🎯 DIVINE: Too many failures? Force logout
+  if (refreshRetryCount >= MAX_REFRESH_RETRIES) {
+    clientLogger.error("Max refresh retries exceeded, forcing logout");
+    if (typeof window !== "undefined") {
+      window.location.href = "/login?reason=session_expired";
+    }
+    return null;
+  }
+
+  isRefreshing = true;
+  refreshRetryCount++;
 
   // 🎯 DIVINE: Call frontend API route (uses HTTP-only cookies)
   refreshPromise = (async () => {
@@ -87,13 +109,29 @@ async function singleFlightRefresh(): Promise<string | null> {
       });
 
       if (!response.ok) {
+        clientLogger.warn("Token refresh failed", { 
+          status: response.status, 
+          attempt: refreshRetryCount 
+        });
+        
+        // 🎯 DIVINE: Exponential backoff before retry
+        if (refreshRetryCount < MAX_REFRESH_RETRIES) {
+          const backoffMs = Math.min(1000 * Math.pow(2, refreshRetryCount - 1), 5000);
+          await new Promise(resolve => setTimeout(resolve, backoffMs));
+        }
+        
         return null;
       }
 
       const data = await response.json();
+      
+      // 🎯 DIVINE: Success! Reset retry counter
+      refreshRetryCount = 0;
+      clientLogger.info("Token refresh successful");
+      
       return data.access_token;
     } catch (error) {
-      clientLogger.error("Token refresh failed", { error });
+      clientLogger.error("Token refresh exception", { error, attempt: refreshRetryCount });
       return null;
     }
   })();
@@ -102,6 +140,7 @@ async function singleFlightRefresh(): Promise<string | null> {
     return await refreshPromise;
   } finally {
     refreshPromise = null;
+    isRefreshing = false;
   }
 }
 
@@ -120,6 +159,56 @@ function recordMetrics(label: string, data: Record<string, unknown>) {
   }
 }
 
+// 🎯 DIVINE: Circuit breaker check
+function isCircuitBreakerOpen(): boolean {
+  if (circuitBreakerOpenUntil === null) return false;
+  
+  if (Date.now() < circuitBreakerOpenUntil) {
+    return true;
+  }
+  
+  // Circuit breaker timeout expired, reset
+  circuitBreakerOpenUntil = null;
+  circuitBreakerFailures = 0;
+  return false;
+}
+
+// 🎯 DIVINE: Record backend failure for circuit breaker
+function recordBackendFailure() {
+  circuitBreakerFailures++;
+  
+  if (circuitBreakerFailures >= CIRCUIT_BREAKER_THRESHOLD) {
+    circuitBreakerOpenUntil = Date.now() + CIRCUIT_BREAKER_TIMEOUT_MS;
+    clientLogger.error("🔴 Circuit breaker OPEN - too many backend failures", {
+      failures: circuitBreakerFailures,
+      reopenAt: new Date(circuitBreakerOpenUntil).toISOString(),
+    });
+    
+    // Show user-friendly message
+    if (typeof window !== "undefined") {
+      const event = new CustomEvent("ava:backend-unavailable", {
+        detail: { message: "Server temporarily unavailable. Retrying..." }
+      });
+      window.dispatchEvent(event);
+    }
+  }
+}
+
+// 🎯 DIVINE: Reset circuit breaker on success
+function recordBackendSuccess() {
+  if (circuitBreakerFailures > 0) {
+    clientLogger.info("✅ Backend recovered, resetting circuit breaker");
+    
+    // Notify user that connection is restored
+    if (typeof window !== "undefined") {
+      const event = new CustomEvent("ava:backend-recovered");
+      window.dispatchEvent(event);
+    }
+  }
+  circuitBreakerFailures = 0;
+  circuitBreakerOpenUntil = null;
+}
+
 export async function apiFetch(input: string, options: ApiRequestOptions = {}): Promise<Response> {
   const {
     auth,
@@ -131,6 +220,12 @@ export async function apiFetch(input: string, options: ApiRequestOptions = {}): 
     signal,
     ...fetchInit
   } = options;
+
+  // 🎯 DIVINE: Circuit breaker check
+  if (isCircuitBreakerOpen()) {
+    clientLogger.warn("🔴 Circuit breaker is OPEN, rejecting request", { endpoint: input });
+    throw new Error("Service temporarily unavailable. Please try again in a moment.");
+  }
 
   const requestId =
     providedRequestId ?? (typeof crypto !== "undefined" ? crypto.randomUUID() : `${Date.now()}`);
@@ -178,9 +273,22 @@ export async function apiFetch(input: string, options: ApiRequestOptions = {}): 
   try {
     response = await exec();
 
+    // 🎯 DIVINE: Handle different error types differently
     if (response.status === 401 && auth !== false) {
-      clientLogger.warn("Received 401, attempting token refresh", { requestId, endpoint });
-      await singleFlightRefresh();
+      clientLogger.warn("🔑 Received 401, attempting token refresh", { requestId, endpoint });
+      
+      const newToken = await singleFlightRefresh();
+      
+      if (!newToken) {
+        clientLogger.error("❌ Token refresh failed, redirecting to login");
+        if (typeof window !== "undefined") {
+          window.location.href = "/login?reason=session_expired";
+        }
+        return response;
+      }
+      
+      // 🎯 DIVINE: Retry with new token
+      clientLogger.info("✅ Token refreshed, retrying request", { requestId, endpoint });
       const retryHeaders = buildHeaders({ ...options, auth }, requestId);
       response = await fetch(endpoint, {
         ...fetchInit,
@@ -190,6 +298,42 @@ export async function apiFetch(input: string, options: ApiRequestOptions = {}): 
           fetchInit.credentials ?? (mode === "relative" ? ("same-origin" as RequestCredentials) : undefined),
       });
     }
+
+    // 🎯 DIVINE: Don't kill session on server errors (5xx)
+    if (response.status >= 500) {
+      recordBackendFailure();
+      clientLogger.error("🔥 Server error encountered", { 
+        status: response.status, 
+        endpoint, 
+        requestId,
+        circuitBreakerFailures 
+      });
+    } else if (response.status >= 200 && response.status < 400) {
+      // 🎯 DIVINE: Success! Reset circuit breaker
+      recordBackendSuccess();
+    }
+
+    // 🎯 DIVINE: Don't disconnect on 403 (permission denied)
+    if (response.status === 403) {
+      clientLogger.warn("🚫 Permission denied (403), but keeping session alive", { 
+        endpoint, 
+        requestId 
+      });
+    }
+
+  } catch (error) {
+    // 🎯 DIVINE: Network errors shouldn't kill session
+    if (error instanceof Error) {
+      if (error.name === "AbortError") {
+        clientLogger.warn("⏱️ Request aborted", { endpoint, requestId });
+      } else if (error.name === "TimeoutError") {
+        clientLogger.warn("⏱️ Request timeout", { endpoint, requestId });
+      } else {
+        clientLogger.error("🌐 Network error", { error: error.message, endpoint, requestId });
+        recordBackendFailure();
+      }
+    }
+    throw error;
   } finally {
     clearTimeout(timeoutId);
     if (dedupeKey) {

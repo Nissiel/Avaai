@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { Sidebar } from "@/components/layouts/sidebar";
 import { TopBar } from "@/components/layouts/top-bar";
 import { SessionManager } from "@/components/auth/session-manager";
+import { BackendHealthMonitor } from "@/components/auth/backend-health-monitor";
 
 // Force dynamic rendering for all app pages (next-intl requires it)
 export const dynamic = "force-dynamic";
@@ -17,6 +18,7 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
   return (
     <div className="flex min-h-screen bg-background">
       <SessionManager />
+      <BackendHealthMonitor />
       <Sidebar />
       <div className="flex min-h-screen flex-1 flex-col">
         <TopBar />
