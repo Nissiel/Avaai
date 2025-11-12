@@ -4,8 +4,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field, field_validator
 from typing import Optional
 import logging
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.src.application.services.vapi import get_vapi_client_for_user
+from api.src.infrastructure.database.session import get_session
 from api.src.infrastructure.persistence.models.user import User
 from api.src.presentation.dependencies.auth import get_current_user
 from api.src.core.settings import get_settings
@@ -74,6 +76,7 @@ def _get_vapi_client(user: User):
 async def create_us_number(
     request: CreateUSNumberRequest,
     user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_session),
 ):
     """
     Create a free US phone number via Vapi.
@@ -91,6 +94,9 @@ async def create_us_number(
             }
         }
     """
+    # 🔥 DIVINE FIX: Refresh user from DB to get latest vapi_api_key
+    await db.refresh(user)
+    
     try:
         vapi = _get_vapi_client(user)
 
@@ -146,6 +152,7 @@ async def create_us_number(
 async def import_twilio_number(
     request: ImportTwilioRequest,
     user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_session),
 ):
     """
     Import an existing Twilio number into Vapi.
@@ -172,6 +179,9 @@ async def import_twilio_number(
             "message": "Numéro importé avec succès"
         }
     """
+    # 🔥 DIVINE FIX: Refresh user from DB to get latest vapi_api_key + twilio credentials
+    await db.refresh(user)
+    
     try:
         # 🔥 DIVINE: Auto-liaison intelligente si pas d'assistant_id fourni
         assistant_id = request.assistant_id

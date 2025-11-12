@@ -60,6 +60,9 @@ async def analytics_overview(
     user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ) -> dict[str, object]:
+    # 🔥 DIVINE FIX: Refresh user from DB to get latest vapi_api_key
+    await session.refresh(user)
+    
     client = _client(user)
     tenant = await ensure_tenant_for_user(session, user)
     tenant_id = tenant.id
@@ -81,6 +84,9 @@ async def analytics_timeseries(
     user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ) -> dict[str, object]:
+    # 🔥 DIVINE FIX: Refresh user from DB to get latest vapi_api_key
+    await session.refresh(user)
+    
     client = _client(user)
     tenant = await ensure_tenant_for_user(session, user)
     await _sync_calls(session, tenant.id, client)
@@ -93,6 +99,9 @@ async def analytics_topics(
     user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ) -> dict[str, object]:
+    # 🔥 DIVINE FIX: Refresh user from DB to get latest vapi_api_key
+    await session.refresh(user)
+    
     client = _client(user)
     tenant = await ensure_tenant_for_user(session, user)
     await _sync_calls(session, tenant.id, client)
@@ -105,6 +114,9 @@ async def analytics_anomalies(
     user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ) -> dict[str, object]:
+    # 🔥 DIVINE FIX: Refresh user from DB to get latest vapi_api_key
+    await session.refresh(user)
+    
     client = _client(user)
     tenant = await ensure_tenant_for_user(session, user)
     await _sync_calls(session, tenant.id, client)
@@ -117,6 +129,9 @@ async def analytics_heatmap(
     user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ) -> dict[str, object]:
+    # 🔥 DIVINE FIX: Refresh user from DB to get latest vapi_api_key
+    await session.refresh(user)
+    
     client = _client(user)
     tenant = await ensure_tenant_for_user(session, user)
     await _sync_calls(session, tenant.id, client)

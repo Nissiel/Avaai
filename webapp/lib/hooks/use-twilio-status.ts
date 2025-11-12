@@ -1,6 +1,22 @@
+import { useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuthToken } from "@/lib/hooks/use-auth-token";
+import { useSessionStore } from "@/stores/session-store";
 import { getTwilioSettings, type TwilioSettingsResponse } from "@/lib/api/twilio-settings";
+
+function buildIdentityKey(userId: string | null, token: string | null): string {
+  if (userId) {
+    return `user:${userId}`;
+  }
+  if (!token) {
+    return "anonymous";
+  }
+  let hash = 0;
+  for (let i = 0; i < token.length; i += 1) {
+    hash = (hash * 31 + token.charCodeAt(i)) | 0;
+  }
+  return `token:${Math.abs(hash)}`;
+}
 
 /**
  * 🔥 DIVINE: Hook to check Twilio credentials status
@@ -8,10 +24,12 @@ import { getTwilioSettings, type TwilioSettingsResponse } from "@/lib/api/twilio
  */
 export function useTwilioStatus() {
   const token = useAuthToken();
+  const userId = useSessionStore((state) => state.session?.user?.id ?? null);
   const queryClient = useQueryClient();
+  const identityKey = useMemo(() => buildIdentityKey(userId, token), [userId, token]);
 
   const { data, isLoading, refetch, error } = useQuery<TwilioSettingsResponse>({
-    queryKey: ["twilio-settings"],
+    queryKey: ["twilio-settings", identityKey],
     queryFn: async () => {
       if (!token) {
         throw new Error("No access token");
@@ -20,7 +38,7 @@ export function useTwilioStatus() {
       // 🔥 DIVINE: Use centralized API (has retry + token refresh built-in)
       return await getTwilioSettings();
     },
-    enabled: !!token, // 🔥 DIVINE: Only run if token exists (no race condition!)
+    enabled: !!token,
     retry: 1, // 🔥 DIVINE: Limit retries to reduce perceived lag
     staleTime: 10_000,
   });

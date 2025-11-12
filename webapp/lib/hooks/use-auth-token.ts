@@ -43,12 +43,20 @@ import { useEffect, useState } from "react";
  */
 export function useAuthToken(): string | null {
   const [token, setToken] = useState<string | null>(() => {
-    // Initialize from localStorage on mount
-    if (typeof window === "undefined") return null;
+    if (typeof window === "undefined") {
+      return null;
+    }
     return localStorage.getItem("access_token");
   });
 
   useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    // Hydrate token once we're on the client (SSR-safe)
+    setToken(localStorage.getItem("access_token"));
+
     // Listen for storage changes (logout, login from other tabs)
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === "access_token") {

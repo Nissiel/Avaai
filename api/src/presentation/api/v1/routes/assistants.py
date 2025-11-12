@@ -7,8 +7,10 @@ from typing import Any, Optional
 
 from pydantic import BaseModel, Field
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.src.application.services.vapi import get_vapi_client_for_user
+from api.src.infrastructure.database.session import get_session
 from api.src.infrastructure.external.vapi_client import VapiApiError
 from api.src.infrastructure.persistence.models.user import User
 from api.src.presentation.dependencies.auth import get_current_user
@@ -187,8 +189,12 @@ async def _auto_link_twilio_number(user: User, assistant_id: Optional[str]) -> O
 @router.get("")
 async def list_assistants(
     user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_session),
     limit: int = Query(default=50, ge=1, le=200),
 ) -> dict[str, object]:
+    # 🔥 DIVINE FIX: Refresh user from DB to get latest vapi_api_key
+    await db.refresh(user)
+    
     client = get_vapi_client_for_user(user)
     try:
         assistants = await client.list_assistants(limit=limit)
@@ -206,7 +212,11 @@ async def list_assistants(
 async def get_assistant(
     assistant_id: str,
     user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_session),
 ) -> dict[str, object]:
+    # 🔥 DIVINE FIX: Refresh user from DB to get latest vapi_api_key
+    await db.refresh(user)
+    
     client = get_vapi_client_for_user(user)
     try:
         assistant = await client.get_assistant(assistant_id)
@@ -222,6 +232,7 @@ async def get_assistant(
 @router.post("")
 async def create_assistant(
     request: CreateAssistantRequest,
+    db: AsyncSession = Depends(get_session),
     user: User = Depends(get_current_user),
     # Note: No auth required during onboarding - user not logged in yet
     # TODO: Add tenant_id to request body once user is authenticated
@@ -235,6 +246,9 @@ async def create_assistant(
     During onboarding: No auth required (user creates assistant before signup)
     After onboarding: Should validate tenant ownership
     """
+    # 🔥 DIVINE FIX: Refresh user from DB to get latest credentials
+    await db.refresh(user)
+    
     client = get_vapi_client_for_user(user)
     settings = get_settings()
 

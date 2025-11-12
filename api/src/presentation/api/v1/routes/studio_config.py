@@ -231,6 +231,10 @@ async def sync_config_to_vapi(
 
     This is THE MAGIC that makes your settings actually work!
     """
+    # 🔥 DIVINE FIX: Refresh user from DB to get latest vapi_api_key
+    # Without this, user object has stale data from JWT token
+    await db.refresh(current_user)
+    
     client = _client(current_user)
     db_config = await get_or_create_user_config(db, current_user)
     config = db_to_schema(db_config)
