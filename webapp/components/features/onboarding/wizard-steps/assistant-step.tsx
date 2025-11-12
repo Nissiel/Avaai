@@ -7,6 +7,7 @@ import { Sparkles, AlertTriangle, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -38,6 +39,10 @@ export function AssistantStep({ form, onNext, onBack }: AssistantStepProps) {
 
   const [assistantName, setAssistantName] = useState("Ava Assistant");
   const [selectedVoice, setSelectedVoice] = useState(DEFAULT_VOICES[0].voiceId);
+  const [systemInstructions, setSystemInstructions] = useState(
+    "You are a helpful AI assistant. Be professional, friendly, and concise. " +
+    "Your goal is to assist callers efficiently and courteously."
+  );
   const [isCreating, setIsCreating] = useState(false);
 
   const vapiConfigured = integrations?.vapi?.configured;
@@ -65,6 +70,7 @@ export function AssistantStep({ form, onNext, onBack }: AssistantStepProps) {
         voice_provider: voice.provider,
         voice_id: voice.voiceId,
         first_message: t("defaults.firstMessage", { name: assistantName }),
+        system_prompt: systemInstructions.trim() || undefined, // ✨ DIVINE: Now capturing AI behavior!
         voice_speed: 1.0,
         model_provider: "openai",
         model: "gpt-4o-mini",
@@ -197,6 +203,34 @@ export function AssistantStep({ form, onNext, onBack }: AssistantStepProps) {
             </SelectContent>
           </Select>
           <p className="text-xs text-muted-foreground">{t("form.voice.hint")}</p>
+        </div>
+
+        {/* ✨ DIVINE: System Instructions Field - CRITICAL for customization */}
+        <div className="space-y-2">
+          <Label htmlFor="system-instructions">
+            🧠 AI Instructions
+            <span className="text-xs font-normal text-muted-foreground ml-2">
+              (What should your assistant do?)
+            </span>
+          </Label>
+          <Textarea
+            id="system-instructions"
+            value={systemInstructions}
+            onChange={(e) => setSystemInstructions(e.target.value)}
+            placeholder="Example: You are a receptionist for [Business Name]. Your goal is to answer calls professionally, collect caller information (name, phone, reason for call), and schedule appointments. Always be warm and helpful."
+            disabled={isCreating}
+            rows={4}
+            className="resize-y min-h-[100px] text-sm"
+          />
+          <p className="text-xs text-muted-foreground">
+            💡 Be specific: Define role, goals, and how the AI should behave. You can customize this later in settings.
+          </p>
+          <div className="flex items-center gap-2 text-xs">
+            <span className={systemInstructions.length < 50 ? "text-orange-600" : "text-green-600"}>
+              {systemInstructions.length} characters
+              {systemInstructions.length < 50 && " - Add more details for better results"}
+            </span>
+          </div>
         </div>
 
         <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-900 dark:bg-blue-950">

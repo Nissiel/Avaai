@@ -1,0 +1,24 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">AvaFirst AI Logo</title>
+  <desc id="desc">Gradient emblem for AvaFirst AI</desc>
+  <defs>
+    <linearGradient id="afb-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#42a5ff"/>
+      <stop offset="55%" stop-color="#6a69ff"/>
+      <stop offset="100%" stop-color="#a855f7"/>
+    </linearGradient>
+    <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="12" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="512" height="512" rx="128" fill="#040714"/>
+  <g filter="url(#softGlow)">
+    <path fill="url(#afb-gradient)" d="M136 406 224 108h78l-89 298a32 32 0 0 1-30 22h-47z"/>
+    <path fill="url(#afb-gradient)" d="m288 108 86-.5 102 298H409l-15-52h-110l-17 52h-79zm62 96-33 101h69z"/>
+    <path fill="#040714" opacity=".8" d="m224 332 19-62h108l20 62z"/>
+  </g>
+</svg>
