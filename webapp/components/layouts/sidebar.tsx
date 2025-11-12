@@ -7,6 +7,7 @@ import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
 
 import { NavLink } from "@/components/ui/nav-link";
+import { AvaLogoWordmark } from "@/components/brand/logo";
 import { cn } from "@/lib/utils";
 
 export type SidebarNavItem = {
@@ -61,8 +62,8 @@ export function Sidebar({ className }: SidebarProps) {
       )}
     >
       <div className="flex items-center justify-between px-5 py-6">
-        <Link href={homeHref as Route} className="text-lg font-semibold tracking-[-0.04em]">
-          Ava Studio
+        <Link href={homeHref as Route} className="transition-opacity hover:opacity-90">
+          <AvaLogoWordmark glow={false} subtitle="Studio" />
         </Link>
       </div>
       <nav className="flex-1 space-y-1 px-3 pb-6">

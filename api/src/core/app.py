@@ -53,6 +53,28 @@ def create_app() -> FastAPI:
     async def healthcheck() -> dict[str, str]:  # pragma: no cover - trivial
         return {"status": "healthy"}
 
+    @app.on_event("startup")
+    async def warmup_database() -> None:
+        """🔥 DIVINE FIX: Warmup database on startup to prevent first-request timeouts"""
+        try:
+            from api.src.infrastructure.database.session import engine
+            from sqlalchemy import text
+            import asyncio
+            
+            print("🔥 Warming up database connection...", flush=True)
+            async with engine.connect() as conn:
+                # Simple ping query with timeout
+                result = await asyncio.wait_for(
+                    conn.execute(text("SELECT 1")),
+                    timeout=3.0
+                )
+                await result.close()
+            print("✅ Database connection warmed up successfully", flush=True)
+        except Exception as e:
+            # Don't block startup if warmup fails - log and continue
+            print(f"⚠️  Database warmup failed (non-blocking): {e}", flush=True)
+        sys.stdout.flush()
+
     # Mount Prometheus metrics endpoint (Phase 2-4)
     if PROMETHEUS_AVAILABLE:
         metrics_app = make_asgi_app()

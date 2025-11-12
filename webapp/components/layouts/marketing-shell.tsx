@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { LanguageSwitcher } from "@/components/navigation/language-switcher";
 import { fallbackLocale, isLocale, type Locale } from "@/lib/i18n/locales";
 import { translate } from "@/lib/translation";
+import { AvaLogoWordmark } from "@/components/brand/logo";
 
 const external = {
   community: "https://discord.gg",
@@ -74,11 +75,8 @@ export function MarketingShell({ children }: { children: React.ReactNode }) {
       <header className="fixed top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl">
         <div className="mx-auto flex h-16 w-full max-w-screen-xl items-center justify-between px-6">
           {/* Logo */}
-          <Link href={routes.home as any} className="flex items-center gap-3 transition-opacity hover:opacity-80">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-secondary">
-              <span className="text-lg font-bold text-white">A</span>
-            </div>
-            <span className="text-xl font-bold tracking-tight">Ava</span>
+          <Link href={routes.home as any} className="transition-opacity hover:opacity-80">
+            <AvaLogoWordmark glow={false} subtitle="Studio" />
           </Link>
 
           {/* Navigation centrale */}

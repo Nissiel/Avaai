@@ -18,6 +18,7 @@ settings = get_settings()
 # DIVINE FIX: asyncpg + PgBouncer configuration
 # CRITICAL: Use NullPool to prevent prepared statement conflicts with poolers
 # CRITICAL: Use unique prepared statement names to avoid collisions
+# CRITICAL: Aggressive timeouts to prevent 10-second hangs on cold DB
 # See: https://docs.sqlalchemy.org/en/20/dialects/postgresql.html#prepared-statement-name-with-pgbouncer
 engine = create_async_engine(
     settings.database_url,
@@ -27,9 +28,12 @@ engine = create_async_engine(
     connect_args={
         "statement_cache_size": 0,  # Disable prepared statement cache
         "prepared_statement_name_func": lambda: f"__asyncpg_{uuid4()}__",  # Unique names
+        "timeout": 5.0,  # 🔥 DIVINE FIX: 5-second connection timeout (prevent 10s hangs)
+        "command_timeout": 8.0,  # 🔥 DIVINE FIX: 8-second query timeout (fast-fail on slow queries)
         "server_settings": {
             "jit": "off",
-            "application_name": "ava-api-production"
+            "application_name": "ava-api-production",
+            "statement_timeout": "8000"  # 🔥 DIVINE FIX: PostgreSQL-level timeout (8 seconds)
         }
     }
 )

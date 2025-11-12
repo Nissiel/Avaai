@@ -19,7 +19,14 @@ RequestKey = Tuple[str, str]
 class ObservabilityMiddleware(BaseHTTPMiddleware):
     """Adds request IDs, structured logs, timeouts and duplicate detection."""
 
-    def __init__(self, app, *, timeout_seconds: int = 10, dedupe_ttl: int = 300, dedupe_max: int = 2000):
+    def __init__(self, app, *, timeout_seconds: int = 8, dedupe_ttl: int = 300, dedupe_max: int = 2000):
+        """
+        🔥 DIVINE FIX: Reduced timeout from 10s to 8s
+        
+        This matches our database query timeout (8s) to fail fast on cold DB
+        instead of letting requests hang for 10 seconds. Better UX: fast failure
+        with proper error message vs. long hang.
+        """
         super().__init__(app)
         self.timeout_seconds = timeout_seconds
         self.dedupe_ttl = dedupe_ttl
