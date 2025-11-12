@@ -13,6 +13,7 @@ import {
   updateRemoteVapiSetting,
   type RemoteVapiSetting,
 } from "@/lib/api/vapi-remote-settings";
+import { useVapiStatus } from "@/lib/hooks/use-vapi-status";
 
 interface SettingEditorProps {
   setting: RemoteVapiSetting;
@@ -95,6 +96,7 @@ export function VapiRemoteSettings() {
   const [error, setError] = useState<string | null>(null);
   const [pendingKey, setPendingKey] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const { hasVapiKey, isLoading: statusLoading } = useVapiStatus();
 
   const coerceValue = useCallback((input: string): unknown => {
     const trimmed = input.trim();
@@ -124,8 +126,14 @@ export function VapiRemoteSettings() {
   }, []);
 
   useEffect(() => {
+    if (!hasVapiKey) {
+      setIsLoading(false);
+      setSettings([]);
+      setError(null);
+      return;
+    }
     loadSettings();
-  }, [loadSettings]);
+  }, [hasVapiKey, loadSettings]);
 
   const handleSave = useCallback(
     (key: string, value: string) => {
@@ -148,11 +156,19 @@ export function VapiRemoteSettings() {
   );
 
   const body = useMemo(() => {
-    if (isLoading) {
+    if (statusLoading || isLoading) {
       return (
         <div className="space-y-3">
           <div className="h-10 animate-pulse rounded-lg bg-muted/40" />
           <div className="h-10 animate-pulse rounded-lg bg-muted/40" />
+        </div>
+      );
+    }
+
+    if (!hasVapiKey) {
+      return (
+        <div className="rounded-lg border border-border/60 bg-muted/10 p-4 text-sm text-muted-foreground">
+          Add your Vapi API key above to view or edit remote settings stored in Vapi.
         </div>
       );
     }
@@ -196,7 +212,7 @@ export function VapiRemoteSettings() {
           variant="outline"
           size="sm"
           className="gap-2"
-          disabled={isLoading || isRefreshing}
+          disabled={isLoading || isRefreshing || !hasVapiKey}
           onClick={async () => {
             setIsRefreshing(true);
             try {

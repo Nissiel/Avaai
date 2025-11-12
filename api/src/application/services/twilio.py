@@ -47,8 +47,8 @@ def resolve_twilio_credentials(
             return TwilioCredentials(account_sid=account_sid, auth_token=auth_token)
 
     raise HTTPException(
-        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-        detail="Twilio credentials not configured. Add them in Settings → Telephony.",
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail="Twilio credentials not configured. Add them in Settings → Twilio.",
     )
 
 
