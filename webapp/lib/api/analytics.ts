@@ -18,9 +18,9 @@ async function fetchInternalJson<T>(path: string, metricsLabel: string): Promise
   const text = await response.text();
   const payload =
     safeJsonParse<T & { detail?: string; error?: string; success?: boolean }>(text, {
-      fallback: {} as T,
+      fallback: {} as T & { detail?: string; error?: string; success?: boolean },
       context: `analytics:${metricsLabel}`,
-    }) ?? ({} as T);
+    }) ?? ({} as T & { detail?: string; error?: string; success?: boolean });
 
   if (!response.ok) {
     const detail = (payload as { detail?: string; error?: string }).detail ?? (payload as { error?: string }).error;
