@@ -15,11 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { GlassCard } from "@/components/ui/glass-card";
 import { createProfileSettingsSchema, type ProfileSettingsValues } from "@/lib/validations/profile";
 import { fallbackLocale, isLocale, localeNames, type Locale } from "@/lib/i18n/locales";
-import {
-  getBackendBaseUrl,
-  persistSession,
-  type AvaSession,
-} from "@/lib/auth/session-client";
+import { persistSession, type AvaSession } from "@/lib/auth/session-client";
 import { useSessionStore } from "@/stores/session-store";
 
 interface UpdateProfileResponse {
@@ -73,36 +69,24 @@ export function ProfileSettingsForm() {
   const watchedValues = form.watch();
 
   useEffect(() => {
-    console.log("📝 Form values changed:", watchedValues);
-  }, [watchedValues]);
-
-  useEffect(() => {
-    console.log("🔄 Resetting form with initialValues:", initialValues);
     form.reset(initialValues);
   }, [initialValues, form]);
 
   const updateProfileMutation = useMutation<UpdateProfileResponse, Error, ProfileSettingsValues>({
     mutationFn: async (values) => {
-      const accessToken =
-        session?.accessToken ??
-        (typeof window !== "undefined" ? window.localStorage.getItem("access_token") : null);
-
-      if (!accessToken) {
-        throw new Error(tMessages("sessionExpired"));
-      }
-
       const payload = {
         name: values.name.trim(),
         locale: values.locale,
         phone: values.phone?.trim() ? values.phone.trim() : null,
       };
 
-      const response = await fetch(`${getBackendBaseUrl()}/api/v1/auth/me`, {
+      // 🎯 DIVINE: Use frontend API route (handles auth, refresh, errors)
+      const response = await fetch("/api/auth/me", {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
         },
+        credentials: "same-origin", // Include cookies
         body: JSON.stringify(payload),
       });
 
@@ -169,23 +153,14 @@ export function ProfileSettingsForm() {
   });
 
   const onSubmit = (values: ProfileSettingsValues) => {
-    console.log("🚀 Profile form submitted:", values);
     updateProfileMutation.mutate(values);
   };
 
   const handleReset = () => {
-    console.log("🔄 Resetting form to:", initialValues);
     form.reset(initialValues);
   };
 
   const isDirty = form.formState.isDirty;
-
-  console.log("📊 Form state:", {
-    isDirty,
-    isValid: form.formState.isValid,
-    isPending: updateProfileMutation.isPending,
-    errors: form.formState.errors,
-  });
 
   return (
     <GlassCard className="space-y-6" variant="none">
