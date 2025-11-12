@@ -49,6 +49,11 @@ def create_app() -> FastAPI:
     print("=" * 80, flush=True)
     sys.stdout.flush()
 
+    @app.get("/", tags=["Health"])
+    async def root() -> dict[str, str]:  # pragma: no cover - trivial
+        """Root endpoint for Render health checks"""
+        return {"status": "healthy", "service": "ava-api"}
+
     @app.get("/healthz", tags=["Health"])
     async def healthcheck() -> dict[str, str]:  # pragma: no cover - trivial
         return {"status": "healthy"}
