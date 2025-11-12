@@ -2,6 +2,8 @@
 
 import { apiFetch } from "@/lib/api/client";
 
+const NEXT_ROUTE = "/api/vapi-settings";
+
 export interface VapiSettings {
   has_vapi_key: boolean;
   vapi_api_key_preview?: string | null;
@@ -26,9 +28,9 @@ async function fetchSettings(
   body?: unknown,
   metricsLabel?: string,
 ) {
-  const response = await apiFetch("/api/v1/vapi-settings", {
+  const response = await apiFetch(NEXT_ROUTE, {
     method,
-    baseUrl: "backend",
+    baseUrl: "relative",
     body: body ? JSON.stringify(body) : undefined,
     metricsLabel: metricsLabel ?? `vapi.settings.${method.toLowerCase()}`,
     timeoutMs: 10_000,

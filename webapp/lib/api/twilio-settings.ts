@@ -1,6 +1,6 @@
 import { apiFetch } from "@/lib/api/client";
 
-const BACKEND_ROUTE = "/api/v1/twilio-settings";
+const NEXT_ROUTE = "/api/twilio-settings";
 
 interface RawTwilioSettingsResponse {
   has_twilio_credentials: boolean;
@@ -41,9 +41,9 @@ async function requestTwilioSettings(
 ): Promise<{ response: Response; text: string; payload: RawTwilioSettingsResponse | { detail?: string } | null }> {
   const { metricsLabel, timeoutMs = 10_000, ...fetchInit } = init;
 
-  const response = await apiFetch(BACKEND_ROUTE, {
+  const response = await apiFetch(NEXT_ROUTE, {
     ...fetchInit,
-    baseUrl: "backend",
+    baseUrl: "relative",
     metricsLabel,
     timeoutMs,
   });
