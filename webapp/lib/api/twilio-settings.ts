@@ -73,19 +73,30 @@ export async function getTwilioSettings(): Promise<TwilioSettingsResponse> {
 }
 
 export async function saveTwilioSettings(payload: SaveTwilioSettingsPayload): Promise<TwilioSettingsResponse> {
-  const { response, payload: raw } = await requestTwilioSettings({
+  console.log("🔥 [saveTwilioSettings] Starting save with payload:", JSON.stringify({
+    account_sid_length: payload.account_sid?.length,
+    auth_token_length: payload.auth_token?.length,
+    phone_number: payload.phone_number,
+  }, null, 2));
+  
+  const { response, payload: resPayload } = await requestTwilioSettings({
     method: "POST",
     body: JSON.stringify(payload),
     metricsLabel: "twilio.settings.save",
-    timeoutMs: 15_000,
   });
 
+  console.log("📡 [saveTwilioSettings] Backend response status:", response.status);
+  console.log("✅ [saveTwilioSettings] Backend returned payload:", JSON.stringify(resPayload, null, 2));
+
   if (!response.ok) {
-    const detail = formatDetail((raw as { detail?: unknown } | null)?.detail, `Failed to save Twilio settings (${response.status})`);
+    const detail = formatDetail((resPayload as { detail?: unknown } | null)?.detail, `Failed to save Twilio settings (${response.status})`);
     throw new Error(detail);
   }
 
-  return normalizeTwilioSettings(raw as RawTwilioSettingsResponse);
+  const normalized = normalizeTwilioSettings(resPayload as RawTwilioSettingsResponse);
+  console.log("📊 [saveTwilioSettings] Normalized result:", JSON.stringify(normalized, null, 2));
+  
+  return normalized;
 }
 
 export async function deleteTwilioSettings(): Promise<void> {

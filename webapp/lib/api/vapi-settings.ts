@@ -72,12 +72,20 @@ export async function getVapiSettings(): Promise<VapiSettings> {
 }
 
 export async function saveVapiSettings(apiKey: string): Promise<VapiSettings> {
+  console.log("🔥 [saveVapiSettings] Starting save with key length:", apiKey.length);
+  
   const payload = await fetchSettings(
     "POST",
     { vapi_api_key: apiKey },
     "vapi.settings.save",
   );
-  return normalize(payload);
+  
+  console.log("✅ [saveVapiSettings] Backend returned payload:", JSON.stringify(payload, null, 2));
+  
+  const normalized = normalize(payload);
+  console.log("📊 [saveVapiSettings] Normalized result:", JSON.stringify(normalized, null, 2));
+  
+  return normalized;
 }
 
 export async function deleteVapiSettings(): Promise<void> {
