@@ -170,7 +170,11 @@ export function ConfigurationPanel() {
         <div className="space-y-4">
           <div>
             <Label htmlFor="persona">Type de personnalité</Label>
-            <Select defaultValue="secretary">
+            <Select
+              defaultValue="secretary"
+              value={config.persona}
+              onValueChange={(value) => updateConfig("persona", value)}
+            >
               <SelectTrigger id="persona" className="mt-1">
                 <SelectValue />
               </SelectTrigger>
@@ -184,7 +188,11 @@ export function ConfigurationPanel() {
           </div>
           <div>
             <Label htmlFor="tone">Ton de voix</Label>
-            <Select defaultValue="warm">
+            <Select
+              defaultValue="warm"
+              value={config.tone}
+              onValueChange={(value) => updateConfig("tone", value)}
+            >
               <SelectTrigger id="tone" className="mt-1">
                 <SelectValue />
               </SelectTrigger>
@@ -229,18 +237,37 @@ export function ConfigurationPanel() {
         <div className="space-y-4">
           <div>
             <Label htmlFor="phone-number">Numéro de téléphone</Label>
-            <Input id="phone-number" placeholder="+1 415 555 0199" className="mt-1" />
+            <Input
+              id="phone-number"
+              placeholder="+1 415 555 0199"
+              className="mt-1"
+              value={config.phoneNumber}
+              onChange={(e) => updateConfig("phoneNumber", e.target.value)}
+            />
             <p className="text-sm text-gray-500 mt-1">
               Le numéro Twilio sur lequel AVA répondra
             </p>
           </div>
           <div>
             <Label htmlFor="business-hours">Heures d'ouverture</Label>
-            <Input id="business-hours" placeholder="09:00-18:00" className="mt-1" />
+            <Input
+              id="business-hours"
+              placeholder="09:00-18:00"
+              className="mt-1"
+              value={config.businessHours}
+              onChange={(e) => updateConfig("businessHours", e.target.value)}
+            />
           </div>
           <div>
             <Label htmlFor="fallback-email">Email de secours</Label>
-            <Input id="fallback-email" type="email" placeholder="support@acme.com" className="mt-1" />
+            <Input
+              id="fallback-email"
+              type="email"
+              placeholder="support@acme.com"
+              className="mt-1"
+              value={config.fallbackEmail}
+              onChange={(e) => updateConfig("fallbackEmail", e.target.value)}
+            />
             <p className="text-sm text-gray-500 mt-1">
               Email où les messages urgents seront transférés
             </p>
@@ -257,26 +284,58 @@ export function ConfigurationPanel() {
         <div className="space-y-4">
           <div>
             <Label htmlFor="summary-email">Email pour les résumés d'appels</Label>
-            <Input id="summary-email" type="email" placeholder="summaries@acme.com" className="mt-1" />
+            <Input
+              id="summary-email"
+              type="email"
+              placeholder="summaries@acme.com"
+              className="mt-1"
+              value={config.summaryEmail}
+              onChange={(e) => updateConfig("summaryEmail", e.target.value)}
+            />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="smtp-server">Serveur SMTP</Label>
-              <Input id="smtp-server" placeholder="smtp.gmail.com" className="mt-1" />
+              <Input
+                id="smtp-server"
+                placeholder="smtp.gmail.com"
+                className="mt-1"
+                value={config.smtpServer}
+                onChange={(e) => updateConfig("smtpServer", e.target.value)}
+              />
             </div>
             <div>
               <Label htmlFor="smtp-port">Port SMTP</Label>
-              <Input id="smtp-port" placeholder="587" className="mt-1" />
+              <Input
+                id="smtp-port"
+                placeholder="587"
+                className="mt-1"
+                value={config.smtpPort}
+                onChange={(e) => updateConfig("smtpPort", e.target.value)}
+              />
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="smtp-username">Nom d'utilisateur SMTP</Label>
-              <Input id="smtp-username" placeholder="notifications@acme.com" className="mt-1" />
+              <Input
+                id="smtp-username"
+                placeholder="notifications@acme.com"
+                className="mt-1"
+                value={config.smtpUsername}
+                onChange={(e) => updateConfig("smtpUsername", e.target.value)}
+              />
             </div>
             <div>
               <Label htmlFor="smtp-password">Mot de passe SMTP</Label>
-              <Input id="smtp-password" type="password" placeholder="••••••••" className="mt-1" />
+              <Input
+                id="smtp-password"
+                type="password"
+                placeholder="••••••••"
+                className="mt-1"
+                value={config.smtpPassword}
+                onChange={(e) => updateConfig("smtpPassword", e.target.value)}
+              />
             </div>
           </div>
         </div>

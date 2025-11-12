@@ -5,9 +5,11 @@ import { studioConfigUpdateSchema } from "@/lib/validations/config";
 
 export async function GET(request: NextRequest) {
   try {
-    // Extract token from Authorization header
+    // Extract token from Authorization header OR cookies (fallback)
     const authHeader = request.headers.get("authorization");
-    const token = authHeader?.replace("Bearer ", "");
+    const token = authHeader?.startsWith("Bearer ")
+      ? authHeader.slice(7)
+      : request.cookies.get("access_token")?.value;
 
     const config = await fetchStudioConfig(token);
     return NextResponse.json(config);
@@ -22,9 +24,11 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    // Extract token from Authorization header
+    // Extract token from Authorization header OR cookies (fallback)
     const authHeader = request.headers.get("authorization");
-    const token = authHeader?.replace("Bearer ", "");
+    const token = authHeader?.startsWith("Bearer ")
+      ? authHeader.slice(7)
+      : request.cookies.get("access_token")?.value;
 
     const payload = await request.json();
     const parsed = studioConfigUpdateSchema.safeParse(payload);
