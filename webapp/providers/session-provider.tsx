@@ -87,13 +87,27 @@ export function SessionProvider({ children, session }: SessionProviderProps) {
         applySession(hydratedSession);
       } catch (error) {
         console.warn("Session bootstrap failed:", error);
-        if (typeof window !== "undefined") {
+        
+        // 🔥 DIVINE FIX: Only clear tokens if we get 401 (truly unauthorized)
+        // Don't clear on network errors, timeouts, or 5xx errors
+        const is401 = error instanceof Error && error.message.includes("status 401");
+        
+        if (is401 && typeof window !== "undefined") {
+          // True authentication failure - clear everything
           window.localStorage.removeItem("access_token");
           window.localStorage.removeItem("refresh_token");
           window.localStorage.removeItem("remember_me");
           emitTokenChange();
+          applySession(null);
+        } else {
+          // Network/server error - keep session, let token refresh handle it
+          console.warn("⚠️ Bootstrap failed but keeping session (not a 401)");
+          // Try to load from cached session instead of clearing
+          const fallbackSession = loadPersistedSession();
+          if (fallbackSession) {
+            applySession(fallbackSession);
+          }
         }
-        applySession(null);
       }
     };
 
