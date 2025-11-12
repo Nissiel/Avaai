@@ -23,7 +23,9 @@ const inflightControllers = new Map<string, AbortController>();
 let refreshPromise: Promise<string | null> | null = null;
 let isRefreshing = false; // 🎯 DIVINE: Prevent concurrent refreshes
 let refreshRetryCount = 0; // 🎯 DIVINE: Track refresh failures
+let lastRefreshAttempt = 0; // 🎯 DIVINE: Prevent refresh loops
 const MAX_REFRESH_RETRIES = 3;
+const REFRESH_COOLDOWN_MS = 5000; // Must wait 5s between refresh attempts
 const DEFAULT_TIMEOUT_MS = 20_000;
 
 // 🎯 DIVINE: Circuit breaker for backend health
@@ -92,11 +94,26 @@ async function singleFlightRefresh(): Promise<string | null> {
     return refreshPromise;
   }
 
-  // 🎯 DIVINE: Too many failures? Force logout
+  // 🎯 DIVINE: Prevent refresh spam (must wait 5s between attempts)
+  const now = Date.now();
+  if (now - lastRefreshAttempt < REFRESH_COOLDOWN_MS) {
+    clientLogger.warn("🚨 Refresh cooldown active, skipping attempt");
+    return null;
+  }
+  lastRefreshAttempt = now;
+
+  // 🎯 DIVINE: Too many failures? Force logout IMMEDIATELY
   if (refreshRetryCount >= MAX_REFRESH_RETRIES) {
-    clientLogger.error("Max refresh retries exceeded, forcing logout");
+    clientLogger.error("🚨 Max refresh retries exceeded, forcing logout NOW");
+    
+    // Clear all auth state
     if (typeof window !== "undefined") {
-      window.location.href = "/login?reason=session_expired";
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("refresh_token");
+      sessionStorage.clear();
+      
+      // Force redirect (no async, no delays)
+      window.location.replace("/login?reason=session_expired");
     }
     return null;
   }
