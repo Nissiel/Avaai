@@ -4,11 +4,12 @@ import { fallbackLocale, isLocale, type Locale } from "@/lib/i18n/locales";
 import { translate } from "@/lib/translation";
 
 interface NotFoundProps {
-  params: { locale: string };
+  params: Promise<{ locale: string }>;
 }
 
-export default function NotFound({ params }: NotFoundProps) {
-  const locale: Locale = isLocale(params.locale) ? params.locale : fallbackLocale;
+export default async function NotFound({ params }: NotFoundProps) {
+  const { locale: localeParam } = await params;
+  const locale: Locale = isLocale(localeParam) ? localeParam : fallbackLocale;
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center gap-6 text-center">
       <div className="space-y-2">

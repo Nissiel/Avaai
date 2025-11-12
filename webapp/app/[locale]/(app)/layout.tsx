@@ -11,10 +11,11 @@ export const revalidate = 0;
 
 interface AppLayoutProps {
   children: ReactNode;
-  params: { locale: string };
+  params: Promise<{ locale: string }>;
 }
 
-export default function AppLayout({ children, params }: AppLayoutProps) {
+export default async function AppLayout({ children, params }: AppLayoutProps) {
+  const { locale } = await params;
   return (
     <div className="flex min-h-screen bg-background">
       <SessionManager />
