@@ -373,7 +373,7 @@ function ContactCallTimelineItem({
 
   const durationLabel = call.durationSeconds
     ? formatDuration(call.durationSeconds, locale)
-    : t("unknownDuration");
+    : t("unknownDuration"); // ✨ DIVINE: Now using correct translation key
   const costLabel =
     typeof call.cost === "number"
       ? call.cost === 0
