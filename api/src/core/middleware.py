@@ -39,6 +39,7 @@ def configure_middleware(app: FastAPI) -> None:
             _normalize_origin(settings.app_url),
             "https://app.ava.ai",
             "https://avaai-olive.vercel.app",
+            "https://app.avafirstai.com",
         ],
     }
 

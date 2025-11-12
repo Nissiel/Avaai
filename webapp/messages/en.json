@@ -362,6 +362,7 @@
       "loading": "Loading...",
       "empty": "No calls yet",
       "unknownNumber": "Unknown number",
+      "unknownDuration": "Duration unavailable",
       "noTranscript": "No transcript available",
       "viewContact": "Open contact profile for {name}",
       "view": "View",
