@@ -159,9 +159,15 @@ export async function refreshAccessToken(refreshToken: string): Promise<string |
 
       const data: AuthTokenResponse = await response.json();
 
-      // Cookie is set by the API route (HTTP-only, secure)
-      // Just emit token change event for in-memory updates
       if (typeof window !== "undefined") {
+        try {
+          window.localStorage.setItem("access_token", data.access_token);
+          if (data.refresh_token) {
+            window.localStorage.setItem("refresh_token", data.refresh_token);
+          }
+        } catch (error) {
+          console.warn("Failed to persist refreshed tokens", error);
+        }
         emitTokenChange();
       }
 
