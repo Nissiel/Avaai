@@ -38,6 +38,11 @@ class Settings(BaseSettings):
 
     # Feature flags
     integrations_stub_mode: bool = True  # Enable stub integrations (disable in production)
+
+    # Database resilience
+    database_max_retries: int = 3  # Number of times to retry transient failures
+    database_retry_backoff_seconds: float = 0.5  # Base backoff between retries (exponential)
+    database_statement_timeout_ms: int = 15_000  # Applied via server_settings for safety
     
     # Circuit breaker configuration (Phase 2-4)
     circuit_breaker_enabled: bool = True
