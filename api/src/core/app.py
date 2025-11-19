@@ -11,6 +11,7 @@ from api.src.core.middleware import configure_middleware
 from api.src.core.settings import get_settings
 from api.src.core.logging import configure_logging
 from api.src.core.rate_limiting import limiter
+from api.src.core.security_validation import run_security_validation, SecurityValidationError
 from api.src.presentation.api.v1.router import api_v1_router
 
 # Prometheus metrics (Phase 2-4)
@@ -24,6 +25,23 @@ except ImportError:
 def create_app() -> FastAPI:
     settings = get_settings()
     configure_logging()
+
+    # 🔒 SECURITY: Validate configuration before starting
+    print("=" * 80, flush=True)
+    print("🔒 SECURITY VALIDATION", flush=True)
+    print("=" * 80, flush=True)
+    sys.stdout.flush()
+    
+    try:
+        # Run strict validation in production, non-strict in development
+        strict_mode = settings.environment == "production"
+        run_security_validation(strict=strict_mode)
+    except SecurityValidationError:
+        print("=" * 80, flush=True)
+        print("❌ STARTUP BLOCKED - Security validation failed", flush=True)
+        print("=" * 80, flush=True)
+        sys.stdout.flush()
+        sys.exit(1)
 
     app = FastAPI(
         title="Ava API",

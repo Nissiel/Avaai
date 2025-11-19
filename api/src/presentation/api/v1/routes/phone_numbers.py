@@ -9,6 +9,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from api.src.application.services.vapi import get_vapi_client_for_user
 from api.src.infrastructure.database.session import get_session
 from api.src.infrastructure.persistence.models.user import User
+from api.src.infrastructure.persistence.models.phone_number import PhoneProvider
+from api.src.infrastructure.persistence.repositories.phone_number_repository import PhoneNumberRepository
 from api.src.presentation.dependencies.auth import get_current_user
 from api.src.core.settings import get_settings
 from twilio.rest import Client as TwilioClient
@@ -105,19 +107,27 @@ async def create_us_number(
             assistant_id=request.assistant_id, area_code=request.area_code
         )
 
-        # TODO: Save to database
-        # phone = PhoneNumber(
-        #     org_id=request.org_id,
-        #     provider="VAPI",
-        #     e164=created["number"],
-        #     vapi_phone_number_id=created["id"],
-        #     routing={"assistant_id": request.assistant_id}
-        # )
-        # await db.add(phone)
-        # await db.commit()
-
-        # Vapi may not return 'number' immediately (provisioning takes time)
+        # Save to database
         phone_number = created.get("number")
+        if phone_number:  # Only save if we have the number
+            repo = PhoneNumberRepository(db)
+            try:
+                await repo.create(
+                    org_id=request.org_id,
+                    provider=PhoneProvider.VAPI,
+                    e164=phone_number,
+                    vapi_phone_number_id=created["id"],
+                    routing={"assistant_id": request.assistant_id}
+                )
+                logger.info(f"✅ Saved phone number {phone_number} to database")
+            except ValueError as ve:
+                # Number already exists, just log and continue
+                logger.warning(f"Phone number already exists: {ve}")
+            except Exception as save_error:
+                # Don't fail the whole request if DB save fails
+                logger.error(f"Failed to save phone number to DB: {save_error}")
+        else:
+            logger.warning("Phone number not yet provisioned, skipping DB save")
         message = (
             f"Numéro US créé: {phone_number}"
             if phone_number
@@ -258,7 +268,7 @@ async def import_twilio_number(
 
         try:
             # Update the assistant to send webhooks to our backend
-            webhook_result = await vapi.update_assistant_webhook(
+            await vapi.update_assistant_webhook(
                 assistant_id=assistant_id,  # 🔥 DIVINE: Use the (maybe auto-linked) assistant_id
                 server_url=webhook_url
             )
@@ -271,17 +281,23 @@ async def import_twilio_number(
             webhook_configured = False
 
         # 4. Save to our DB
-        # TODO: Implement database save
-        # phone = PhoneNumber(
-        #     org_id=request.org_id,
-        #     provider="VAPI",  # Managed by Vapi but uses Twilio under the hood
-        #     e164=request.phone_number,
-        #     vapi_phone_number_id=imported["id"],
-        #     twilio_account_sid=request.twilio_account_sid,
-        #     routing={"assistant_id": request.assistant_id}
-        # )
-        # await db.add(phone)
-        # await db.commit()
+        repo = PhoneNumberRepository(db)
+        try:
+            await repo.create(
+                org_id=request.org_id,
+                provider=PhoneProvider.VAPI_TWILIO,
+                e164=request.phone_number,
+                vapi_phone_number_id=imported["id"],
+                twilio_account_sid=request.twilio_account_sid,
+                routing={"assistant_id": assistant_id}
+            )
+            logger.info(f"✅ Saved phone number {request.phone_number} to database")
+        except ValueError as ve:
+            # Number already exists, just log and continue
+            logger.warning(f"Phone number already exists: {ve}")
+        except Exception as save_error:
+            # Don't fail the whole request if DB save fails
+            logger.error(f"Failed to save phone number to DB: {save_error}")
 
         return {
             "success": True,
@@ -363,11 +379,13 @@ async def verify_twilio_credentials(request: VerifyTwilioRequest):
 
 
 @router.get("/my-numbers")
-async def get_my_numbers(org_id: str):
+async def get_my_numbers(
+    org_id: str,
+    db: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
+):
     """
     Get all phone numbers for an organization.
-
-    TODO: Implement database query
 
     Returns:
         [
@@ -379,11 +397,37 @@ async def get_my_numbers(org_id: str):
             }
         ]
     """
-    # TODO: Query from database
-    # phones = await db.query(PhoneNumber).filter(PhoneNumber.org_id == org_id).all()
+    repo = PhoneNumberRepository(db)
+    phones = await repo.list_by_org(org_id)
+
+    # Extract country code from E.164 format
+    def get_country_code(e164: str) -> str:
+        if e164.startswith('+33'):
+            return 'FR'
+        elif e164.startswith('+972'):
+            return 'IL'
+        elif e164.startswith('+1'):
+            return 'US'
+        elif e164.startswith('+44'):
+            return 'UK'
+        elif e164.startswith('+49'):
+            return 'DE'
+        else:
+            return 'OTHER'
 
     return {
         "success": True,
-        "numbers": [],  # TODO: Return from DB
-        "message": "TODO: Implement database query",
+        "numbers": [
+            {
+                "id": phone.id,
+                "number": phone.e164,
+                "provider": phone.provider.value,
+                "country": get_country_code(phone.e164),
+                "vapi_id": phone.vapi_phone_number_id,
+                "routing": phone.routing,
+                "created_at": phone.created_at.isoformat(),
+            }
+            for phone in phones
+        ],
+        "count": len(phones),
     }

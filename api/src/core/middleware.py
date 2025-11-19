@@ -10,6 +10,7 @@ from starlette.middleware.cors import ALL_METHODS
 from api.src.core.settings import get_settings
 from api.src.core.middleware_observability import ObservabilityMiddleware
 from api.src.presentation.middleware.correlation import CorrelationIdMiddleware
+from api.src.presentation.middleware.security_headers import SecurityHeadersMiddleware
 
 
 def _normalize_origin(origin: str | None) -> str | None:
@@ -57,6 +58,9 @@ def configure_middleware(app: FastAPI) -> None:
 
     # Add correlation ID middleware FIRST (before CORS)
     app.add_middleware(CorrelationIdMiddleware)
+
+    # Add security headers middleware
+    app.add_middleware(SecurityHeadersMiddleware)
 
     app.add_middleware(
         CORSMiddleware,
