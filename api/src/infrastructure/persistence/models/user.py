@@ -12,10 +12,19 @@ from typing import Optional
 from uuid import uuid4
 
 from sqlalchemy import Boolean, DateTime, Integer, String
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
+from typing import TYPE_CHECKING
 
 from .base import Base
+
+if TYPE_CHECKING:
+    from .studio_config import StudioConfig
+    from .phone_number import PhoneNumber
+    from .call import CallRecord
+    from .ava_profile import AvaProfile
+    from .assistant import Assistant
+    from .business_profile import BusinessProfile
 
 
 class User(Base):
@@ -43,6 +52,13 @@ class User(Base):
         unique=True,
         nullable=True,
         index=True,
+    )
+    supabase_user_id: Mapped[Optional[str]] = mapped_column(
+        String(64),
+        unique=True,
+        nullable=True,
+        index=True,
+        comment="Supabase Auth user ID (maps to GoTrue user)",
     )
     password: Mapped[Optional[str]] = mapped_column(
         String(255),
@@ -76,30 +92,6 @@ class User(Base):
         nullable=False,
     )
 
-    # Vapi.ai Integration (User's own API key)
-    vapi_api_key: Mapped[Optional[str]] = mapped_column(
-        String(255),
-        nullable=True,
-        comment="User's personal Vapi.ai API key for their assistants",
-    )
-
-    # Twilio Integration (User's own credentials)
-    twilio_account_sid: Mapped[Optional[str]] = mapped_column(
-        String(255),
-        nullable=True,
-        comment="User's Twilio Account SID",
-    )
-    twilio_auth_token: Mapped[Optional[str]] = mapped_column(
-        String(255),
-        nullable=True,
-        comment="User's Twilio Auth Token",
-    )
-    twilio_phone_number: Mapped[Optional[str]] = mapped_column(
-        String(50),
-        nullable=True,
-        comment="User's Twilio phone number",
-    )
-
     # Onboarding tracking
     onboarding_completed: Mapped[bool] = mapped_column(
         Boolean,
@@ -110,18 +102,6 @@ class User(Base):
         Integer,
         default=0,
         nullable=False,
-    )
-    onboarding_vapi_skipped: Mapped[bool] = mapped_column(
-        Boolean,
-        default=False,
-        nullable=False,
-        comment="User skipped Vapi configuration during onboarding",
-    )
-    onboarding_twilio_skipped: Mapped[bool] = mapped_column(
-        Boolean,
-        default=False,
-        nullable=False,
-        comment="User skipped Twilio configuration during onboarding",
     )
     onboarding_assistant_created: Mapped[bool] = mapped_column(
         Boolean,
@@ -141,6 +121,48 @@ class User(Base):
         server_default=func.now(),
         onupdate=func.now(),
         nullable=False,
+    )
+
+    # Relationships
+    # NOTE: Using lazy="select" (default) to avoid N+1 queries.
+    # Use explicit selectinload() or joinedload() in queries when you need related data.
+    # Example: select(User).options(selectinload(User.studio_configs))
+    studio_configs: Mapped[list["StudioConfig"]] = relationship(
+        "StudioConfig",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        lazy="select"  # Changed from selectin to prevent automatic N+1
+    )
+    phone_numbers: Mapped[list["PhoneNumber"]] = relationship(
+        "PhoneNumber",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        lazy="select"  # Changed from selectin to prevent automatic N+1
+    )
+    call_records: Mapped[list["CallRecord"]] = relationship(
+        "CallRecord",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        lazy="select"  # Changed from selectin to prevent automatic N+1
+    )
+    ava_profiles: Mapped[list["AvaProfile"]] = relationship(
+        "AvaProfile",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        lazy="select"  # Changed from selectin to prevent automatic N+1
+    )
+    assistants: Mapped[list["Assistant"]] = relationship(
+        "Assistant",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        lazy="select"  # Changed from selectin to prevent automatic N+1
+    )
+    business_profile: Mapped[Optional["BusinessProfile"]] = relationship(
+        "BusinessProfile",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        uselist=False,  # One-to-one relationship
+        lazy="select"
     )
 
     def __repr__(self) -> str:

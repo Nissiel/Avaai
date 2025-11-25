@@ -1,13 +1,16 @@
 """
 Authentication dependencies for Ava API.
 
-Provides `get_current_user()` dependency that validates JWT tokens and returns
-the authenticated User object with vapi_api_key for multi-tenant operations.
+Provides `get_current_user()` dependency that validates Supabase JWT tokens
+and returns the authenticated User object for multi-tenant operations.
+
+NOTE: This is Supabase-only authentication. Legacy JWT support has been removed.
 """
 
 from __future__ import annotations
 
 import os
+import logging
 from typing import Annotated
 
 from fastapi import Depends, HTTPException, Security, status
@@ -18,28 +21,107 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ...core.settings import Settings, get_settings
 from ...infrastructure.persistence.models.user import User
 from ...infrastructure.database.session import get_session
+from ...infrastructure.persistence.repositories.user_repository import UserRepository
+
+logger = logging.getLogger(__name__)
 
 # Development mode: Optional auth for local testing
+# SECURITY WARNING: This completely bypasses authentication!
 DEV_MODE = os.getenv("ENVIRONMENT", "development") == "development"
+
+# Log warning if dev mode is enabled
+if DEV_MODE:
+    logger.warning(
+        "⚠️  SECURITY WARNING: Running in DEVELOPMENT mode - authentication is DISABLED! "
+        "Set ENVIRONMENT=production to enable authentication."
+    )
 
 bearer_scheme = HTTPBearer(auto_error=not DEV_MODE)
 
 
-async def _parse_token(token: str, settings: Settings) -> dict:
-    """Parse and validate JWT token using settings-based secret.
-
-    🔐 DIVINE: Uses Pydantic settings instead of direct os.getenv for consistency.
+async def _parse_supabase_token(token: str, settings: Settings) -> dict:
     """
-    secret = settings.jwt_secret_key
-    if not secret or secret == "CHANGE_ME_IN_PRODUCTION_USE_ENV_VAR":
+    Decode and validate a Supabase JWT token.
+
+    Raises HTTPException on failure.
+    """
+    if not settings.supabase_auth_enabled:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="JWT secret not configured. Set AVA_API_JWT_SECRET_KEY environment variable."
+            detail="Supabase Auth is not enabled. Set ENABLE_SUPABASE_AUTH=true."
         )
+
+    if not settings.supabase_jwt_secret:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Supabase JWT secret not configured. Set SUPABASE_JWT_SECRET environment variable."
+        )
+
     try:
-        return jwt.decode(token, secret, algorithms=["HS256"])
-    except JWTError as exc:  # pragma: no cover - defensive
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token") from exc
+        payload = jwt.decode(
+            token,
+            settings.supabase_jwt_secret,
+            algorithms=["HS256"],
+            options={"verify_aud": False},  # Supabase uses multiple audiences (authenticated/service_role)
+        )
+    except JWTError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token"
+        ) from exc
+
+    # Validate this is a Supabase token
+    iss = (payload.get("iss") or "").lower()
+    aud = payload.get("aud")
+
+    if "supabase" not in iss and "gotrue" not in iss:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token issuer"
+        )
+
+    if aud and aud not in {"authenticated", "service_role"}:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token audience"
+        )
+
+    return payload
+
+
+async def _resolve_supabase_user(payload: dict, repository: UserRepository) -> User:
+    """Map Supabase JWT payload to a local User (link or create)."""
+    supabase_user_id = payload.get("sub")
+    email = payload.get("email")
+
+    if not supabase_user_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid Supabase token (missing sub)",
+        )
+
+    if not email:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Supabase token missing email claim",
+        )
+
+    user_metadata = payload.get("user_metadata") or {}
+    name = user_metadata.get("full_name") or user_metadata.get("name")
+    locale = user_metadata.get("locale") or "en"
+
+    try:
+        return await repository.get_or_create_by_supabase(
+            supabase_user_id=supabase_user_id,
+            email=email,
+            name=name,
+            locale=locale,
+        )
+    except Exception as exc:  # pragma: no cover - defensive
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to resolve Supabase user",
+        ) from exc
 
 
 async def get_current_user(
@@ -48,15 +130,21 @@ async def get_current_user(
     settings: Annotated[Settings, Depends(get_settings)] = None,
 ) -> User:
     """
-    Resolve the authenticated user from JWT token.
+    Resolve the authenticated user from Supabase JWT token.
 
-    Returns the full User object with vapi_api_key for multi-tenant Vapi operations.
+    Returns the full User object for multi-tenant operations.
     In DEV mode, returns default dev user if no credentials provided.
+
+    NOTE: This is Supabase-only authentication. Legacy JWT support has been removed.
     """
     from sqlalchemy import select
+    repository = UserRepository(session)
 
     # DEV MODE: Get or create default user
+    # SECURITY WARNING: This bypasses authentication completely!
     if DEV_MODE and credentials is None:
+        logger.warning("🔓 DEV MODE: Bypassing authentication - returning dev user")
+
         result = await session.execute(select(User).limit(1))
         user = result.scalar_one_or_none()
 
@@ -72,6 +160,7 @@ async def get_current_user(
             session.add(user)
             await session.commit()
             await session.refresh(user)
+            logger.info("Created default dev user: %s", user.email)
 
         return user
 
@@ -79,17 +168,8 @@ async def get_current_user(
     if credentials is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required")
 
-    payload = await _parse_token(credentials.credentials, settings)
-    user_id_raw = payload.get("sub")
+    # Parse and validate Supabase JWT token
+    supabase_payload = await _parse_supabase_token(credentials.credentials, settings)
 
-    if not user_id_raw:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token payload")
-
-    # Query user by ID
-    result = await session.execute(select(User).where(User.id == str(user_id_raw)))
-    user = result.scalar_one_or_none()
-
-    if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-
-    return user
+    # Resolve user from Supabase token
+    return await _resolve_supabase_user(supabase_payload, repository)

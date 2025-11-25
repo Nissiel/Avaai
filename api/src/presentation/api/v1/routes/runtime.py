@@ -31,4 +31,4 @@ async def control_runtime(payload: RuntimeControlRequest) -> dict[str, str]:
 @router.get("/status")
 async def runtime_status() -> dict[str, str]:
     # Placeholder for future orchestration integration.
-    return {"status": "ok"}
+    return {"status": "running"}

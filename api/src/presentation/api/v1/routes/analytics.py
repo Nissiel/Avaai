@@ -20,7 +20,7 @@ from api.src.application.services.analytics import (
     synchronise_calls_from_vapi,
 )
 from api.src.application.services.email import get_user_email_service
-from api.src.application.services.tenant import ensure_tenant_for_user
+from api.src.application.services.vapi import get_vapi_client
 from api.src.infrastructure.external.vapi_client import VapiApiError, VapiClient
 from api.src.infrastructure.database.session import get_session
 from api.src.infrastructure.persistence.models.call import CallRecord
@@ -32,13 +32,9 @@ router = APIRouter(prefix="/analytics", tags=["Analytics"])
 logger = logging.getLogger("ava.analytics")
 
 
-def _client(user: User) -> VapiClient:
-    """Create VapiClient with user's personal API key (multi-tenant)."""
-    try:
-        token = user.vapi_api_key
-        return VapiClient(token=token)
-    except ValueError as exc:
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
+def _client() -> VapiClient:
+    """Create VapiClient with platform API key."""
+    return get_vapi_client()
 
 
 async def _load_studio_config(session: AsyncSession, user_id: str) -> Optional[StudioConfigModel]:
@@ -48,9 +44,9 @@ async def _load_studio_config(session: AsyncSession, user_id: str) -> Optional[S
     return result.scalar_one_or_none()
 
 
-async def _sync_calls(session: AsyncSession, tenant_id, client: VapiClient) -> None:
+async def _sync_calls(session: AsyncSession, user_id, client: VapiClient) -> None:
     try:
-        await synchronise_calls_from_vapi(session, tenant_id=tenant_id, vapi_client=client)
+        await synchronise_calls_from_vapi(session, user_id=user_id, vapi_client=client)
     except VapiApiError as exc:
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(exc)) from exc
 
@@ -62,15 +58,14 @@ async def analytics_overview(
 ) -> dict[str, object]:
     # 🔥 DIVINE FIX: Refresh user from DB to get latest vapi_api_key
     await session.refresh(user)
-    
-    client = _client(user)
-    tenant = await ensure_tenant_for_user(session, user)
-    tenant_id = tenant.id
-    await _sync_calls(session, tenant_id, client)
 
-    overview = await compute_overview_metrics(session, tenant_id=tenant_id)
-    calls = await recent_calls_with_transcripts(session, tenant_id=tenant_id)
-    topics = await compute_trending_topics(session, tenant_id=tenant_id, limit=6)
+    client = _client()
+    user_id = user.id
+    await _sync_calls(session, user_id, client)
+
+    overview = await compute_overview_metrics(session, user_id=user_id)
+    calls = await recent_calls_with_transcripts(session, user_id=user_id)
+    topics = await compute_trending_topics(session, user_id=user_id, limit=6)
 
     return {
         "overview": overview,
@@ -86,11 +81,11 @@ async def analytics_timeseries(
 ) -> dict[str, object]:
     # 🔥 DIVINE FIX: Refresh user from DB to get latest vapi_api_key
     await session.refresh(user)
-    
-    client = _client(user)
-    tenant = await ensure_tenant_for_user(session, user)
-    await _sync_calls(session, tenant.id, client)
-    series = await compute_time_series(session, tenant_id=tenant.id)
+
+    client = _client()
+    user_id = user.id
+    await _sync_calls(session, user_id, client)
+    series = await compute_time_series(session, user_id=user_id)
     return {"series": series}
 
 
@@ -101,11 +96,11 @@ async def analytics_topics(
 ) -> dict[str, object]:
     # 🔥 DIVINE FIX: Refresh user from DB to get latest vapi_api_key
     await session.refresh(user)
-    
-    client = _client(user)
-    tenant = await ensure_tenant_for_user(session, user)
-    await _sync_calls(session, tenant.id, client)
-    topics = await compute_trending_topics(session, tenant_id=tenant.id)
+
+    client = _client()
+    user_id = user.id
+    await _sync_calls(session, user_id, client)
+    topics = await compute_trending_topics(session, user_id=user_id)
     return {"topics": topics}
 
 
@@ -116,11 +111,11 @@ async def analytics_anomalies(
 ) -> dict[str, object]:
     # 🔥 DIVINE FIX: Refresh user from DB to get latest vapi_api_key
     await session.refresh(user)
-    
-    client = _client(user)
-    tenant = await ensure_tenant_for_user(session, user)
-    await _sync_calls(session, tenant.id, client)
-    anomalies = await detect_anomalies(session, tenant_id=tenant.id)
+
+    client = _client()
+    user_id = user.id
+    await _sync_calls(session, user_id, client)
+    anomalies = await detect_anomalies(session, user_id=user_id)
     return {"anomalies": anomalies}
 
 
@@ -131,11 +126,11 @@ async def analytics_heatmap(
 ) -> dict[str, object]:
     # 🔥 DIVINE FIX: Refresh user from DB to get latest vapi_api_key
     await session.refresh(user)
-    
-    client = _client(user)
-    tenant = await ensure_tenant_for_user(session, user)
-    await _sync_calls(session, tenant.id, client)
-    heatmap = await compute_activity_heatmap(session, tenant_id=tenant.id)
+
+    client = _client()
+    user_id = user.id
+    await _sync_calls(session, user_id, client)
+    heatmap = await compute_activity_heatmap(session, user_id=user_id)
     return {"heatmap": heatmap}
 
 
@@ -163,7 +158,7 @@ async def send_call_transcript_email(
     result = await session.execute(
         select(CallRecord)
         .where(CallRecord.id == call_id)
-        .where(CallRecord.tenant_id == user.id)
+        .where(CallRecord.user_id == user.id)
     )
     call = result.scalar_one_or_none()
 

@@ -12,11 +12,15 @@ from enum import Enum
 from typing import Optional
 from uuid import uuid4
 
-from sqlalchemy import JSON, DateTime, Enum as SQLEnum, String
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import ForeignKey, JSON, DateTime, Enum as SQLEnum, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
+from typing import TYPE_CHECKING
 
 from .base import Base
+
+if TYPE_CHECKING:
+    from .user import User
 
 
 class PhoneProvider(str, Enum):
@@ -41,9 +45,10 @@ class PhoneNumber(Base):
         nullable=False,
     )
 
-    # Organization link
-    org_id: Mapped[str] = mapped_column(
+    # User link (renamed from org_id for clarity)
+    user_id: Mapped[str] = mapped_column(
         String(36),
+        ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
@@ -113,6 +118,9 @@ class PhoneNumber(Base):
         onupdate=func.now(),
         nullable=False,
     )
+
+    # Relationship
+    user: Mapped["User"] = relationship("User", back_populates="phone_numbers")
 
     def __repr__(self) -> str:
         """String representation."""

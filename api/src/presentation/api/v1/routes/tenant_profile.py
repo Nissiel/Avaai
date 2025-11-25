@@ -35,34 +35,34 @@ router = APIRouter(prefix="/tenant/ava-profile", tags=["Ava Profile"])
 
 
 async def _get_or_create_profile(session: AsyncSession, user_id) -> AvaProfile:
-    """Get or create AVA profile for user. User ID = Tenant ID in our 1:1 model."""
-    result = await session.execute(select(AvaProfile).where(AvaProfile.tenant_id == user_id))
+    """Get or create AVA profile for user."""
+    result = await session.execute(select(AvaProfile).where(AvaProfile.user_id == user_id))
     profile: AvaProfile | None = result.scalar_one_or_none()
     if profile:
         return profile
 
     profile = AvaProfile(
-        tenant_id=user_id,  # user.id is used as tenant_id (1:1 mapping)
+        user_id=user_id,
         name="Ava",
         voice="alloy",
-        language="fr-FR",
-        tone="douce, calme et professionnelle",
-        personality="empathique, efficace, rassurante",
+        language="en-US",
+        tone="warm, calm and professional",
+        personality="empathetic, efficient, reassuring",
         greeting=(
-            "Bonjour et bienvenue. Je suis Ava, l'assistante personnelle de Nissiel Thomas. "
-            "Merci de m'indiquer votre prénom, votre nom ainsi que votre numéro de téléphone, "
-            "puis dites-moi comment je peux vous aider."
+            "Hello and welcome. I'm Ava, your personal assistant. "
+            "Please provide your first name, last name, and phone number, "
+            "then let me know how I can help you today."
         ),
         allowed_topics=DEFAULT_ALLOWED_TOPICS.copy(),
         forbidden_topics=DEFAULT_FORBIDDEN_TOPICS.copy(),
         can_take_notes=True,
         can_summarize_live=True,
-        fallback_behavior="Si une demande sort du périmètre, explique poliment que tu vas transmettre le message à Nissiel Thomas.",
-        signature_style="chaleureuse et professionnelle",
+        fallback_behavior="If a request is outside scope, politely explain that you will forward the message to the appropriate person.",
+        signature_style="warm and professional",
         custom_rules=(
-            "Toujours vérifier la langue de l’appelant (français, anglais ou hébreu) et t’y adapter. "
-            "Demander prénom, nom, numéro de téléphone et email, puis reformuler l’objet de l’appel. "
-            "Ne jamais promettre d’action : tu transmets les informations à Nissiel Thomas."
+            "Always detect the caller's language and adapt accordingly. "
+            "Ask for first name, last name, phone number and email, then summarize the purpose of the call. "
+            "Never promise any actions: you forward the information to the appropriate person."
         ),
     )
     session.add(profile)

@@ -64,7 +64,22 @@
     
     /* Radius */
     --radius: 0.75rem;
-    
+
+    /* ========================================================================
+     * AUTH THEME - Minimalist Validation States
+     * ======================================================================== */
+
+    /* Input validation - using semantic colors */
+    --auth-valid: var(--success);
+    --auth-valid-muted: 142 76% 90%;
+    --auth-info: var(--accent);
+    --auth-info-muted: 192 91% 90%;
+
+    /* Banner colors */
+    --auth-banner-bg: 217 91% 97%;
+    --auth-banner-border: 217 91% 85%;
+    --auth-banner-text: 217 91% 30%;
+
     /* ========================================================================
      * GLASSMORPHISM VARIABLES
      * ======================================================================== */

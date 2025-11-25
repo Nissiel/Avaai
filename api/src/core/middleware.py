@@ -30,12 +30,7 @@ def configure_middleware(app: FastAPI) -> None:
     env_origins = [origin for origin in env_origins if origin]
 
     defaults = {
-        "local": [
-            "http://localhost:3000",
-            "http://localhost:3001",
-            "http://127.0.0.1:3000",
-            "http://127.0.0.1:3001",
-        ],
+        "local": [],
         "production": [
             _normalize_origin(settings.app_url),
             "https://app.ava.ai",

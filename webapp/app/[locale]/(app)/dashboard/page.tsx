@@ -17,13 +17,15 @@ import { GlassCard } from '@/components/ui/glass-card';
 import { FuturisticButton } from '@/components/ui/futuristic-button';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { CallTranscriptViewer } from '@/components/app/call-transcript-viewer';
-import { SetupReminderBanner } from '@/components/app/setup-reminder-banner';
+import { SetupChecklist } from '@/components/app/setup-checklist';
+import { VerificationBanner } from '@/components/app/verification-banner';
+import { useSetupStatus } from '@/lib/hooks/use-setup-status';
 import { toast } from 'sonner';
 
 import { getAnalyticsOverview } from '@/lib/api/analytics';
 import { listAssistants, type AssistantsResult } from '@/lib/api/assistants';
 import { sendCallTranscriptEmail } from '@/lib/api/calls';
-import type { DashboardAnalytics } from '@/lib/dto';
+import type { DashboardAnalytics, CallSummary } from '@/lib/dto';
 import { useAssistantsStore } from '@/lib/stores/assistants-store';
 import { useCallsStore } from '@/lib/stores/calls-store';
 import type { Locale as SupportedLocale } from '@/lib/i18n/locales';
@@ -71,8 +73,11 @@ export default function DashboardPage() {
     [locale],
   );
   const [mounted, setMounted] = React.useState(false);
-  const [selectedCall, setSelectedCall] = React.useState<any | null>(null);
+  const [selectedCall, setSelectedCall] = React.useState<CallSummary | null>(null);
   const aliases = useContactAliasStore((state) => state.aliases);
+
+  // Check setup status to conditionally show dashboard content
+  const { isSetupActive } = useSetupStatus();
 
   const analyticsQuery = useQuery<DashboardAnalytics>({
     queryKey: ['dashboard', 'analytics'],
@@ -187,17 +192,23 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-8">
-      {/* Setup Reminder Banner */}
-      <SetupReminderBanner />
+    <div className="space-y-6">
+      {/* Setup Checklist */}
+      <SetupChecklist />
 
-      {/* Header */}
-      <div className="flex items-center justify-between">
+      {/* Only show dashboard content when setup is complete or dismissed */}
+      {!isSetupActive && (
+        <>
+          {/* Verification Banner */}
+          <VerificationBanner />
+
+          {/* Header */}
+          <div className="flex items-center justify-between">
         <div>
           <h1 className="text-4xl font-bold tracking-tight">{t('title')}</h1>
           <p className="text-muted-foreground mt-2">{t('subtitle')}</p>
         </div>
-        <Link href={`/${locale}/app/assistants`.replace(/\/{2,}/g, '/') as any}>
+        <Link href={`/${locale}/app/assistants`.replace(/\/{2,}/g, '/') as Route}>
           <FuturisticButton
             size="lg"
             variant="primary"
@@ -274,7 +285,7 @@ export default function DashboardPage() {
               <div className="pointer-events-none absolute inset-x-0 top-0 h-6 bg-gradient-to-b from-background to-transparent opacity-70 transition-opacity group-hover/recent:opacity-100" />
               <div className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-background to-transparent" />
               <div className="space-y-4">
-                {calls.map((call: any) => {
+                {calls.map((call: CallSummary) => {
                   const phoneNumber: string = call.customerNumber || '';
                   const alias = phoneNumber ? aliases[phoneNumber] : undefined;
                   const normalizedPhone = phoneNumber ? humanizeIdentifier(phoneNumber) : '';
@@ -381,6 +392,8 @@ export default function DashboardPage() {
             await emailMutation.mutateAsync(callId);
           }}
         />
+      )}
+        </>
       )}
     </div>
   );

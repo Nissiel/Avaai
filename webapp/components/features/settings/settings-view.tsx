@@ -4,24 +4,35 @@ import { useMemo } from "react";
 import type { Route } from "next";
 import { useTranslations } from "next-intl";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { User, Building2, Puzzle } from "lucide-react";
 
-import Link from "next/link";
-
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ProfileSettingsForm } from "@/components/features/settings/profile-settings-form";
-import { VapiSettingsForm } from "@/components/features/settings/vapi-settings-form";
-import { TwilioSettingsForm } from "@/components/features/settings/twilio-settings-form";
-import { EmailSettingsForm } from "@/components/features/settings/email-settings-form";
-import { GlassCard } from "@/components/ui/glass-card";
-import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { ProfileTab } from "@/components/features/settings/tabs/profile-tab";
+import { BusinessTab } from "@/components/features/settings/tabs/business-tab";
+import { IntegrationsTab } from "@/components/features/settings/tabs/integrations-tab";
 import { useSessionStore } from "@/stores/session-store";
 
-const TAB_KEYS = ["profile", "vapi", "twilio", "email"] as const;
+const TAB_KEYS = ["profile", "business", "integrations"] as const;
 type TabKey = (typeof TAB_KEYS)[number];
 
 function isTabKey(value: string | null): value is TabKey {
   return value ? TAB_KEYS.includes(value as TabKey) : false;
 }
+
+const tabConfig: Record<TabKey, { icon: React.ReactNode; labelKey: string }> = {
+  profile: {
+    icon: <User className="h-4 w-4" />,
+    labelKey: "profile",
+  },
+  business: {
+    icon: <Building2 className="h-4 w-4" />,
+    labelKey: "business",
+  },
+  integrations: {
+    icon: <Puzzle className="h-4 w-4" />,
+    labelKey: "integrations",
+  },
+};
 
 export function SettingsView() {
   const { session } = useSessionStore((state) => ({ session: state.session }));
@@ -30,7 +41,7 @@ export function SettingsView() {
   const pathname = usePathname();
   const tHeader = useTranslations("settingsPage.header");
   const tTabs = useTranslations("settingsPage.tabs");
-  const tNotice = useTranslations("settingsPage.movedNotice");
+
   const activeTab = useMemo<TabKey>(() => {
     const sectionParam = searchParams?.get("section");
     if (isTabKey(sectionParam)) {
@@ -39,10 +50,9 @@ export function SettingsView() {
     return "profile";
   }, [searchParams]);
 
-  const displayName = session?.user?.name ?? session?.user?.email ?? "Votre profil";
+  const displayName = session?.user?.name ?? session?.user?.email ?? "Your Profile";
 
-  const handleTabChange = (value: string) => {
-    if (!isTabKey(value)) return;
+  const handleTabChange = (value: TabKey) => {
     const params = new URLSearchParams(searchParams?.toString() ?? "");
     params.set("section", value);
     const nextUrl = `${pathname}?${params.toString()}` as Route;
@@ -50,48 +60,50 @@ export function SettingsView() {
   };
 
   return (
-    <section className="space-y-8">
-      <header className="space-y-2">
-        <p className="text-sm uppercase tracking-[0.24em] text-brand-500">{tHeader("title")}</p>
-        <div>
-          <h1 className="text-3xl font-semibold tracking-tight">{displayName}</h1>
-          <p className="text-sm text-muted-foreground">{tHeader("subtitle")}</p>
-        </div>
+    <section className="space-y-6">
+      {/* Header */}
+      <header className="space-y-1">
+        <p className="text-xs uppercase tracking-[0.2em] text-brand-500 font-medium">
+          {tHeader("title")}
+        </p>
+        <h1 className="text-2xl font-semibold tracking-tight">{displayName}</h1>
+        <p className="text-sm text-muted-foreground">{tHeader("subtitle")}</p>
       </header>
 
-      <Tabs value={activeTab} onValueChange={handleTabChange}>
-        <TabsList>
-          <TabsTrigger value="profile">{tTabs("profile")}</TabsTrigger>
-          <TabsTrigger value="vapi">{tTabs("vapi")}</TabsTrigger>
-          <TabsTrigger value="twilio">{tTabs("twilio")}</TabsTrigger>
-          <TabsTrigger value="email">{tTabs("email")}</TabsTrigger>
-        </TabsList>
+      {/* Main Layout - Horizontal Tabs */}
+      <div className="space-y-6">
+        {/* Tab Navigation */}
+        <nav className="flex gap-1 border-b border-border pb-2">
+          {TAB_KEYS.map((tab) => {
+            const config = tabConfig[tab];
+            const isActive = activeTab === tab;
 
-        <TabsContent value="profile" className="space-y-6">
-          <ProfileSettingsForm />
-          <GlassCard className="flex flex-col gap-3 rounded-2xl border border-border/70 bg-muted/10 p-5 shadow-none md:flex-row md:items-center md:justify-between" variant="none">
-            <div className="space-y-1.5">
-              <h3 className="text-sm font-semibold tracking-tight">{tNotice("title")}</h3>
-              <p className="text-sm text-muted-foreground">{tNotice("subtitle")}</p>
-            </div>
-            <Button variant="outline" asChild>
-              <Link href="/assistants">{tNotice("cta")}</Link>
-            </Button>
-          </GlassCard>
-        </TabsContent>
+            return (
+              <button
+                key={tab}
+                onClick={() => handleTabChange(tab)}
+                className={cn(
+                  "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all",
+                  "hover:bg-muted/50",
+                  isActive
+                    ? "bg-brand-500/10 text-brand-500 border border-brand-500/20"
+                    : "text-muted-foreground border border-transparent"
+                )}
+              >
+                {config.icon}
+                <span>{tTabs(config.labelKey)}</span>
+              </button>
+            );
+          })}
+        </nav>
 
-        <TabsContent value="vapi" className="space-y-6">
-          <VapiSettingsForm />
-        </TabsContent>
-
-        <TabsContent value="twilio" className="space-y-6">
-          <TwilioSettingsForm />
-        </TabsContent>
-
-        <TabsContent value="email" className="space-y-6">
-          <EmailSettingsForm />
-        </TabsContent>
-      </Tabs>
+        {/* Content Area */}
+        <div className="min-w-0">
+          {activeTab === "profile" && <ProfileTab />}
+          {activeTab === "business" && <BusinessTab />}
+          {activeTab === "integrations" && <IntegrationsTab />}
+        </div>
+      </div>
     </section>
   );
 }

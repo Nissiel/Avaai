@@ -85,7 +85,62 @@
     },
     "or": "Ou continuer avec",
     "oauth": "Continuer avec {provider}",
-    "policy": "En continuant vous acceptez les Conditions et la Politique de confidentialité d'Ava.ai."
+    "policy": "En continuant vous acceptez les Conditions et la Politique de confidentialité d'Ava.ai.",
+    "placeholders": {
+      "email": "votre@email.com"
+    },
+    "forgotPassword": {
+      "title": "Mot de passe oublié",
+      "subtitle": "Entrez votre email pour recevoir un lien de réinitialisation",
+      "resetPassword": "Réinitialiser le mot de passe",
+      "sending": "Envoi en cours...",
+      "backToLogin": "Retour à la connexion",
+      "emailSent": "Email envoyé !",
+      "checkInbox": "Vérifiez votre boîte de réception pour le lien de réinitialisation.",
+      "checkEmail": "Vérifiez votre email",
+      "sentTo": "Nous avons envoyé un lien de réinitialisation à",
+      "checkSpam": "Si vous ne voyez pas l'email, vérifiez vos spams."
+    },
+    "resetPassword": {
+      "title": "Réinitialiser le mot de passe",
+      "subtitle": "Créez un nouveau mot de passe",
+      "newPassword": "Nouveau mot de passe",
+      "confirmPassword": "Confirmer le mot de passe",
+      "enterNewPassword": "Entrez le nouveau mot de passe",
+      "confirmNewPassword": "Confirmez le nouveau mot de passe",
+      "resetButton": "Réinitialiser le mot de passe",
+      "updating": "Mise à jour...",
+      "verifying": "Vérification du lien...",
+      "invalidLink": "Lien invalide",
+      "requestNew": "Demander un nouveau lien",
+      "successTitle": "Mot de passe réinitialisé !",
+      "redirecting": "Votre mot de passe a été mis à jour. Redirection...",
+      "goToLogin": "Aller à la connexion",
+      "passwordsMatch": "Les mots de passe correspondent",
+      "backToLogin": "Retour à la connexion"
+    },
+    "passwordRequirements": {
+      "minLength": "Au moins 8 caractères",
+      "uppercase": "Une lettre majuscule",
+      "lowercase": "Une lettre minuscule",
+      "number": "Un chiffre"
+    },
+    "errors": {
+      "supabaseNotEnabled": "La réinitialisation nécessite Supabase Auth",
+      "clientNotInitialized": "Service d'authentification non disponible",
+      "invalidEmail": "Veuillez entrer une adresse email valide",
+      "rateLimited": "Trop de tentatives. Veuillez patienter quelques minutes.",
+      "title": "Erreur",
+      "resetFailed": "Échec de l'envoi de l'email. Veuillez réessayer.",
+      "invalidResetLink": "Lien invalide ou expiré. Veuillez en demander un nouveau.",
+      "sessionFailed": "Échec de la vérification du token",
+      "tokenExpired": "Le lien a expiré. Veuillez en demander un nouveau.",
+      "noResetToken": "Aucun token trouvé. Veuillez demander un nouveau lien.",
+      "initFailed": "Échec de l'initialisation",
+      "passwordsMismatch": "Les mots de passe ne correspondent pas",
+      "passwordRequirements": "Le mot de passe ne respecte pas les exigences",
+      "samePassword": "Le nouveau mot de passe doit être différent"
+    }
   },
   "marketing": {
     "features": "Fonctionnalités",
@@ -420,21 +475,20 @@
       "subtitle": "Manage your personal details and configure your Ava studio."
     },
     "tabs": {
-      "profile": "Profile",
-      "studio": "Studio settings",
-      "vapi": "Intégration Vapi",
-      "twilio": "Intégration Twilio",
-      "email": "Emails"
+      "profile": "Profil",
+      "business": "Entreprise",
+      "integrations": "Intégrations"
     },
     "profile": {
       "title": "User profile",
       "description": "Your details appear in notifications and customer communications.",
       "form": {
-        "name": "Full name",
+        "name": "Nom complet",
+        "namePlaceholder": "Entrez votre nom complet",
         "email": "Email",
-        "phone": "Phone (optional)",
-        "phonePlaceholder": "+1 415 555 0100",
-        "locale": "Default language"
+        "phone": "Téléphone (optionnel)",
+        "phonePlaceholder": "+33 1 23 45 67 89",
+        "locale": "Langue par défaut"
       },
       "actions": {
         "reset": "Reset",
@@ -451,11 +505,58 @@
         "nameMax": "Name cannot exceed 100 characters",
         "email": "Please enter a valid email",
         "phone": "Provide an international number (+1 ...)",
-        "locale": "Please select a language"
+        "locale": "Veuillez sélectionner une langue"
+      }
+    },
+    "business": {
+      "identity": {
+        "title": "Identité de l'entreprise",
+        "description": "Informations de base sur votre organisation",
+        "companyName": "Nom de l'entreprise",
+        "companyNamePlaceholder": "Acme Corporation",
+        "website": "Site web",
+        "industry": "Secteur d'activité",
+        "industryPlaceholder": "Sélectionnez un secteur",
+        "companySize": "Taille de l'entreprise",
+        "companySizePlaceholder": "Sélectionnez la taille"
+      },
+      "focus": {
+        "title": "Activité",
+        "sectionDescription": "Ce que fait votre entreprise et qui vous servez",
+        "businessDescription": "Description de l'activité",
+        "descriptionPlaceholder": "Décrivez ce que fait votre entreprise...",
+        "services": "Services / Produits",
+        "servicesPlaceholder": "Ajouter un service ou produit",
+        "targetMarket": "Marché cible",
+        "targetMarketPlaceholder": "ex: PME, Grandes entreprises, Startups",
+        "valueProposition": "Proposition de valeur",
+        "valuePropositionPlaceholder": "Qu'est-ce qui vous rend unique ?"
+      },
+      "knowledge": {
+        "title": "Base de connaissances",
+        "description": "Téléchargez des documents pour que votre agent IA puisse les consulter",
+        "dropzone": "Glissez des fichiers ici ou cliquez pour parcourir",
+        "fileTypes": "PDF, DOCX, TXT jusqu'à 10 Mo"
+      }
+    },
+    "integrations": {
+      "title": "Intégrations",
+      "description": "Connectez des services externes pour renforcer votre agent IA",
+      "calendar": {
+        "name": "Calendrier",
+        "description": "Planifier des rendez-vous et réunions"
+      },
+      "whatsapp": {
+        "name": "WhatsApp",
+        "description": "Plateforme de messagerie professionnelle"
+      },
+      "crm": {
+        "name": "CRM",
+        "description": "Gestion de la relation client"
       }
     },
     "studio": {
-      "title": "Studio settings",
+      "title": "Paramètres studio",
       "description": "Define your organisation identity and Ava personality.",
       "refresh": "Refresh",
       "loading": "Loading studio configuration…",
@@ -625,8 +726,15 @@
     "dashboard": "Tableau de bord",
     "assistants": "Assistants",
     "contacts": "Contacts",
-    "calls": "Calls",
-    "profile": "Profil"
+    "calls": "Appels",
+    "profile": "Profil",
+    "settings": "Paramètres",
+    "billing": "Facturation",
+    "sections": {
+      "main": "Principal",
+      "account": "Compte"
+    },
+    "phone": "Téléphone"
   },
   "sidebarTip": {
     "title": "🎯 Astuce",
@@ -956,5 +1064,41 @@
         "delete": "Supprimer les identifiants Twilio ?"
       }
     }
+  },
+  "setupChecklist": {
+    "title": "Complétez votre configuration",
+    "dismiss": "Fermer",
+    "completeLater": "Terminer plus tard",
+    "items": {
+      "profile": {
+        "label": "Ajoutez vos infos entreprise",
+        "description": "Définissez le nom de votre entreprise"
+      },
+      "phone": {
+        "label": "Connectez un numéro",
+        "description": "Obtenez un numéro pour recevoir des appels"
+      },
+      "assistant": {
+        "label": "Créez votre premier assistant",
+        "description": "Configurez votre réceptionniste IA"
+      }
+    }
+  },
+  "verification": {
+    "verifyPhone": "Vérifiez votre téléphone",
+    "verifyPhoneDescription": "Vérifiez votre numéro de téléphone pour une sécurité renforcée.",
+    "phoneVerification": "Vérification du téléphone",
+    "verifyNow": "Vérifier",
+    "emailVerification": "Vérification email",
+    "resendEmail": "Renvoyer",
+    "sending": "Envoi...",
+    "emailSent": "Email envoyé",
+    "checkInbox": "Vérifiez votre boîte de réception.",
+    "emailFailed": "Échec de l'envoi",
+    "tryAgain": "Veuillez réessayer plus tard.",
+    "verifyAccount": "Vérifiez votre compte",
+    "verifyEmail": "Vérifiez votre email",
+    "verifyBothDescription": "Complétez la sécurité de votre compte en vérifiant votre email et téléphone.",
+    "verifyEmailDescription": "Vérifiez votre adresse email pour sécuriser votre compte."
   }
 }

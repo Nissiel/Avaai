@@ -2,13 +2,19 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from api.src.application.services.vapi import get_vapi_client
 from api.src.infrastructure.database.session import get_session
 from api.src.infrastructure.persistence.models.user import User
 from api.src.infrastructure.persistence.models.studio_config import StudioConfig as StudioConfigModel
+from api.src.infrastructure.persistence.models.email_config import EmailConfig
+from api.src.infrastructure.persistence.models.voice_config import VoiceConfig
+from api.src.infrastructure.persistence.models.ai_config import AIConfig
+from api.src.infrastructure.persistence.models.transcriber_config import TranscriberConfig
 from api.src.presentation.dependencies.auth import get_current_user
 from api.src.presentation.schemas.studio_config import (
     DEFAULT_STUDIO_CONFIG,
@@ -18,6 +24,7 @@ from api.src.presentation.schemas.studio_config import (
 from api.src.infrastructure.external.vapi_client import VapiApiError, VapiClient
 from api.src.core.settings import get_settings
 from api.src.core.crypto import get_smtp_encryptor, EncryptionError
+from api.src.core.rate_limiting import limiter
 
 router = APIRouter(prefix="/studio", tags=["Studio"])
 
@@ -30,37 +37,29 @@ async def get_or_create_user_config(
     Get user's studio config from database, or create default if doesn't exist.
 
     This replaces the old in-memory _config_state with proper database persistence.
+    Uses normalized schema with related configs for email, voice, AI, and transcriber.
     """
-    # Try to find existing config for this user
+    # Try to find existing config for this user (eagerly load related configs)
     result = await db.execute(
-        select(StudioConfigModel).where(StudioConfigModel.user_id == user.id)
+        select(StudioConfigModel)
+        .where(StudioConfigModel.user_id == user.id)
+        .options(
+            selectinload(StudioConfigModel.email_config),
+            selectinload(StudioConfigModel.voice_config),
+            selectinload(StudioConfigModel.ai_config),
+            selectinload(StudioConfigModel.transcriber_config),
+        )
     )
     config = result.scalar_one_or_none()
 
     if config is None:
-        # Create default config for new user
+        # Create default config for new user (normalized structure)
         config = StudioConfigModel(
             user_id=user.id,
             organization_name=DEFAULT_STUDIO_CONFIG.organizationName,
-            admin_email=DEFAULT_STUDIO_CONFIG.adminEmail,
             timezone=DEFAULT_STUDIO_CONFIG.timezone,
             phone_number=DEFAULT_STUDIO_CONFIG.phoneNumber,
             business_hours=DEFAULT_STUDIO_CONFIG.businessHours,
-            fallback_email=DEFAULT_STUDIO_CONFIG.fallbackEmail,
-            summary_email=DEFAULT_STUDIO_CONFIG.summaryEmail,
-            smtp_server=DEFAULT_STUDIO_CONFIG.smtpServer,
-            smtp_port=DEFAULT_STUDIO_CONFIG.smtpPort,
-            smtp_username=DEFAULT_STUDIO_CONFIG.smtpUsername,
-            smtp_password_encrypted="",
-            voice_provider=DEFAULT_STUDIO_CONFIG.voiceProvider,
-            voice_id=DEFAULT_STUDIO_CONFIG.voiceId,
-            voice_speed=DEFAULT_STUDIO_CONFIG.voiceSpeed,
-            ai_model=DEFAULT_STUDIO_CONFIG.aiModel,
-            ai_temperature=DEFAULT_STUDIO_CONFIG.aiTemperature,
-            ai_max_tokens=DEFAULT_STUDIO_CONFIG.aiMaxTokens,
-            transcriber_provider=DEFAULT_STUDIO_CONFIG.transcriberProvider,
-            transcriber_model=DEFAULT_STUDIO_CONFIG.transcriberModel,
-            transcriber_language=DEFAULT_STUDIO_CONFIG.transcriberLanguage,
             first_message=DEFAULT_STUDIO_CONFIG.firstMessage,
             system_prompt=DEFAULT_STUDIO_CONFIG.systemPrompt,
             persona=DEFAULT_STUDIO_CONFIG.persona,
@@ -71,6 +70,45 @@ async def get_or_create_user_config(
             ask_for_phone=DEFAULT_STUDIO_CONFIG.askForPhone,
         )
         db.add(config)
+        await db.flush()  # Get the config ID for related configs
+
+        # Create related configs
+        email_config = EmailConfig(
+            studio_config_id=config.id,
+            admin_email=DEFAULT_STUDIO_CONFIG.adminEmail,
+            fallback_email=DEFAULT_STUDIO_CONFIG.fallbackEmail,
+            summary_email=DEFAULT_STUDIO_CONFIG.summaryEmail,
+            smtp_server=DEFAULT_STUDIO_CONFIG.smtpServer,
+            smtp_port=str(DEFAULT_STUDIO_CONFIG.smtpPort),
+            smtp_username=DEFAULT_STUDIO_CONFIG.smtpUsername,
+            smtp_password_encrypted="",
+        )
+        db.add(email_config)
+
+        voice_config = VoiceConfig(
+            studio_config_id=config.id,
+            voice_provider=DEFAULT_STUDIO_CONFIG.voiceProvider,
+            voice_id=DEFAULT_STUDIO_CONFIG.voiceId,
+            voice_speed=DEFAULT_STUDIO_CONFIG.voiceSpeed,
+        )
+        db.add(voice_config)
+
+        ai_config = AIConfig(
+            studio_config_id=config.id,
+            ai_model=DEFAULT_STUDIO_CONFIG.aiModel,
+            ai_temperature=DEFAULT_STUDIO_CONFIG.aiTemperature,
+            ai_max_tokens=DEFAULT_STUDIO_CONFIG.aiMaxTokens,
+        )
+        db.add(ai_config)
+
+        transcriber_config = TranscriberConfig(
+            studio_config_id=config.id,
+            transcriber_provider=DEFAULT_STUDIO_CONFIG.transcriberProvider,
+            transcriber_model=DEFAULT_STUDIO_CONFIG.transcriberModel,
+            transcriber_language=DEFAULT_STUDIO_CONFIG.transcriberLanguage,
+        )
+        db.add(transcriber_config)
+
         await db.commit()
         await db.refresh(config)
 
@@ -78,29 +116,20 @@ async def get_or_create_user_config(
 
 
 def db_to_schema(db_config: StudioConfigModel) -> StudioConfig:
-    """Convert database model to Pydantic schema."""
+    """Convert database model to Pydantic schema (reading from normalized related configs)."""
+    # Get related configs (may be None if not yet created)
+    email = db_config.email_config
+    voice = db_config.voice_config
+    ai = db_config.ai_config
+    transcriber = db_config.transcriber_config
+
     return StudioConfig(
+        # Core config fields
         organizationName=db_config.organization_name,
-        adminEmail=db_config.admin_email,
         timezone=db_config.timezone,
         phoneNumber=db_config.phone_number,
         businessHours=db_config.business_hours,
-        fallbackEmail=db_config.fallback_email,
-        summaryEmail=db_config.summary_email,
-        smtpServer=db_config.smtp_server,
-        smtpPort=db_config.smtp_port,
-        smtpUsername=db_config.smtp_username,
-        smtpPassword="",
         vapiAssistantId=db_config.vapi_assistant_id,
-        voiceProvider=db_config.voice_provider,
-        voiceId=db_config.voice_id,
-        voiceSpeed=db_config.voice_speed,
-        aiModel=db_config.ai_model,
-        aiTemperature=db_config.ai_temperature,
-        aiMaxTokens=db_config.ai_max_tokens,
-        transcriberProvider=db_config.transcriber_provider,
-        transcriberModel=db_config.transcriber_model,
-        transcriberLanguage=db_config.transcriber_language,
         firstMessage=db_config.first_message,
         systemPrompt=db_config.system_prompt,
         guidelines=db_config.guidelines,
@@ -110,26 +139,32 @@ def db_to_schema(db_config: StudioConfigModel) -> StudioConfig:
         askForName=db_config.ask_for_name,
         askForEmail=db_config.ask_for_email,
         askForPhone=db_config.ask_for_phone,
+        # Email config fields
+        adminEmail=email.admin_email if email else "",
+        fallbackEmail=email.fallback_email if email else "",
+        summaryEmail=email.summary_email if email else "",
+        smtpServer=email.smtp_server if email else "",
+        smtpPort=email.smtp_port if email else "587",
+        smtpUsername=email.smtp_username if email else "",
+        smtpPassword="",  # Never return encrypted password
+        # Voice config fields
+        voiceProvider=voice.voice_provider if voice else "11labs",
+        voiceId=voice.voice_id if voice else "sarah",
+        voiceSpeed=voice.voice_speed if voice else 1.0,
+        # AI config fields
+        aiModel=ai.ai_model if ai else "gpt-4o-mini",
+        aiTemperature=ai.ai_temperature if ai else 0.7,
+        aiMaxTokens=ai.ai_max_tokens if ai else 500,
+        # Transcriber config fields
+        transcriberProvider=transcriber.transcriber_provider if transcriber else "deepgram",
+        transcriberModel=transcriber.transcriber_model if transcriber else "nova-2",
+        transcriberLanguage=transcriber.transcriber_language if transcriber else "en",
     )
 
 
-def _client(user: User) -> VapiClient:
-    """🎯 DIVINE: Get Vapi client with user's personal API key (multi-tenant)."""
-    settings = get_settings()
-    token = user.vapi_api_key or settings.vapi_api_key
-    if not token:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Vapi API key not configured. Please add your Vapi key in Settings.",
-        )
-
-    try:
-        return VapiClient(token=token)
-    except ValueError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=str(exc),
-        ) from exc
+def _client() -> VapiClient:
+    """Get Vapi client using platform credentials."""
+    return get_vapi_client()
 
 
 @router.get("/config", response_model=StudioConfig)
@@ -161,28 +196,13 @@ async def update_studio_config(
     if not data:
         return db_to_schema(db_config)
 
-    # Map Pydantic fields to database columns (camelCase → snake_case)
-    field_mapping = {
+    # Field mappings for normalized schema
+    core_fields = {
         "organizationName": "organization_name",
-        "adminEmail": "admin_email",
         "timezone": "timezone",
         "phoneNumber": "phone_number",
         "businessHours": "business_hours",
-        "fallbackEmail": "fallback_email",
-        "summaryEmail": "summary_email",
-        "smtpServer": "smtp_server",
-        "smtpPort": "smtp_port",
-        "smtpUsername": "smtp_username",
         "vapiAssistantId": "vapi_assistant_id",
-        "voiceProvider": "voice_provider",
-        "voiceId": "voice_id",
-        "voiceSpeed": "voice_speed",
-        "aiModel": "ai_model",
-        "aiTemperature": "ai_temperature",
-        "aiMaxTokens": "ai_max_tokens",
-        "transcriberProvider": "transcriber_provider",
-        "transcriberModel": "transcriber_model",
-        "transcriberLanguage": "transcriber_language",
         "firstMessage": "first_message",
         "systemPrompt": "system_prompt",
         "guidelines": "guidelines",
@@ -194,21 +214,63 @@ async def update_studio_config(
         "askForPhone": "ask_for_phone",
     }
 
+    email_fields = {
+        "adminEmail": "admin_email",
+        "fallbackEmail": "fallback_email",
+        "summaryEmail": "summary_email",
+        "smtpServer": "smtp_server",
+        "smtpPort": "smtp_port",
+        "smtpUsername": "smtp_username",
+    }
+
+    voice_fields = {
+        "voiceProvider": "voice_provider",
+        "voiceId": "voice_id",
+        "voiceSpeed": "voice_speed",
+    }
+
+    ai_fields = {
+        "aiModel": "ai_model",
+        "aiTemperature": "ai_temperature",
+        "aiMaxTokens": "ai_max_tokens",
+    }
+
+    transcriber_fields = {
+        "transcriberProvider": "transcriber_provider",
+        "transcriberModel": "transcriber_model",
+        "transcriberLanguage": "transcriber_language",
+    }
+
+    # Handle SMTP password encryption
     if "smtpPassword" in data:
         password_value = data.pop("smtpPassword") or ""
-        encryptor = get_smtp_encryptor()
-        try:
-            db_config.smtp_password_encrypted = encryptor.encrypt(password_value) if password_value else ""
-        except EncryptionError as exc:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=str(exc),
-            ) from exc
+        if db_config.email_config:
+            encryptor = get_smtp_encryptor()
+            try:
+                db_config.email_config.smtp_password_encrypted = encryptor.encrypt(password_value) if password_value else ""
+            except EncryptionError as exc:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=str(exc),
+                ) from exc
 
+    # Update core config fields
     for camel_key, value in data.items():
-        snake_key = field_mapping.get(camel_key, camel_key)
-        if hasattr(db_config, snake_key):
+        if camel_key in core_fields:
+            snake_key = core_fields[camel_key]
             setattr(db_config, snake_key, value)
+        elif camel_key in email_fields and db_config.email_config:
+            snake_key = email_fields[camel_key]
+            setattr(db_config.email_config, snake_key, value)
+        elif camel_key in voice_fields and db_config.voice_config:
+            snake_key = voice_fields[camel_key]
+            setattr(db_config.voice_config, snake_key, value)
+        elif camel_key in ai_fields and db_config.ai_config:
+            snake_key = ai_fields[camel_key]
+            setattr(db_config.ai_config, snake_key, value)
+        elif camel_key in transcriber_fields and db_config.transcriber_config:
+            snake_key = transcriber_fields[camel_key]
+            setattr(db_config.transcriber_config, snake_key, value)
 
     await db.commit()
     await db.refresh(db_config)
@@ -217,7 +279,9 @@ async def update_studio_config(
 
 
 @router.post("/sync-vapi")
+@limiter.limit("10/minute")  # Rate limit: max 10 syncs per minute
 async def sync_config_to_vapi(
+    request: Request,  # Required for rate limiter
     db: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ) -> dict:

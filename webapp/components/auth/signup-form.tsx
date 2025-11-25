@@ -25,7 +25,6 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
   createSessionFromTokenResponse,
-  getBackendBaseUrl,
   persistSession,
   type AuthTokenResponse,
 } from "@/lib/auth/session-client";
@@ -100,7 +99,6 @@ export function SignupForm() {
   const [phoneType, setPhoneType] = useState<"valid" | "invalid" | "empty">("empty");
   const [passwordStrength, setPasswordStrength] = useState({ score: 0, label: "", color: "" });
   const setSession = useSessionStore((state) => state.setSession);
-  const backendBaseUrl = getBackendBaseUrl();
 
   const form = useForm<SignupValues>({
     resolver: zodResolver(signupSchema),
@@ -134,6 +132,9 @@ export function SignupForm() {
     setIsLoading(true);
 
     try {
+      // 🔥 DIVINE: Always use backend API for signup (handles both Supabase and legacy)
+      // This ensures user sync between Supabase Auth and public.users table
+
       const response = await fetch(`/api/auth/signup`, {
         method: "POST",
         headers: {
@@ -154,13 +155,19 @@ export function SignupForm() {
         throw new Error(data.detail || "Erreur lors de l'inscription");
       }
 
-      // Store tokens in localStorage
+      // Store tokens in localStorage AND cookies (for middleware auth check)
       if (typeof window !== "undefined") {
         localStorage.setItem("access_token", data.access_token);
         localStorage.setItem("refresh_token", data.refresh_token);
+
+        // 🔥 DIVINE FIX: Set cookies for middleware to detect auth state
+        document.cookie = `access_token=${data.access_token}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
+        document.cookie = `refresh_token=${data.refresh_token}; path=/; max-age=${60 * 60 * 24 * 30}; SameSite=Lax`;
+
         emitTokenChange();
 
         const sessionPayload = createSessionFromTokenResponse(data);
+        console.log("🔥 Signup success - session payload:", sessionPayload);
         setSession(sessionPayload);
         persistSession(sessionPayload);
       }
@@ -169,14 +176,36 @@ export function SignupForm() {
         description: "Bienvenue sur AVA !",
       });
 
-      // Redirect to onboarding
-      router.push(`/${locale}/onboarding`);
+      // Redirect to dashboard
+      router.push(`/${locale}/dashboard`);
+      router.refresh();
 
     } catch (error) {
       console.error("Signup error:", error);
-      toast.error("Erreur lors de l'inscription", {
-        description: error instanceof Error ? error.message : "Une erreur est survenue",
-      });
+      const errorMessage = error instanceof Error ? error.message : "Une erreur est survenue";
+
+      // Map backend errors to user-friendly messages
+      let title = "Erreur lors de l'inscription";
+      let description = errorMessage;
+
+      if (errorMessage.toLowerCase().includes("email already registered")) {
+        title = "Email déjà utilisé";
+        description = "Cette adresse email est déjà associée à un compte. Essayez de vous connecter ou utilisez une autre adresse.";
+      } else if (errorMessage.toLowerCase().includes("phone already registered")) {
+        title = "Téléphone déjà utilisé";
+        description = "Ce numéro de téléphone est déjà associé à un compte.";
+      } else if (errorMessage.toLowerCase().includes("rate limit") || errorMessage.toLowerCase().includes("too many")) {
+        title = "Trop de tentatives";
+        description = "Veuillez patienter quelques minutes avant de réessayer.";
+      } else if (errorMessage.toLowerCase().includes("password")) {
+        title = "Mot de passe invalide";
+        description = errorMessage;
+      } else if (errorMessage.toLowerCase().includes("timeout") || errorMessage.toLowerCase().includes("timed out")) {
+        title = "Délai dépassé";
+        description = "Le serveur met trop de temps à répondre. Veuillez réessayer.";
+      }
+
+      toast.error(title, { description, duration: 6000 });
     } finally {
       setIsLoading(false);
     }

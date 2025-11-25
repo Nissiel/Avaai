@@ -2,6 +2,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from api.src.core.app import create_app
+from api.src.core.crypto import get_smtp_encryptor
 from api.src.infrastructure.external.vapi_client import VapiClient
 from api.src.presentation.dependencies.auth import get_current_user
 
@@ -10,11 +11,14 @@ from api.src.presentation.dependencies.auth import get_current_user
 def test_client_fixture():
     app = create_app()
 
+    encryptor = get_smtp_encryptor()
+
     async def _fake_user():
         class DummyUser:
             id = "user-1"
             email = "test@example.com"
-            vapi_api_key = "sk_test"
+            vapi_api_key_encrypted = encryptor.encrypt("sk_test")
+            vapi_api_key_preview = "sk_test..."
         return DummyUser()
 
     app.dependency_overrides[get_current_user] = _fake_user

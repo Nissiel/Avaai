@@ -3,11 +3,13 @@ User onboarding routes for tracking onboarding progress
 """
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import BaseModel, Field
 
 from api.src.infrastructure.database.session import get_session
 from api.src.infrastructure.persistence.models.user import User
+from api.src.infrastructure.persistence.models.studio_config import StudioConfig
 from api.src.presentation.dependencies.auth import get_current_user
 
 router = APIRouter()
@@ -111,10 +113,8 @@ async def update_user_profile(
     This endpoint saves profile data from the Welcome step:
     - name: User's full name
     - locale: Language preference (en, fr, he)
-    - organization_name, industry, company_size: Optional business info
-
-    Note: organization_name, industry, company_size are not stored in User model yet,
-    but accepted for future use. Currently only name and locale are persisted.
+    - organization_name: Stored in user's StudioConfig
+    - industry, company_size: Future use (not persisted yet)
     """
     # Update only the fields that were provided and exist in User model
     if payload.name is not None:
@@ -123,8 +123,25 @@ async def update_user_profile(
     if payload.locale is not None:
         current_user.locale = payload.locale
 
-    # TODO: Store organization_name, industry, company_size when Organization model is implemented
-    # For now, these fields are accepted but not persisted
+    # Store organization_name in StudioConfig if provided
+    if payload.organization_name is not None:
+        # Get or create studio config for user
+        result = await db.execute(
+            select(StudioConfig).where(StudioConfig.user_id == current_user.id)
+        )
+        studio_config = result.scalar_one_or_none()
+
+        if studio_config:
+            studio_config.organization_name = payload.organization_name
+        else:
+            # Create new studio config with organization name
+            studio_config = StudioConfig(
+                user_id=current_user.id,
+                organization_name=payload.organization_name,
+            )
+            db.add(studio_config)
+
+    # TODO: Store industry, company_size when additional fields are added to model
 
     await db.commit()
     await db.refresh(current_user)

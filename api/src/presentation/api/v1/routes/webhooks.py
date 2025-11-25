@@ -14,8 +14,9 @@ Events processed:
 
 from fastapi import APIRouter, Request, HTTPException, Header, status
 from datetime import datetime
-from typing import Optional, Dict, Any, Tuple
+from typing import Optional, Dict, Any, Tuple, List, Literal
 from uuid import UUID, uuid4
+from pydantic import BaseModel, Field, validator
 import hmac
 import hashlib
 import json
@@ -23,8 +24,8 @@ from sqlalchemy import select
 from urllib.parse import parse_qs
 
 from api.src.application.services.email import get_user_email_service
-from api.src.application.services.tenant import ensure_tenant_for_user
-from api.src.application.services.twilio import resolve_twilio_credentials
+from api.src.application.services.twilio import get_twilio_credentials
+from api.src.infrastructure.persistence.models.phone_number import PhoneNumber
 from api.src.core.settings import get_settings
 from api.src.infrastructure.database.session import get_session
 from api.src.infrastructure.persistence.models.call import CallRecord
@@ -35,19 +36,97 @@ from twilio.request_validator import RequestValidator
 router = APIRouter(prefix="/webhooks", tags=["webhooks"])
 
 
+# ============================================================================
+# 🔒 PYDANTIC VALIDATION MODELS - Security Layer
+# ============================================================================
+
+class VapiWebhookPayload(BaseModel):
+    """
+    Validated Vapi webhook payload structure.
+
+    Enforces strict validation to prevent injection attacks.
+    """
+    type: Literal["call.started", "call.ended", "function-call", "transcript.update"] = Field(
+        ...,
+        description="Event type from Vapi"
+    )
+    call: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="Call data for call.started and call.ended events"
+    )
+    functionCall: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="Function call data for function-call events"
+    )
+
+    @validator("call", "functionCall")
+    def validate_size(cls, v):
+        """Prevent DoS attacks via huge payloads."""
+        if v and len(str(v)) > 100_000:  # 100KB max
+            raise ValueError("Webhook payload too large (max 100KB)")
+        return v
+
+    class Config:
+        extra = "allow"  # Allow additional fields but validate known ones
+
+
+class FunctionCallParameters(BaseModel):
+    """
+    Validated function call parameters.
+
+    Prevents injection in function execution.
+    """
+    # For save_caller_info function
+    firstName: Optional[str] = Field(None, max_length=100)
+    lastName: Optional[str] = Field(None, max_length=100)
+    email: Optional[str] = Field(None, max_length=255)
+    phoneNumber: Optional[str] = Field(None, max_length=20)
+
+    # For book_appointment function
+    datetime: Optional[str] = Field(None, max_length=50)
+    duration: Optional[int] = Field(None, ge=1, le=480)  # 1-480 minutes
+
+    @validator("email")
+    def validate_email(cls, v):
+        """Basic email validation."""
+        if v and ("@" not in v or len(v) > 255):
+            raise ValueError("Invalid email format")
+        return v
+
+    @validator("phoneNumber")
+    def validate_phone(cls, v):
+        """Basic phone validation."""
+        if v and not v.strip().lstrip("+").replace(" ", "").replace("-", "").isdigit():
+            raise ValueError("Invalid phone number format")
+        return v
+
+    class Config:
+        extra = "ignore"  # Ignore unknown fields for security
+
+
 def verify_vapi_signature(signature: Optional[str], body: bytes) -> bool:
     """
     Verify webhook signature from Vapi.
 
     Security measure to ensure webhook is from Vapi, not attacker.
+    Uses the dedicated webhook signing secret (not the API key).
     """
     settings = get_settings()
-    if not settings.vapi_api_key or not signature:
+
+    # Use webhook secret, NOT API key
+    # See: https://docs.vapi.ai/webhooks#signature-verification
+    webhook_secret = settings.vapi_webhook_secret
+
+    if not webhook_secret or not signature:
+        import logging
+        logger = logging.getLogger(__name__)
+        if not webhook_secret:
+            logger.warning("Vapi webhook secret not configured (AVA_API_VAPI_WEBHOOK_SECRET)")
         return False
 
     # Compute HMAC-SHA256
     expected_signature = hmac.new(
-        settings.vapi_api_key.encode(),
+        webhook_secret.encode(),
         body,
         hashlib.sha256
     ).hexdigest()
@@ -61,7 +140,7 @@ async def vapi_webhook(
     x_vapi_signature: Optional[str] = Header(None)
 ):
     """
-    Main Vapi webhook endpoint.
+    Main Vapi webhook endpoint with strict validation.
 
     Receives events from Vapi.ai:
     - call.started: Call initiated
@@ -69,54 +148,80 @@ async def vapi_webhook(
     - function-call: Execute custom functions
     - transcript.update: Real-time transcription
 
+    Security:
+    - Signature verification in production
+    - Pydantic validation for all payloads
+    - Size limits to prevent DoS
+
     Returns:
         Success response or function result
+
+    Raises:
+        HTTPException(401): Invalid signature
+        HTTPException(400): Invalid payload
+        HTTPException(422): Validation error
     """
     settings = get_settings()
 
     # Get raw body for signature verification
     body = await request.body()
 
-    # Verify signature (production security)
+    # 🔒 SECURITY: Check body size before parsing
+    if len(body) > 500_000:  # 500KB max
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail="Webhook payload too large (max 500KB)"
+        )
+
+    # 🔒 SECURITY: Verify signature (production only)
     if settings.environment == "production":
         if not verify_vapi_signature(x_vapi_signature, body):
             raise HTTPException(
-                status_code=401,
+                status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid webhook signature"
             )
 
-    # Parse event
+    # 🔒 SECURITY: Parse and validate with Pydantic
     try:
-        event = json.loads(body)
-    except json.JSONDecodeError:
+        event_dict = json.loads(body)
+    except json.JSONDecodeError as exc:
         raise HTTPException(
-            status_code=400,
-            detail="Invalid JSON payload"
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid JSON payload: {str(exc)}"
         )
 
-    event_type = event.get("type")
+    # 🔒 SECURITY: Validate payload structure
+    try:
+        event = VapiWebhookPayload(**event_dict)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Webhook validation failed: {str(exc)}"
+        )
 
-    # Route to appropriate handler
-    if event_type == "call.ended":
-        await handle_call_ended(event)
+    # Route to appropriate handler (using validated data)
+    if event.type == "call.ended":
+        await handle_call_ended(event_dict)  # Pass original dict for backward compat
         return {"status": "success", "action": "call_saved_and_email_sent"}
 
-    elif event_type == "function-call":
-        result = await handle_function_call(event)
+    elif event.type == "function-call":
+        result = await handle_function_call(event_dict)
         return result
 
-    elif event_type == "call.started":
+    elif event.type == "call.started":
         # Just acknowledge for now
         return {"status": "success", "action": "call_started_acknowledged"}
 
-    elif event_type == "transcript.update":
+    elif event.type == "transcript.update":
         # Future: Stream to frontend via websockets
         return {"status": "success", "action": "transcript_update_acknowledged"}
 
     else:
-        # Unknown event type - log and ignore
-        print(f"⚠️ Unknown Vapi event type: {event_type}")
-        return {"status": "success", "action": "unknown_event_ignored"}
+        # This should never happen due to Literal validation
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Unknown event type: {event.type}"
+        )
 
 
 async def handle_call_ended(event: dict):
@@ -169,7 +274,7 @@ async def handle_call_ended(event: dict):
     # Prepare caller info
     caller_name = customer_data.get("name", metadata.get("caller_name", "Unknown Caller"))
     business_name = metadata.get("organization") or metadata.get("organizationName") or "AVA Business"
-    org_email = "nissieltb@gmail.com"  # Legacy fallback
+    org_email = None  # Will be resolved from user/config
 
     # Save call to database
     resolved_user: Optional[User] = None
@@ -182,7 +287,6 @@ async def handle_call_ended(event: dict):
                 print("   ⚠️  No user found, skipping DB save")
                 break
 
-            tenant = await ensure_tenant_for_user(db, user)
             resolved_user = user
             resolved_config = config
             business_name = config.organization_name if config else business_name
@@ -191,7 +295,7 @@ async def handle_call_ended(event: dict):
             new_call = CallRecord(
                 id=vapi_call_id,
                 assistant_id=assistant_id or "unknown",
-                tenant_id=tenant.id,
+                user_id=user.id,
                 customer_number=caller_phone,
                 status="completed",
                 started_at=_parse_iso_datetime(started_at),
@@ -266,11 +370,19 @@ async def handle_function_call(event: dict) -> dict:
     function_name = function_call.get("name")
     parameters = function_call.get("parameters", {})
 
+    # Extract call context for database operations
+    call_data = event.get("call", {})
+    call_context = {
+        "call_id": call_data.get("id"),
+        "assistant_id": call_data.get("assistantId"),
+    }
+
     print(f"🔧 Function called: {function_name}")
     print(f"   Parameters: {parameters}")
+    print(f"   Call ID: {call_context.get('call_id')}")
 
     if function_name == "save_caller_info":
-        return await save_caller_info(parameters)
+        return await save_caller_info(parameters, call_context)
 
     elif function_name == "book_appointment":
         # Future implementation
@@ -286,40 +398,119 @@ async def handle_function_call(event: dict) -> dict:
         }
 
 
-async def save_caller_info(params: dict) -> dict:
+async def save_caller_info(params: dict, call_context: dict) -> dict:
     """
-    Save caller information to database.
+    Save caller information to database with validation.
 
     Called by AVA during conversation when caller provides their info.
+    Updates the call record's meta field with caller details.
 
     Args:
-        params: {
-            "call_id": str,
-            "phone_number": str,
-            "first_name": str,
-            "last_name": str,
-            "email": str (optional)
-        }
+        params: Raw parameters dict from function call
+        call_context: Contains call_id and assistant_id for database lookup
 
     Returns:
         Success result
+
+    Raises:
+        HTTPException: If validation fails
     """
-    first_name = params.get("firstName")
-    last_name = params.get("lastName")
-    email = params.get("email")
-    phone_number = params.get("phoneNumber")
+    # 🔒 SECURITY: Validate parameters
+    try:
+        validated = FunctionCallParameters(**params)
+    except Exception as exc:
+        return {
+            "result": "I'm sorry, there was an error saving your information. Please try again.",
+            "success": False,
+            "error": str(exc)
+        }
 
-    print(f"   Saving caller: {first_name} {last_name}")
+    first_name = validated.firstName or "Unknown"
+    last_name = validated.lastName or ""
+    email = validated.email
+    phone_number = validated.phoneNumber
+    full_name = f"{first_name} {last_name}".strip()
 
-    # TODO: Save to database
-    # For now, just acknowledge
+    print(f"   Saving caller: {full_name}")
+
+    # Save to database
+    call_id = call_context.get("call_id")
+    saved_to_db = False
+
+    if call_id:
+        try:
+            async for db in get_session():
+                # Find existing call record or create a pending one
+                call_record = await db.get(CallRecord, call_id)
+
+                if call_record:
+                    # Update existing call record's meta with caller info
+                    current_meta = call_record.meta or {}
+                    current_meta["caller_name"] = full_name
+                    current_meta["caller_first_name"] = first_name
+                    current_meta["caller_last_name"] = last_name
+                    if email:
+                        current_meta["caller_email"] = email
+                    if phone_number:
+                        current_meta["caller_phone"] = phone_number
+                    current_meta["caller_info_saved_at"] = datetime.utcnow().isoformat()
+
+                    call_record.meta = current_meta
+                    await db.commit()
+                    saved_to_db = True
+                    print(f"   ✅ Caller info saved to existing call record")
+                else:
+                    # Call record doesn't exist yet (call is still in progress)
+                    # Create a minimal record that will be updated when call ends
+                    assistant_id = call_context.get("assistant_id", "unknown")
+
+                    # Try to find user from assistant
+                    stmt = select(StudioConfigModel).where(
+                        StudioConfigModel.vapi_assistant_id == assistant_id
+                    )
+                    result = await db.execute(stmt)
+                    config = result.scalar_one_or_none()
+
+                    if config:
+                        new_call = CallRecord(
+                            id=call_id,
+                            assistant_id=assistant_id,
+                            user_id=config.user_id,
+                            customer_number=phone_number,
+                            status="in-progress",
+                            started_at=datetime.utcnow(),
+                            meta={
+                                "caller_name": full_name,
+                                "caller_first_name": first_name,
+                                "caller_last_name": last_name,
+                                "caller_email": email,
+                                "caller_phone": phone_number,
+                                "caller_info_saved_at": datetime.utcnow().isoformat(),
+                            }
+                        )
+                        db.add(new_call)
+                        await db.commit()
+                        saved_to_db = True
+                        print(f"   ✅ New call record created with caller info")
+                    else:
+                        print(f"   ⚠️  Could not find user for assistant {assistant_id}")
+
+                break  # Exit async generator
+        except Exception as e:
+            print(f"   ❌ Failed to save caller info to DB: {e}")
+            import traceback
+            traceback.print_exc()
+    else:
+        print(f"   ⚠️  No call_id in context, skipping DB save")
 
     return {
         "result": f"Thank you {first_name}! I've saved your information.",
         "success": True,
         "data": {
-            "caller_name": f"{first_name} {last_name}",
-            "saved": True
+            "caller_name": full_name,
+            "email": email,
+            "phone": phone_number,
+            "saved": saved_to_db
         }
     }
 
@@ -444,12 +635,13 @@ async def _resolve_user_and_config(
         result = await db.execute(select(StudioConfigModel).where(StudioConfigModel.user_id == user.id))
         config = result.scalar_one_or_none()
 
+    # SECURITY: Do NOT fallback to first user in database
+    # If we can't identify the user from assistant_id or metadata, return None
+    # The caller must handle the missing user case appropriately
     if not user:
-        fallback = await db.execute(select(User).limit(1))
-        user = fallback.scalar_one_or_none()
-        if user and config is None:
-            result = await db.execute(select(StudioConfigModel).where(StudioConfigModel.user_id == user.id))
-            config = result.scalar_one_or_none()
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.warning("Could not resolve user from assistant_id=%s or metadata=%s", assistant_id, metadata)
 
     return user, config
 
@@ -507,12 +699,19 @@ async def twilio_status_webhook(request: Request):
     async for db in get_session():
         user_for_number = None
         if to_number:
-            result = await db.execute(select(User).where(User.twilio_phone_number == to_number))
+            # Look up user via phone_numbers table
+            result = await db.execute(
+                select(User)
+                .join(PhoneNumber, PhoneNumber.user_id == User.id)
+                .where(PhoneNumber.e164 == to_number)
+            )
             user_for_number = result.scalar_one_or_none()
 
         signature = request.headers.get("X-Twilio-Signature")
         try:
-            token_for_signature = resolve_twilio_credentials(user_for_number, allow_env_fallback=True).auth_token
+            # Use platform-level Twilio credentials
+            creds = get_twilio_credentials()
+            token_for_signature = creds.auth_token
         except HTTPException:
             token_for_signature = None
 
@@ -529,22 +728,21 @@ async def twilio_status_webhook(request: Request):
             # Find associated user/tenant based on destination number
             user = user_for_number
 
+            # SECURITY: Do NOT fallback to first user in database
+            # Calls must be traceable to a specific user via phone number
             if not user:
-                fallback_user = await db.execute(select(User).limit(1))
-                user = fallback_user.scalar_one_or_none()
-
-            if not user:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.warning("Could not resolve user for Twilio call to %s (CallSid: %s)", to_number, call_sid)
                 raise HTTPException(
-                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                    detail="No user configured for Twilio status webhook",
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"No user found for phone number {to_number}. Ensure the number is configured in a user account.",
                 )
-
-            tenant = await ensure_tenant_for_user(db, user)
 
             record = CallRecord(
                 id=call_sid,
                 assistant_id=form_data.get("CalledViaSid") or "twilio-status",
-                tenant_id=tenant.id,
+                user_id=user.id,
                 customer_number=from_number,
                 status=twilio_status,
                 started_at=timestamp,
@@ -583,4 +781,4 @@ async def twilio_status_webhook(request: Request):
         await db.commit()
         break
 
-    return {"status": "ok", "callSid": call_sid, "callStatus": twilio_status}
+    return {"status": "success", "callSid": call_sid, "callStatus": twilio_status}

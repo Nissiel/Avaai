@@ -2,13 +2,15 @@ import pytest
 from fastapi import HTTPException
 
 from api.src.application.services.twilio import resolve_twilio_credentials, TwilioCredentials
+from api.src.core.crypto import get_smtp_encryptor
 from api.src.core.settings import get_settings
 
 
 class DummyUser:
     def __init__(self, sid: str | None, token: str | None):
         self.twilio_account_sid = sid
-        self.twilio_auth_token = token
+        encryptor = get_smtp_encryptor()
+        self.twilio_auth_token_encrypted = encryptor.encrypt(token) if token else None
 
 
 def test_resolve_twilio_credentials_uses_user_values(monkeypatch):

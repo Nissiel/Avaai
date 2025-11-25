@@ -64,24 +64,22 @@ def _parse_datetime(value: Any) -> datetime:
     return _now()
 
 
-def _normalize_tenant_id(value):
+def _normalize_user_id(value) -> str:
+    """Convert user_id to string format for database storage."""
     if isinstance(value, UUID):
-        return value
+        return str(value)
     if isinstance(value, str):
-        try:
-            return UUID(value)
-        except ValueError:
-            return value
-    return value
+        return value
+    return str(value)
 
 
-def _as_call_record(raw: dict[str, Any], tenant_id) -> CallRecord:
+def _as_call_record(raw: dict[str, Any], user_id) -> CallRecord:
     started_at = _parse_datetime(raw.get("startedAt"))
     ended_at = _parse_datetime(raw.get("endedAt")) if raw.get("endedAt") else None
     record = CallRecord(
         id=str(raw.get("id")),
         assistant_id=str(raw.get("assistantId", "")),
-        tenant_id=_normalize_tenant_id(tenant_id),
+        user_id=_normalize_user_id(user_id),
         customer_number=str(raw.get("customer", {}).get("number", "")) if isinstance(raw.get("customer"), dict) else None,
         status=str(raw.get("status", "unknown")),
         started_at=started_at,
@@ -120,15 +118,15 @@ def _extract_transcript(raw: dict[str, Any]) -> Optional[str]:
 async def synchronise_calls_from_vapi(
     session: AsyncSession,
     *,
-    tenant_id,
+    user_id,
     vapi_client: VapiClient,
     limit: int = 100,
 ) -> Sequence[CallRecord]:
     """Fetch latest calls from Vapi and persist them locally."""
 
-    tenant_key = _normalize_tenant_id(tenant_id)
+    user_key = _normalize_user_id(user_id)
     raw_calls = await vapi_client.list_calls(limit=limit)
-    records = [_as_call_record(raw, tenant_key) for raw in raw_calls if raw.get("id")]
+    records = [_as_call_record(raw, user_key) for raw in raw_calls if raw.get("id")]
     await upsert_calls(session, records)
     return records
 
@@ -136,15 +134,15 @@ async def synchronise_calls_from_vapi(
 async def compute_overview_metrics(
     session: AsyncSession,
     *,
-    tenant_id,
+    user_id,
     lookback_days: int = 7,
 ) -> Dict[str, Any]:
-    """Return aggregated analytics metrics for the given tenant."""
+    """Return aggregated analytics metrics for the given user."""
 
     end = _now()
     start = end - timedelta(days=lookback_days)
-    tenant_key = _normalize_tenant_id(tenant_id)
-    calls = await get_calls_in_range(session, tenant_id=tenant_key, start=start, end=end)
+    user_key = _normalize_user_id(user_id)
+    calls = await get_calls_in_range(session, user_id=user_key, start=start, end=end)
 
     total_calls = len(calls)
     active_now = sum(1 for call in calls if call.status in {"in-progress", "ringing", "queued"})
@@ -170,13 +168,13 @@ async def compute_overview_metrics(
 async def compute_time_series(
     session: AsyncSession,
     *,
-    tenant_id,
+    user_id,
     lookback_days: int = 14,
 ) -> Sequence[Dict[str, Any]]:
     end = _now()
     start = end - timedelta(days=lookback_days)
-    tenant_key = _normalize_tenant_id(tenant_id)
-    calls = await get_calls_in_range(session, tenant_id=tenant_key, start=start, end=end)
+    user_key = _normalize_user_id(user_id)
+    calls = await get_calls_in_range(session, user_id=user_key, start=start, end=end)
 
     day_buckets: Dict[datetime, Dict[str, Any]] = defaultdict(
         lambda: {
@@ -233,13 +231,13 @@ async def compute_time_series(
 async def compute_trending_topics(
     session: AsyncSession,
     *,
-    tenant_id,
+    user_id,
     lookback_days: int = 14,
     limit: int = 12,
 ) -> Sequence[Dict[str, Any]]:
     end = _now()
     start = end - timedelta(days=lookback_days)
-    calls = await get_calls_in_range(session, tenant_id=tenant_id, start=start, end=end)
+    calls = await get_calls_in_range(session, user_id=user_id, start=start, end=end)
 
     counter: Counter[str] = Counter()
     samples: Dict[str, str] = {}
@@ -273,13 +271,13 @@ async def compute_trending_topics(
 async def detect_anomalies(
     session: AsyncSession,
     *,
-    tenant_id,
+    user_id,
     lookback_days: int = 14,
     limit: int = 20,
 ) -> Sequence[Dict[str, Any]]:
     end = _now()
     start = end - timedelta(days=lookback_days)
-    calls = await get_calls_in_range(session, tenant_id=tenant_id, start=start, end=end)
+    calls = await get_calls_in_range(session, user_id=user_id, start=start, end=end)
 
     durations = [call.duration_seconds for call in calls if call.duration_seconds]
     mean_duration = mean(durations) if durations else 0
@@ -331,12 +329,12 @@ async def detect_anomalies(
 async def compute_activity_heatmap(
     session: AsyncSession,
     *,
-    tenant_id,
+    user_id,
     lookback_days: int = 14,
 ) -> Sequence[Dict[str, Any]]:
     end = _now()
     start = end - timedelta(days=lookback_days)
-    calls = await get_calls_in_range(session, tenant_id=tenant_id, start=start, end=end)
+    calls = await get_calls_in_range(session, user_id=user_id, start=start, end=end)
 
     heatmap: Dict[tuple[int, int], int] = defaultdict(int)
     for call in calls:
@@ -363,12 +361,12 @@ async def compute_activity_heatmap(
 async def recent_calls_with_transcripts(
     session: AsyncSession,
     *,
-    tenant_id,
+    user_id,
     limit: int = 20,
 ) -> Sequence[dict]:
     """Return recent calls, enriched with transcripts."""
 
-    calls = await get_recent_calls(session, tenant_id=tenant_id, limit=limit)
+    calls = await get_recent_calls(session, user_id=user_id, limit=limit)
     return [
         {
             "id": call.id,

@@ -85,7 +85,62 @@
     },
     "or": "Or continue with",
     "oauth": "Continue with {provider}",
-    "policy": "By continuing you agree to the Terms and Privacy of Ava.ai."
+    "policy": "By continuing you agree to the Terms and Privacy of Ava.ai.",
+    "placeholders": {
+      "email": "your@email.com"
+    },
+    "forgotPassword": {
+      "title": "Forgot password",
+      "subtitle": "Enter your email to receive a reset link",
+      "resetPassword": "Reset password",
+      "sending": "Sending...",
+      "backToLogin": "Back to login",
+      "emailSent": "Email sent!",
+      "checkInbox": "Check your inbox for the reset link.",
+      "checkEmail": "Check your email",
+      "sentTo": "We sent a reset link to",
+      "checkSpam": "If you don't see the email, check your spam folder."
+    },
+    "resetPassword": {
+      "title": "Reset password",
+      "subtitle": "Create a new password",
+      "newPassword": "New password",
+      "confirmPassword": "Confirm password",
+      "enterNewPassword": "Enter new password",
+      "confirmNewPassword": "Confirm new password",
+      "resetButton": "Reset password",
+      "updating": "Updating...",
+      "verifying": "Verifying your link...",
+      "invalidLink": "Invalid link",
+      "requestNew": "Request a new link",
+      "successTitle": "Password reset successful!",
+      "redirecting": "Your password has been updated. Redirecting...",
+      "goToLogin": "Go to login",
+      "passwordsMatch": "Passwords match",
+      "backToLogin": "Back to login"
+    },
+    "passwordRequirements": {
+      "minLength": "At least 8 characters",
+      "uppercase": "One uppercase letter",
+      "lowercase": "One lowercase letter",
+      "number": "One number"
+    },
+    "errors": {
+      "supabaseNotEnabled": "Password reset requires Supabase Auth",
+      "clientNotInitialized": "Authentication service not available",
+      "invalidEmail": "Please enter a valid email address",
+      "rateLimited": "Too many requests. Please wait a few minutes.",
+      "title": "Error",
+      "resetFailed": "Failed to send email. Please try again.",
+      "invalidResetLink": "Invalid or expired link. Please request a new one.",
+      "sessionFailed": "Failed to verify token",
+      "tokenExpired": "Link has expired. Please request a new one.",
+      "noResetToken": "No token found. Please request a new reset link.",
+      "initFailed": "Failed to initialize",
+      "passwordsMismatch": "Passwords do not match",
+      "passwordRequirements": "Password does not meet requirements",
+      "samePassword": "New password must be different"
+    }
   },
   "marketing": {
     "features": "Features",
@@ -317,7 +372,14 @@
     "assistants": "Assistants",
     "calls": "Calls",
     "contacts": "Contacts",
-    "profile": "Profile"
+    "profile": "Profile",
+    "settings": "Settings",
+    "billing": "Billing",
+    "sections": {
+      "main": "Main",
+      "account": "Account"
+    },
+    "phone": "Phone"
   },
   "sidebarTip": {
     "title": "Pro tip",
@@ -538,10 +600,8 @@
     },
     "tabs": {
       "profile": "Profile",
-      "studio": "Studio settings",
-      "vapi": "Vapi Integration",
-      "twilio": "Twilio Integration",
-      "email": "Email delivery"
+      "business": "Business",
+      "integrations": "Integrations"
     },
     "movedNotice": {
       "title": "Looking for studio settings?",
@@ -609,10 +669,10 @@
       "description": "Your details appear in notifications and customer communications.",
       "form": {
         "name": "Full name",
+        "namePlaceholder": "Enter your full name",
         "email": "Email",
-        "phone": "Phone (optional)",
-        "phonePlaceholder": "+1 415 555 0100",
-        "locale": "Default language"
+        "phone": "Phone",
+        "phonePlaceholder": "+1 415 555 0100"
       },
       "actions": {
         "reset": "Reset",
@@ -630,6 +690,53 @@
         "email": "Please enter a valid email",
         "phone": "Provide an international number (+1 ...)",
         "locale": "Please select a language"
+      }
+    },
+    "business": {
+      "identity": {
+        "title": "Company Identity",
+        "description": "Basic information about your organization",
+        "companyName": "Company Name",
+        "companyNamePlaceholder": "Acme Corporation",
+        "website": "Website",
+        "industry": "Industry",
+        "industryPlaceholder": "Select industry",
+        "companySize": "Company Size",
+        "companySizePlaceholder": "Select size"
+      },
+      "focus": {
+        "title": "Business Focus",
+        "sectionDescription": "What your business does and who you serve",
+        "businessDescription": "Business Description",
+        "descriptionPlaceholder": "Describe what your company does...",
+        "services": "Services / Products",
+        "servicesPlaceholder": "Add a service or product",
+        "targetMarket": "Target Market",
+        "targetMarketPlaceholder": "e.g., SMBs, Enterprise, Startups",
+        "valueProposition": "Value Proposition",
+        "valuePropositionPlaceholder": "What makes you unique?"
+      },
+      "knowledge": {
+        "title": "Knowledge Base",
+        "description": "Upload documents for your AI agent to reference",
+        "dropzone": "Drag files here or click to browse",
+        "fileTypes": "PDF, DOCX, TXT up to 10MB"
+      }
+    },
+    "integrations": {
+      "title": "Integrations",
+      "description": "Connect external services to empower your AI agent",
+      "calendar": {
+        "name": "Calendar",
+        "description": "Schedule appointments and meetings"
+      },
+      "whatsapp": {
+        "name": "WhatsApp",
+        "description": "Business messaging platform"
+      },
+      "crm": {
+        "name": "CRM",
+        "description": "Customer relationship management"
       }
     },
     "studio": {
@@ -960,5 +1067,41 @@
         "delete": "Are you sure you want to delete your Twilio credentials?"
       }
     }
+  },
+  "setupChecklist": {
+    "title": "Complete your setup",
+    "dismiss": "Dismiss",
+    "completeLater": "Complete later",
+    "items": {
+      "profile": {
+        "label": "Add your business info",
+        "description": "Set your company name"
+      },
+      "phone": {
+        "label": "Connect a phone number",
+        "description": "Get a number to receive calls"
+      },
+      "assistant": {
+        "label": "Create your first assistant",
+        "description": "Configure your AI receptionist"
+      }
+    }
+  },
+  "verification": {
+    "verifyPhone": "Verify your phone",
+    "verifyPhoneDescription": "Verify your phone number for additional account security.",
+    "phoneVerification": "Phone Verification",
+    "verifyNow": "Verify",
+    "emailVerification": "Email Verification",
+    "resendEmail": "Resend",
+    "sending": "Sending...",
+    "emailSent": "Email sent",
+    "checkInbox": "Check your inbox for the verification link.",
+    "emailFailed": "Failed to send email",
+    "tryAgain": "Please try again later.",
+    "verifyAccount": "Verify Your Account",
+    "verifyEmail": "Verify Your Email",
+    "verifyBothDescription": "Complete your account security by verifying your email and phone number.",
+    "verifyEmailDescription": "Verify your email address to secure your account and receive important notifications."
   }
 }

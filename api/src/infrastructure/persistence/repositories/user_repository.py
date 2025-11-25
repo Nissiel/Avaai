@@ -32,6 +32,7 @@ class UserRepository:
         phone: Optional[str] = None,
         name: Optional[str] = None,
         locale: str = "en",
+        supabase_user_id: Optional[str] = None,
     ) -> User:
         """
         Create a new user in database.
@@ -42,6 +43,7 @@ class UserRepository:
             phone: Phone number in E.164 format (optional, unique if provided)
             name: User display name (optional)
             locale: User locale (default: "en")
+            supabase_user_id: Supabase Auth user ID (optional, unique)
 
         Returns:
             Created User model with generated ID and timestamps
@@ -55,6 +57,7 @@ class UserRepository:
             phone=phone,
             name=name,
             locale=locale,
+            supabase_user_id=supabase_user_id,
         )
         self.session.add(user)
         await self.session.commit()
@@ -90,6 +93,20 @@ class UserRepository:
             select(User).where(User.phone == phone)
         )
         return result.scalar_one_or_none()
+
+    async def get_by_supabase_user_id(self, supabase_user_id: str) -> User | None:
+        """
+        Find user by Supabase Auth user ID.
+        """
+        result = await self.session.execute(
+            select(User).where(User.supabase_user_id == supabase_user_id)
+        )
+        return result.scalar_one_or_none()
+
+    # Alias for convenience
+    async def get_by_supabase_id(self, supabase_user_id: str) -> User | None:
+        """Alias for get_by_supabase_user_id."""
+        return await self.get_by_supabase_user_id(supabase_user_id)
 
     async def get_by_id(self, user_id: str | UUID) -> User | None:
         """
@@ -153,3 +170,42 @@ class UserRepository:
         await self.session.delete(user)
         await self.session.commit()
         return True
+
+    async def get_or_create_by_supabase(
+        self,
+        supabase_user_id: str,
+        email: str,
+        name: Optional[str] = None,
+        locale: str = "en",
+    ) -> User:
+        """
+        Resolve or create a user linked to a Supabase auth identity.
+
+        Preference order:
+        1) Existing by supabase_user_id
+        2) Existing by email (link supabase_user_id)
+        3) Create new user with provided email
+        """
+        user = await self.get_by_supabase_user_id(supabase_user_id)
+        if user:
+            return user
+
+        # Link existing email if present
+        existing_by_email = await self.get_by_email(email)
+        if existing_by_email:
+            existing_by_email.supabase_user_id = supabase_user_id
+            if name and not existing_by_email.name:
+                existing_by_email.name = name
+            await self.session.commit()
+            await self.session.refresh(existing_by_email)
+            return existing_by_email
+
+        # Create new user
+        user = await self.create(
+            email=email,
+            password=None,
+            name=name,
+            locale=locale,
+            supabase_user_id=supabase_user_id,
+        )
+        return user

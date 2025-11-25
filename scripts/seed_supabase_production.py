@@ -28,12 +28,10 @@ from sqlalchemy import text, select
 from datetime import datetime
 import uuid
 
-# Import models
-from api.src.domain.entities.user import User
-from api.src.domain.entities.assistant import Assistant
-from api.src.domain.entities.phone_number import PhoneNumber
-from api.src.domain.entities.studio_config import StudioConfig
-from api.src.domain.entities.user_onboarding_state import UserOnboardingState
+# Import models from correct location
+from api.src.infrastructure.persistence.models.user import User
+from api.src.infrastructure.persistence.models.studio_config import StudioConfig
+from api.src.core.crypto import get_smtp_encryptor, EncryptionError
 
 async def seed_production():
     """Seed Supabase production database"""
@@ -42,12 +40,16 @@ async def seed_production():
     print("=" * 70)
     print()
 
-    # Get DATABASE_URL from environment (will be set on Render)
-    db_url = os.getenv("DATABASE_URL")
+    # Load .env file
+    from dotenv import load_dotenv
+    load_dotenv("api/.env")
+
+    # Get DATABASE_URL from environment
+    db_url = os.getenv("AVA_API_DATABASE_URL") or os.getenv("DATABASE_URL")
 
     if not db_url:
-        print("❌ DATABASE_URL not set!")
-        print("💡 This script should run on Render with env vars set")
+        print("❌ AVA_API_DATABASE_URL not set!")
+        print("💡 Set it in api/.env or as environment variable")
         return False
 
     if "supabase" not in db_url and "postgres" not in db_url:
@@ -55,11 +57,18 @@ async def seed_production():
         print(f"   Current: {db_url[:50]}...")
         return False
 
-    print("✅ DATABASE_URL found (PostgreSQL)")
+    print("✅ Database URL found (PostgreSQL)")
     print()
 
-    # Connect
-    engine = create_async_engine(db_url, echo=False)
+    # Connect with PgBouncer-compatible settings
+    engine = create_async_engine(
+        db_url,
+        echo=False,
+        connect_args={
+            "statement_cache_size": 0,
+            "prepared_statement_cache_size": 0,
+        }
+    )
     async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
     try:
@@ -86,15 +95,23 @@ async def seed_production():
                 print("📝 Creating user...")
 
                 # Create user
-                from api.src.infrastructure.security.password import get_password_hash
+                from api.src.presentation.api.v1.routes.auth import hash_password
+
+                encryptor = get_smtp_encryptor()
+                try:
+                    encrypted_vapi_key = encryptor.encrypt("b3cf0568-fc95-4dcf-b6f4-30a007d80b64")
+                except EncryptionError as exc:
+                    print(f"❌ Failed to encrypt seed Vapi key: {exc}")
+                    return False
 
                 user = User(
                     id=str(uuid.uuid4()),
                     email="nissieltb@gmail.com",
                     name="Nissiel Thomas",
-                    hashed_password=get_password_hash("Bichon55!!"),
+                    hashed_password=hash_password("Bichon55!!"),
                     onboarding_completed=True,
-                    vapi_api_key="b3cf0568-fc95-4dcf-b6f4-30a007d80b64",  # From .env
+                    vapi_api_key_encrypted=encrypted_vapi_key,
+                    vapi_api_key_preview="b3cf0568...",
                     created_at=datetime.utcnow()
                 )
 
@@ -103,43 +120,6 @@ async def seed_production():
                 await session.refresh(user)
 
                 print(f"✅ User created: {user.email}")
-
-            print()
-
-            # Create default assistant
-            print("🤖 Checking for assistant...")
-            result = await session.execute(
-                select(Assistant).where(Assistant.user_id == user.id)
-            )
-            existing_assistant = result.scalar_one_or_none()
-
-            if existing_assistant:
-                print(f"✅ Assistant already exists: {existing_assistant.name}")
-            else:
-                print("📝 Creating default assistant...")
-
-                assistant = Assistant(
-                    id=str(uuid.uuid4()),
-                    user_id=user.id,
-                    name="AVA Assistant",
-                    vapi_assistant_id="sample_vapi_id_" + str(uuid.uuid4())[:8],
-                    first_message="Bonjour! Je suis AVA, votre assistante virtuelle. Comment puis-je vous aider aujourd'hui?",
-                    system_prompt="Tu es AVA, une assistante professionnelle francophone. Tu es polie, efficace et tu parles naturellement.",
-                    model="gpt-4o",
-                    voice_provider="azure",
-                    voice_id="fr-FR-DeniseNeural",
-                    voice_speed=1.0,
-                    transcriber_provider="deepgram",
-                    transcriber_model="nova-2",
-                    transcriber_language="fr",
-                    created_at=datetime.utcnow()
-                )
-
-                session.add(assistant)
-                await session.commit()
-                await session.refresh(assistant)
-
-                print(f"✅ Assistant created: {assistant.name}")
 
             print()
 
@@ -179,42 +159,12 @@ async def seed_production():
                 print("✅ Studio config created")
 
             print()
-
-            # Create onboarding state
-            print("📋 Checking for onboarding state...")
-            result = await session.execute(
-                select(UserOnboardingState).where(UserOnboardingState.user_id == user.id)
-            )
-            existing_onboarding = result.scalar_one_or_none()
-
-            if existing_onboarding:
-                print("✅ Onboarding state already exists")
-            else:
-                print("📝 Creating onboarding state...")
-
-                onboarding = UserOnboardingState(
-                    id=str(uuid.uuid4()),
-                    user_id=user.id,
-                    current_step=4,  # Completed
-                    completed=True,
-                    created_at=datetime.utcnow(),
-                    updated_at=datetime.utcnow()
-                )
-
-                session.add(onboarding)
-                await session.commit()
-
-                print("✅ Onboarding state created")
-
-            print()
             print("=" * 70)
             print("✅ SEED COMPLETE!")
             print()
             print("📊 Database is now ready for users:")
             print(f"   ✅ User: {user.email}")
-            print(f"   ✅ Assistant configured")
             print(f"   ✅ Studio config set")
-            print(f"   ✅ Onboarding complete")
             print()
             print("🚀 The app should now work in production!")
             print()

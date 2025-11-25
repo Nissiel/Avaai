@@ -8,10 +8,17 @@ from __future__ import annotations
 
 import logging
 from typing import Optional, Sequence
-from uuid import uuid4
+from uuid import uuid4, UUID
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+
+
+def _to_str(value) -> str:
+    """Convert value to string (handles UUID objects)."""
+    if isinstance(value, UUID):
+        return str(value)
+    return str(value) if value else ""
 
 from api.src.infrastructure.persistence.models.phone_number import PhoneNumber, PhoneProvider
 
@@ -28,7 +35,7 @@ class PhoneNumberRepository:
     async def create(
         self,
         *,
-        org_id: str,
+        user_id: str,
         provider: PhoneProvider,
         e164: str,
         vapi_phone_number_id: Optional[str] = None,
@@ -41,7 +48,7 @@ class PhoneNumberRepository:
         Create a new phone number record.
 
         Args:
-            org_id: Organization ID that owns this number
+            user_id: User ID that owns this number
             provider: Phone provider (VAPI, TWILIO, VAPI_TWILIO, SIP)
             e164: Phone number in E.164 format (+33612345678)
             vapi_phone_number_id: Vapi phone number ID if applicable
@@ -63,7 +70,7 @@ class PhoneNumberRepository:
 
         phone = PhoneNumber(
             id=str(uuid4()),
-            org_id=org_id,
+            user_id=user_id,
             provider=provider,
             e164=e164,
             vapi_phone_number_id=vapi_phone_number_id,
@@ -77,7 +84,7 @@ class PhoneNumberRepository:
         await self.session.commit()
         await self.session.refresh(phone)
 
-        logger.info(f"Created phone number: {e164} (provider={provider}, org={org_id})")
+        logger.info(f"Created phone number: {e164} (provider={provider}, user={user_id})")
         return phone
 
     async def get_by_id(self, phone_id: str) -> Optional[PhoneNumber]:
@@ -100,9 +107,10 @@ class PhoneNumberRepository:
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def list_by_org(self, org_id: str) -> Sequence[PhoneNumber]:
-        """List all phone numbers for an organization."""
-        stmt = select(PhoneNumber).where(PhoneNumber.org_id == org_id).order_by(PhoneNumber.created_at.desc())
+    async def list_by_user(self, user_id: str | UUID) -> Sequence[PhoneNumber]:
+        """List all phone numbers for a user."""
+        user_id_str = _to_str(user_id)
+        stmt = select(PhoneNumber).where(PhoneNumber.user_id == user_id_str).order_by(PhoneNumber.created_at.desc())
         result = await self.session.execute(stmt)
         return result.scalars().all()
 

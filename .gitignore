@@ -27,3 +27,8 @@ venv/
 # OS
 .DS_Store
 Thumbs.db
+
+# Documentation & Scripts (except README.md)
+*.md
+!README.md
+*.sh

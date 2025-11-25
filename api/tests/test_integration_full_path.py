@@ -16,9 +16,13 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from fastapi import status
 from fastapi.testclient import TestClient
+from cryptography.fernet import Fernet
 
 from api.src.core.settings import get_settings
 from api.src.infrastructure.external.circuit_breaker import CircuitState, get_circuit_breaker
+
+FERNET_KEY = os.environ["AVA_API_SMTP_ENCRYPTION_KEY"].encode("utf-8")
+FERNET = Fernet(FERNET_KEY)
 
 
 @pytest.fixture
@@ -27,9 +31,11 @@ def mock_user():
     user = MagicMock()
     user.id = "test-user-123"
     user.email = "test@example.com"
-    user.vapi_api_key = "test-vapi-key"
+    user.vapi_api_key_encrypted = FERNET.encrypt(b"test-vapi-key").decode("utf-8")
+    user.vapi_api_key_preview = "sk_test..."
     user.twilio_account_sid = "ACtest123"
-    user.twilio_auth_token = "test-token"
+    user.twilio_auth_token_encrypted = FERNET.encrypt(b"test-token").decode("utf-8")
+    user.twilio_phone_number = "+15551234567"
     return user
 
 

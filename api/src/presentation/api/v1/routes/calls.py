@@ -37,7 +37,7 @@ async def list_calls(
     - status: Filter by status (in-progress, ended, failed)
     """
 
-    calls = await get_recent_calls(session, tenant_id=str(user.id), limit=limit)
+    calls = await get_recent_calls(session, user_id=str(user.id), limit=limit)
     now_utc = datetime.now(timezone.utc)
     scrubbed = False
     for call in calls:
@@ -84,7 +84,7 @@ async def get_call_detail(
     """
 
     call = await get_call_by_id(session, call_id)
-    if not call or str(call.tenant_id) != str(user.id):
+    if not call or str(call.user_id) != str(user.id):
         raise HTTPException(status_code=404, detail="Call not found")
 
     scrubbed = await scrub_transcript_if_expired(
@@ -122,7 +122,7 @@ async def get_call_recording(
     """
 
     call = await get_call_by_id(session, call_id)
-    if not call or str(call.tenant_id) != str(user.id):
+    if not call or str(call.user_id) != str(user.id):
         raise HTTPException(status_code=404, detail="Call not found")
 
     recording_url = call.meta.get("recordingUrl") if isinstance(call.meta, dict) else None

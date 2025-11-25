@@ -1,18 +1,20 @@
 """Phone numbers API routes for Vapi and Twilio integration."""
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from pydantic import BaseModel, Field, field_validator
 from typing import Optional
 import logging
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from api.src.application.services.vapi import get_vapi_client_for_user
+from api.src.application.services.vapi import get_vapi_client
+from api.src.infrastructure.external.vapi_client import VapiClient
 from api.src.infrastructure.database.session import get_session
 from api.src.infrastructure.persistence.models.user import User
 from api.src.infrastructure.persistence.models.phone_number import PhoneProvider
 from api.src.infrastructure.persistence.repositories.phone_number_repository import PhoneNumberRepository
 from api.src.presentation.dependencies.auth import get_current_user
 from api.src.core.settings import get_settings
+from api.src.core.rate_limiting import limiter
 from twilio.rest import Client as TwilioClient
 
 router = APIRouter(prefix="/phone-numbers", tags=["phone"])
@@ -27,7 +29,7 @@ class CreateUSNumberRequest(BaseModel):
     """Request to create a free US number via Vapi."""
 
     assistant_id: str = Field(..., description="AVA assistant ID to link")
-    org_id: str = Field(..., description="Organization ID")
+    user_id: str = Field(..., description="User ID")
     area_code: Optional[str] = Field(
         None, description="Optional US area code (e.g., '415')"
     )
@@ -45,7 +47,7 @@ class ImportTwilioRequest(BaseModel):
         default=None,
         description="AVA assistant UUID. Leave empty to auto-link to the first assistant.",
     )
-    org_id: str = Field(..., description="Organization ID")
+    user_id: str = Field(..., description="User ID")
 
     @field_validator("assistant_id", mode="before")
     @classmethod
@@ -67,15 +69,18 @@ class VerifyTwilioRequest(BaseModel):
 # ==================== Helper ====================
 
 
-def _get_vapi_client(user: User):
-    return get_vapi_client_for_user(user)
+def _get_vapi_client() -> VapiClient:
+    """Create VapiClient with platform credentials."""
+    return get_vapi_client()
 
 
 # ==================== Routes ====================
 
 
 @router.post("/create-us", status_code=status.HTTP_201_CREATED)
+@limiter.limit("5/minute")  # Rate limit: max 5 phone creations per minute
 async def create_us_number(
+    request_obj: Request,  # Required for rate limiter
     request: CreateUSNumberRequest,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
@@ -100,7 +105,7 @@ async def create_us_number(
     await db.refresh(user)
     
     try:
-        vapi = _get_vapi_client(user)
+        vapi = _get_vapi_client()
 
         # Create via Vapi (US only, free, max 10)
         created = await vapi.create_phone_number(
@@ -113,7 +118,7 @@ async def create_us_number(
             repo = PhoneNumberRepository(db)
             try:
                 await repo.create(
-                    org_id=request.org_id,
+                    user_id=request.user_id,
                     provider=PhoneProvider.VAPI,
                     e164=phone_number,
                     vapi_phone_number_id=created["id"],
@@ -159,7 +164,9 @@ async def create_us_number(
 
 
 @router.post("/import-twilio", status_code=status.HTTP_201_CREATED)
+@limiter.limit("5/minute")  # Rate limit: max 5 phone imports per minute
 async def import_twilio_number(
+    request_obj: Request,  # Required for rate limiter
     request: ImportTwilioRequest,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
@@ -199,7 +206,7 @@ async def import_twilio_number(
 
         if not assistant_id:
             logger.info("⚠️ Pas d'assistant_id fourni, recherche du premier assistant...")
-            vapi = _get_vapi_client(user)
+            vapi = _get_vapi_client()
 
             try:
                 assistants = await vapi.list_assistants()
@@ -248,7 +255,7 @@ async def import_twilio_number(
             )
 
         # 2. Import to Vapi
-        vapi = _get_vapi_client(user)
+        vapi = _get_vapi_client()
 
         imported = await vapi.import_phone_number(
             twilio_account_sid=request.twilio_account_sid,
@@ -284,7 +291,7 @@ async def import_twilio_number(
         repo = PhoneNumberRepository(db)
         try:
             await repo.create(
-                org_id=request.org_id,
+                user_id=request.user_id,
                 provider=PhoneProvider.VAPI_TWILIO,
                 e164=request.phone_number,
                 vapi_phone_number_id=imported["id"],
@@ -327,7 +334,10 @@ async def import_twilio_number(
 
 
 @router.post("/twilio/verify")
-async def verify_twilio_credentials(request: VerifyTwilioRequest):
+async def verify_twilio_credentials(
+    request: VerifyTwilioRequest,
+    user: User = Depends(get_current_user),  # SECURITY: Require authentication
+):
     """
     Verify Twilio credentials and check if phone number exists.
 
@@ -380,12 +390,11 @@ async def verify_twilio_credentials(request: VerifyTwilioRequest):
 
 @router.get("/my-numbers")
 async def get_my_numbers(
-    org_id: str,
     db: AsyncSession = Depends(get_session),
     user: User = Depends(get_current_user),
 ):
     """
-    Get all phone numbers for an organization.
+    Get all phone numbers for the authenticated user.
 
     Returns:
         [
@@ -397,8 +406,9 @@ async def get_my_numbers(
             }
         ]
     """
+    # SECURITY: Always use authenticated user's ID, not a query parameter
     repo = PhoneNumberRepository(db)
-    phones = await repo.list_by_org(org_id)
+    phones = await repo.list_by_user(user.id)
 
     # Extract country code from E.164 format
     def get_country_code(e164: str) -> str:

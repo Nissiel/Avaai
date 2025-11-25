@@ -21,8 +21,22 @@ function negotiateLocale(requested?: string[] | string | null): Locale {
   return matched;
 }
 
+async function maybeRequestLocale(): Promise<string | undefined> {
+  try {
+    const mod = await import("next-intl/server");
+    const fn = (mod as any).requestLocale;
+    if (typeof fn === "function") {
+      return await fn();
+    }
+  } catch {
+    // requestLocale not available in this next-intl version
+  }
+  return undefined;
+}
+
 export default getRequestConfig(async ({ locale }) => {
-  const resolvedLocale = isLocale(locale) ? locale : negotiateLocale(locale);
+  const localeFromRequest = await maybeRequestLocale();
+  const resolvedLocale = isLocale(localeFromRequest ?? locale) ? (localeFromRequest ?? locale) : negotiateLocale(localeFromRequest ?? locale);
   try {
     const messages = (await import(`@/messages/${resolvedLocale}.json`)).default;
     return {

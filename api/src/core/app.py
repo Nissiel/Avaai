@@ -81,23 +81,25 @@ def create_app() -> FastAPI:
         """🔥 DIVINE FIX: Warmup database on startup to prevent first-request timeouts"""
         import asyncio
         import time
-        
+
         try:
-            from api.src.infrastructure.database.session import engine
+            from api.src.infrastructure.database.session import SessionLocal
             from sqlalchemy import text
-            
-            print("🔥 Warming up database connection pool...", flush=True)
-            async with engine.connect() as conn:
-                # Simple ping query with generous timeout for cold Supabase
-                start = time.time()
+
+            print("🔥 Warming up database connection...", flush=True)
+            start = time.time()
+
+            # Use SessionLocal which has proper PgBouncer-compatible settings
+            async with SessionLocal() as session:
                 await asyncio.wait_for(
-                    conn.execute(text("SELECT 1")),
-                    timeout=20.0  # 🔥 Give Supabase 20s to wake from sleep
+                    session.execute(text("SELECT 1")),
+                    timeout=60.0  # 🔥 Give Supabase 60s to wake from sleep
                 )
-                elapsed = time.time() - start
-                print(f"✅ Database warmed up in {elapsed:.2f}s (cold start handled)", flush=True)
+
+            elapsed = time.time() - start
+            print(f"✅ Database warmed up in {elapsed:.2f}s", flush=True)
         except asyncio.TimeoutError:
-            print(f"⚠️  Database warmup timed out after 20s (continuing anyway)", flush=True)
+            print(f"⚠️  Database warmup timed out after 60s (continuing anyway)", flush=True)
         except Exception as e:
             # Don't block startup if warmup fails - log and continue
             print(f"⚠️  Database warmup failed (non-blocking): {e}", flush=True)

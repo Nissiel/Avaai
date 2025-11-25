@@ -6,7 +6,10 @@ function resolveAuthToken(request: NextRequest): string | undefined {
   if (header?.startsWith("Bearer ")) {
     return header.slice(7);
   }
-  return request.cookies.get("access_token")?.value ?? undefined;
+  const cookieToken =
+    request.cookies.get("access_token")?.value ??
+    request.cookies.get("sb-access-token")?.value;
+  return cookieToken ?? undefined;
 }
 
 export interface ProxyOptions {

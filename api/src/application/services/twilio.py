@@ -11,7 +11,6 @@ from twilio.rest import Client as TwilioRestClient
 
 from api.src.core.settings import get_settings
 from api.src.infrastructure.external.circuit_breaker import get_circuit_breaker
-from api.src.infrastructure.persistence.models.user import User
 
 
 def _clean(value: str | None) -> str | None:
@@ -26,29 +25,18 @@ class TwilioCredentials:
     auth_token: str
 
 
-def resolve_twilio_credentials(
-    user: User | None = None,
-    *,
-    allow_env_fallback: bool = True,
-) -> TwilioCredentials:
-    """Return Twilio credentials for the given user or fall back to env."""
+def get_twilio_credentials() -> TwilioCredentials:
+    """Get Twilio credentials from environment."""
+    settings = get_settings()
+    account_sid = _clean(settings.twilio_account_sid)
+    auth_token = _clean(settings.twilio_auth_token)
 
-    if user:
-        account_sid = _clean(user.twilio_account_sid)
-        auth_token = _clean(user.twilio_auth_token)
-        if account_sid and auth_token:
-            return TwilioCredentials(account_sid=account_sid, auth_token=auth_token)
-
-    if allow_env_fallback:
-        settings = get_settings()
-        account_sid = _clean(settings.twilio_account_sid)
-        auth_token = _clean(settings.twilio_auth_token)
-        if account_sid and auth_token:
-            return TwilioCredentials(account_sid=account_sid, auth_token=auth_token)
+    if account_sid and auth_token:
+        return TwilioCredentials(account_sid=account_sid, auth_token=auth_token)
 
     raise HTTPException(
-        status_code=status.HTTP_400_BAD_REQUEST,
-        detail="Twilio credentials not configured. Add them in Settings → Twilio.",
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        detail="Twilio credentials not configured. Set TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN environment variables.",
     )
 
 
@@ -63,17 +51,13 @@ def _get_cached_client(account_sid: str, auth_token: str) -> TwilioRestClient:
     return TwilioRestClient(account_sid, auth_token)
 
 
-def get_twilio_client(
-    user: User | None = None,
-    *,
-    allow_env_fallback: bool = True,
-) -> TwilioRestClient:
+def get_twilio_client() -> TwilioRestClient:
     """
     Get Twilio client with connection pooling.
-    
-    Resolves credentials and returns cached client instance.
+
+    Returns cached client instance using platform credentials.
     """
-    creds = resolve_twilio_credentials(user, allow_env_fallback=allow_env_fallback)
+    creds = get_twilio_credentials()
     return _get_cached_client(creds.account_sid, creds.auth_token)
 
 
@@ -82,32 +66,30 @@ async def make_twilio_call_with_circuit_breaker(
     from_: str,
     url: str,
     *,
-    user: User | None = None,
     method: str = "POST",
 ) -> Any:
     """
     Make a Twilio call with circuit breaker protection.
-    
+
     Args:
         to: Destination phone number
         from_: Source phone number (Twilio number)
         url: TwiML webhook URL
-        user: Optional user for credential resolution
         method: HTTP method for webhook (default: POST)
-        
+
     Returns:
         Twilio call resource
-        
+
     Raises:
         HTTPException: If circuit is open or credentials invalid
     """
     breaker = get_circuit_breaker("twilio", config=None)
-    
+
     async def _make_call():
-        client = get_twilio_client(user, allow_env_fallback=True)
+        client = get_twilio_client()
         # Note: Twilio SDK is synchronous, but we wrap it for circuit breaker compatibility
         return client.calls.create(to=to, from_=from_, url=url, method=method)
-    
+
     return await breaker.call(_make_call)
 
 
@@ -115,36 +97,33 @@ async def send_twilio_sms_with_circuit_breaker(
     to: str,
     from_: str,
     body: str,
-    *,
-    user: User | None = None,
 ) -> Any:
     """
     Send Twilio SMS with circuit breaker protection.
-    
+
     Args:
         to: Destination phone number
         from_: Source phone number (Twilio number)
         body: Message content
-        user: Optional user for credential resolution
-        
+
     Returns:
         Twilio message resource
-        
+
     Raises:
         HTTPException: If circuit is open or credentials invalid
     """
     breaker = get_circuit_breaker("twilio", config=None)
-    
+
     async def _send_sms():
-        client = get_twilio_client(user, allow_env_fallback=True)
+        client = get_twilio_client()
         return client.messages.create(to=to, from_=from_, body=body)
-    
+
     return await breaker.call(_send_sms)
 
 
 __all__ = [
     "TwilioCredentials",
-    "resolve_twilio_credentials",
+    "get_twilio_credentials",
     "get_twilio_client",
     "make_twilio_call_with_circuit_breaker",
     "send_twilio_sms_with_circuit_breaker",

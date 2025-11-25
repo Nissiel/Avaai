@@ -1,21 +1,23 @@
 """
 Studio Config model for persisting studio configuration per user.
 
-Stores all studio settings (voice, AI model, prompts, etc.) in the database
-instead of in-memory _config_state.
+Normalized structure - voice, AI, transcriber, and email configs are in separate tables.
 """
 
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from uuid import uuid4
 
-from sqlalchemy import Boolean, DateTime, Float, Integer, String, Text
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import Boolean, DateTime, ForeignKey, String, Text
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
 from .base import Base
+
+if TYPE_CHECKING:
+    from .user import User
 
 
 class StudioConfig(Base):
@@ -34,6 +36,7 @@ class StudioConfig(Base):
     # Foreign key to user
     user_id: Mapped[str] = mapped_column(
         String(36),
+        ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
         comment="User who owns this studio config",
@@ -44,10 +47,6 @@ class StudioConfig(Base):
         String(255),
         default="My Organization",
         nullable=False,
-    )
-    admin_email: Mapped[Optional[str]] = mapped_column(
-        String(255),
-        nullable=True,
     )
     timezone: Mapped[str] = mapped_column(
         String(64),
@@ -64,91 +63,12 @@ class StudioConfig(Base):
         default="09:00-18:00",
         nullable=False,
     )
-    fallback_email: Mapped[Optional[str]] = mapped_column(
-        String(255),
-        nullable=True,
-    )
-    summary_email: Mapped[Optional[str]] = mapped_column(
-        String(255),
-        nullable=True,
-    )
-    smtp_server: Mapped[str] = mapped_column(
-        String(255),
-        default="",
-        nullable=False,
-    )
-    smtp_port: Mapped[str] = mapped_column(
-        String(10),
-        default="587",
-        nullable=False,
-    )
-    smtp_username: Mapped[str] = mapped_column(
-        String(255),
-        default="",
-        nullable=False,
-    )
-    smtp_password_encrypted: Mapped[str] = mapped_column(
-        Text,
-        default="",
-        nullable=False,
-    )
 
     # Vapi Assistant
     vapi_assistant_id: Mapped[Optional[str]] = mapped_column(
         String(255),
         nullable=True,
         comment="Vapi assistant ID for syncing",
-    )
-
-    # Voice Configuration
-    voice_provider: Mapped[str] = mapped_column(
-        String(50),
-        default="11labs",
-        nullable=False,
-    )
-    voice_id: Mapped[str] = mapped_column(
-        String(255),
-        default="sarah",
-        nullable=False,
-    )
-    voice_speed: Mapped[float] = mapped_column(
-        Float,
-        default=1.0,
-        nullable=False,
-    )
-
-    # AI Model Configuration
-    ai_model: Mapped[str] = mapped_column(
-        String(100),
-        default="gpt-4o-mini",
-        nullable=False,
-    )
-    ai_temperature: Mapped[float] = mapped_column(
-        Float,
-        default=0.7,
-        nullable=False,
-    )
-    ai_max_tokens: Mapped[int] = mapped_column(
-        Integer,
-        default=500,
-        nullable=False,
-    )
-
-    # Transcriber Configuration
-    transcriber_provider: Mapped[str] = mapped_column(
-        String(50),
-        default="deepgram",
-        nullable=False,
-    )
-    transcriber_model: Mapped[str] = mapped_column(
-        String(100),
-        default="nova-2",
-        nullable=False,
-    )
-    transcriber_language: Mapped[str] = mapped_column(
-        String(10),
-        default="en",
-        nullable=False,
     )
 
     # Conversation Settings
@@ -214,6 +134,42 @@ class StudioConfig(Base):
         nullable=False,
     )
 
+    # Relationships
+    user: Mapped["User"] = relationship("User", back_populates="studio_configs")
+
+    # Related configs (1:1 relationships)
+    email_config: Mapped[Optional["EmailConfig"]] = relationship(
+        "EmailConfig",
+        back_populates="studio_config",
+        uselist=False,
+        cascade="all, delete-orphan"
+    )
+    voice_config: Mapped[Optional["VoiceConfig"]] = relationship(
+        "VoiceConfig",
+        back_populates="studio_config",
+        uselist=False,
+        cascade="all, delete-orphan"
+    )
+    ai_config: Mapped[Optional["AIConfig"]] = relationship(
+        "AIConfig",
+        back_populates="studio_config",
+        uselist=False,
+        cascade="all, delete-orphan"
+    )
+    transcriber_config: Mapped[Optional["TranscriberConfig"]] = relationship(
+        "TranscriberConfig",
+        back_populates="studio_config",
+        uselist=False,
+        cascade="all, delete-orphan"
+    )
+
     def __repr__(self) -> str:
         """String representation for debugging."""
         return f"<StudioConfig(id={self.id}, user_id={self.user_id}, organization={self.organization_name})>"
+
+
+# Import the related config models at the end to avoid circular imports
+from .email_config import EmailConfig
+from .voice_config import VoiceConfig
+from .ai_config import AIConfig
+from .transcriber_config import TranscriberConfig

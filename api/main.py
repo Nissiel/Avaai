@@ -11,3 +11,7 @@ load_dotenv(env_path)
 from api.src.core.app import create_app
 
 app = create_app()
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("api.main:app", host="0.0.0.0", port=5555, reload=True)

@@ -31,7 +31,6 @@ import {
   handleStudioUpdateError,
   showStudioUpdateLoading,
 } from "@/lib/toast/studio-update-toasts";
-import { useIntegrationsStatus } from "@/lib/hooks/use-integrations-status";
 import {
   PERSONA_PROMPTS,
   PERSONA_LABELS,
@@ -191,7 +190,6 @@ export function StudioSettingsForm({
     };
   }, [form.watch("aiModel"), form.watch("voiceId")]);
 
-  const integrations = useIntegrationsStatus();
 
   // 🔥 DIVINE: Clean mutation using orchestrator
   type UpdateVariables = {
@@ -224,8 +222,6 @@ export function StudioSettingsForm({
         form.reset(savedConfig);
         onLinkedAssistantChange?.(savedConfig.vapiAssistantId ?? null);
       }
-
-      integrations.invalidate?.();
 
       // Show appropriate toasts
       handleStudioUpdateToasts(result);
@@ -352,8 +348,7 @@ export function StudioSettingsForm({
         <form
           className="space-y-4"
           onSubmit={form.handleSubmit((values) => {
-            const skipVapiSync = !(integrations.vapi.configured);
-            updateMutation.mutate({ values, skipVapiSync });
+            updateMutation.mutate({ values, skipVapiSync: false });
           })}
         >
 
@@ -1251,12 +1246,6 @@ export function StudioSettingsForm({
               </div>
             )}
             <div className="flex flex-col gap-3">
-              {!integrations.vapi.configured && (
-                <div className="flex items-center gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-100">
-                  <AlertCircle className="h-3.5 w-3.5" />
-                  <span>Configure your Vapi API key to enable automatic sync.</span>
-                </div>
-              )}
               <div className="flex items-center justify-between gap-4">
                 {/* Cost Calculator Display */}
                 <div className="flex items-center gap-2">

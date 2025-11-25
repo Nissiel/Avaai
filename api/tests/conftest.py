@@ -13,6 +13,7 @@ os.environ["AVA_API_ENVIRONMENT"] = "test"
 os.environ["AVA_API_LOG_LEVEL"] = "DEBUG"
 os.environ["AVA_API_JWT_SECRET_KEY"] = "test_secret_key_for_testing_only"
 os.environ["AVA_API_VAPI_API_KEY"] = "test_vapi_key"
+os.environ["AVA_API_SMTP_ENCRYPTION_KEY"] = "wJ2YcYzaO6F6DRKCVh0b07XHtcwPa5wPLXnw0lPwQxI="
 os.environ["INTEGRATIONS_STUB_MODE"] = "true"  # Enable stubs for testing
 os.environ["CIRCUIT_BREAKER_ENABLED"] = "true"
 os.environ["RATE_LIMIT_PER_MINUTE"] = "60"  # Higher limit for tests

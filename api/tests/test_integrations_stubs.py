@@ -8,8 +8,10 @@ class DummyUser:
     def __init__(self, *, user_id: str = "user-1", email: str = "test@example.com"):
         self.id = user_id
         self.email = email
-        self.twilio_account_sid = None
-        self.twilio_auth_token = None
+        # Match the User model field names (encrypted fields)
+        self.twilio_account_sid_encrypted = None
+        self.twilio_auth_token_encrypted = None
+        self.vapi_api_key_encrypted = None
 
 
 def _client():

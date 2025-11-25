@@ -420,11 +420,9 @@
       "subtitle": "Manage your personal details and configure your Ava studio."
     },
     "tabs": {
-      "profile": "Profile",
-      "studio": "Studio settings",
-      "vapi": "אינטגרציית Vapi",
-      "twilio": "אינטגרציית Twilio",
-      "email": "שליחת מייל"
+      "profile": "פרופיל",
+      "business": "עסק",
+      "integrations": "אינטגרציות"
     },
     "profile": {
       "title": "User profile",
@@ -432,9 +430,8 @@
       "form": {
         "name": "Full name",
         "email": "Email",
-        "phone": "Phone (optional)",
-        "phonePlaceholder": "+1 415 555 0100",
-        "locale": "Default language"
+        "phone": "Phone",
+        "phonePlaceholder": "+1 415 555 0100"
       },
       "actions": {
         "reset": "Reset",
@@ -513,6 +510,22 @@
           "professional": "Professional",
           "energetic": "Energetic"
         }
+      }
+    },
+    "integrations": {
+      "title": "אינטגרציות",
+      "description": "חברו שירותים חיצוניים כדי לחזק את סוכן ה-AI שלכם",
+      "calendar": {
+        "name": "יומן",
+        "description": "תזמון פגישות ומפגשים"
+      },
+      "whatsapp": {
+        "name": "WhatsApp",
+        "description": "פלטפורמת הודעות עסקית"
+      },
+      "crm": {
+        "name": "CRM",
+        "description": "ניהול קשרי לקוחות"
       }
     },
     "vapi": {
@@ -954,6 +967,25 @@
       },
       "confirm": {
         "delete": "למחוק את פרטי הכניסה של Twilio?"
+      }
+    }
+  },
+  "setupChecklist": {
+    "title": "השלם את ההגדרות",
+    "dismiss": "סגור",
+    "completeLater": "השלם מאוחר יותר",
+    "items": {
+      "profile": {
+        "label": "הוסף פרטי עסק",
+        "description": "הגדר את שם החברה"
+      },
+      "phone": {
+        "label": "חבר מספר טלפון",
+        "description": "קבל מספר לקבלת שיחות"
+      },
+      "assistant": {
+        "label": "צור את העוזר הראשון",
+        "description": "הגדר את הפקידה הווירטואלית שלך"
       }
     }
   }

@@ -4,6 +4,7 @@ Repository functions for persisting and querying call records.
 
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timedelta, timezone
 from typing import Iterable, Optional, Sequence
 
@@ -14,20 +15,19 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.src.infrastructure.persistence.models.call import CallRecord
 
+logger = logging.getLogger(__name__)
 
-def _coerce_tenant_id(value):
-    """Normalize tenant identifiers so UUID columns can be filtered reliably."""
+
+def _coerce_user_id(value) -> str | None:
+    """Normalize user identifiers to strings for VARCHAR columns."""
 
     if value is None:
         return None
     if isinstance(value, UUID):
-        return value
+        return str(value)
     if isinstance(value, str):
-        try:
-            return UUID(value)
-        except ValueError:
-            return value
-    return value
+        return value
+    return str(value)
 
 
 async def upsert_calls(session: AsyncSession, calls: Iterable[CallRecord]) -> None:
@@ -46,16 +46,16 @@ async def upsert_calls(session: AsyncSession, calls: Iterable[CallRecord]) -> No
 async def get_recent_calls(
     session: AsyncSession,
     *,
-    tenant_id: Optional[str] = None,
+    user_id: Optional[str] = None,
     since: datetime | None = None,
     limit: int = 100,
 ) -> Sequence[CallRecord]:
     """Return recent calls ordered by start time."""
 
     query: Select[tuple[CallRecord]] = select(CallRecord).order_by(CallRecord.started_at.desc())
-    tenant_filter = _coerce_tenant_id(tenant_id)
-    if tenant_filter:
-        query = query.where(CallRecord.tenant_id == tenant_filter)
+    user_filter = _coerce_user_id(user_id)
+    if user_filter:
+        query = query.where(CallRecord.user_id == user_filter)
     if since:
         query = query.where(CallRecord.started_at >= since)
     if limit:
@@ -68,16 +68,16 @@ async def get_recent_calls(
 async def get_calls_in_range(
     session: AsyncSession,
     *,
-    tenant_id,
+    user_id,
     start: datetime,
     end: datetime,
 ) -> Sequence[CallRecord]:
     """Return calls within a date range for analytics."""
 
-    tenant_filter = _coerce_tenant_id(tenant_id)
+    user_filter = _coerce_user_id(user_id)
     query: Select[tuple[CallRecord]] = (
         select(CallRecord)
-        .where(CallRecord.tenant_id == tenant_filter)
+        .where(CallRecord.user_id == user_filter)
         .where(CallRecord.started_at >= start)
         .where(CallRecord.started_at <= end)
     )
@@ -105,42 +105,35 @@ async def get_call_by_id(session: AsyncSession, call_id: str) -> CallRecord | No
     return await session.get(CallRecord, call_id)
 
 
-async def delete_call_record(session: AsyncSession, call_id: str, tenant_id: str) -> bool:
-    """Delete a call record if it belongs to the tenant."""
-    
-    # 🔥 DIVINE: Add logging for debugging
-    print(f"🗑️  DELETE CALL ATTEMPT:")
-    print(f"   Call ID: {call_id} (type: {type(call_id).__name__}, len: {len(call_id)})")
-    print(f"   Tenant ID: {tenant_id}")
-    
-    # 🔥 DIVINE: Try to find by ID first
+async def delete_call_record(session: AsyncSession, call_id: str, user_id: str) -> bool:
+    """Delete a call record if it belongs to the user."""
+
+    logger.debug("Attempting to delete call: call_id=%s, user_id=%s", call_id, user_id)
+
+    # Try to find by ID first
     call = await session.get(CallRecord, call_id)
-    
+
     if not call:
-        # 🔥 DIVINE: If not found by direct get, try query (maybe ID has extra chars)
-        print(f"   ⚠️  Not found by session.get(), trying query...")
-        from sqlalchemy import select
+        # If not found by direct get, try query (maybe ID has extra chars)
+        logger.debug("Call not found by session.get(), trying stripped query")
         stmt = select(CallRecord).where(CallRecord.id == call_id.strip())
         result = await session.execute(stmt)
         call = result.scalar_one_or_none()
-    
+
     if not call:
-        print(f"   ❌ Call not found in database")
+        logger.debug("Call %s not found in database", call_id)
         return False
-    
-    print(f"   ✅ Found call: {call.id}")
-    print(f"   📋 Call tenant_id: {call.tenant_id} (type: {type(call.tenant_id).__name__})")
-    print(f"   🔍 Expected tenant_id: {tenant_id} (type: {type(tenant_id).__name__})")
-    
-    # 🔥 DIVINE: Compare tenant IDs as strings to avoid UUID vs str mismatch
-    if str(call.tenant_id) != str(tenant_id):
-        print(f"   ❌ Tenant ID mismatch!")
+
+    logger.debug("Found call: id=%s, user_id=%s", call.id, call.user_id)
+
+    # Compare user IDs as strings to avoid UUID vs str mismatch
+    if str(call.user_id) != str(user_id):
+        logger.warning("User ID mismatch: call.user_id=%s, requested user_id=%s", call.user_id, user_id)
         return False
-    
-    print(f"   🗑️  Deleting call...")
+
     await session.delete(call)
     await session.commit()
-    print(f"   ✅ Call deleted successfully")
+    logger.debug("Call %s deleted successfully", call_id)
     return True
 
 

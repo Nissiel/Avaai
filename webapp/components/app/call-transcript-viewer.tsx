@@ -21,12 +21,14 @@ import { clientLogger } from "@/lib/logging/client-logger";
 interface CallTranscriptViewerProps {
   call: {
     id: string;
-    customerNumber: string;
-    transcript?: string;
+    customerNumber?: string | null;
+    transcript?: string | null;
     duration?: string;
-    cost?: number;
+    durationSeconds?: number | null;
+    cost?: number | null;
     status?: string;
     createdAt?: string;
+    startedAt?: string | null;
   };
   onClose?: () => void;
   onSendEmail?: (callId: string) => Promise<void>;
@@ -110,7 +112,7 @@ export function CallTranscriptViewer({ call, onClose, onSendEmail }: CallTranscr
                     {call.duration}
                   </span>
                 )}
-                {call.cost !== undefined && (
+                {call.cost != null && (
                   <span className="flex items-center gap-1">
                     <DollarSign className="h-3 w-3" />
                     ${call.cost.toFixed(4)}

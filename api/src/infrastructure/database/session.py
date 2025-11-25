@@ -13,7 +13,7 @@ from collections.abc import AsyncGenerator
 
 from sqlalchemy.exc import InterfaceError, OperationalError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-from sqlalchemy.pool import NullPool
+from sqlalchemy.pool import NullPool, AsyncAdaptedQueuePool
 
 try:  # pragma: no cover - optional dependency
     from asyncpg import exceptions as asyncpg_exceptions  # type: ignore
@@ -26,23 +26,24 @@ logger = logging.getLogger("ava.database")
 
 settings = get_settings()
 
-# 🔥 DIVINE ARCHITECTURE: Render + PgBouncer (transaction pooling)
-# PgBouncer already multiplexes connections, so SQLAlchemy MUST avoid pooling.
-# Using NullPool prevents cached prepared statements from leaking across
-# logical connections and eliminates DuplicatePreparedStatementError.
+# 🔥 DIVINE ARCHITECTURE: Supabase Session Pooler (port 5432)
+# Session Mode supports prepared statements, so we can use them safely.
+# Using AsyncAdaptedQueuePool for better connection reuse with reasonable limits.
 engine = create_async_engine(
     settings.database_url,
     echo=False,
     future=True,
-    poolclass=NullPool,
+    poolclass=AsyncAdaptedQueuePool,  # 🔥 Session Mode supports connection pooling
+    pool_size=5,  # 🔥 Keep 5 connections ready
+    max_overflow=10,  # 🔥 Allow up to 15 total connections
+    pool_pre_ping=True,  # 🔥 Verify connections before use
+    pool_recycle=300,  # 🔥 Recycle connections after 5 minutes
     connect_args={
-        "statement_cache_size": 0,  # 🔥 Disable asyncpg prepared statements (PgBouncer compat)
-        "prepared_statement_cache_size": 0,  # 🔥 Disable SQLAlchemy prepared statements (PgBouncer compat)
-        "timeout": 10.0,  # 🔥 10-second connection timeout (give Supabase time to wake)
+        "timeout": 60.0,  # 🔥 60-second connection timeout (give Supabase time to wake from cold start)
         "command_timeout": settings.database_statement_timeout_ms / 1000,  # 🔥 Query timeout (seconds)
         "server_settings": {
             "jit": "off",  # 🔥 Disable JIT for predictable performance
-            "application_name": "ava-api-production",  # 🔥 Identify in PostgreSQL logs
+            "application_name": "ava-api-dev",  # 🔥 Identify in PostgreSQL logs
             "statement_timeout": f"{settings.database_statement_timeout_ms}ms",  # 🔥 DIVINE: Must include unit!
         },
     },

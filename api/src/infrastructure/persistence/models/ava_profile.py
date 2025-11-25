@@ -17,26 +17,39 @@ from sqlalchemy import (
     String,
     Text,
 )
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.sql import func
+from typing import TYPE_CHECKING
+from uuid import uuid4
 
 from api.src.domain.value_objects.ava_profile import (
     DEFAULT_ALLOWED_TOPICS,
     DEFAULT_FORBIDDEN_TOPICS,
 )
 from .base import Base
-from .tenant import Tenant
+
+if TYPE_CHECKING:
+    from .user import User
 
 
 class AvaProfile(Base):
-    """SQLAlchemy model persisting per-tenant Ava personalisation."""
+    """SQLAlchemy model persisting per-user Ava personalisation."""
 
     __tablename__ = "ava_profiles"
 
-    tenant_id: Mapped[UUID] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("tenants.id", ondelete="CASCADE"),
+    id: Mapped[str] = mapped_column(
+        String(36),
         primary_key=True,
+        default=lambda: str(uuid4()),
+        nullable=False,
+    )
+
+    user_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     name: Mapped[str] = mapped_column(String(40), default="Ava", nullable=False)
     voice: Mapped[str] = mapped_column(String(64), default="alloy", nullable=False)
@@ -83,18 +96,26 @@ class AvaProfile(Base):
         ),
         nullable=False,
     )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        default=datetime.utcnow,
+        server_default=func.now(),
+        onupdate=func.now(),
         nullable=False,
     )
 
-    tenant = relationship(Tenant, backref="ava_profile", lazy="joined")
+    # Relationship
+    user: Mapped["User"] = relationship("User", back_populates="ava_profiles")
 
     def to_dict(self) -> dict:
         """Utility for serialising the profile to JSON-friendly structures."""
         return {
-            "tenant_id": str(self.tenant_id),
+            "id": str(self.id),
+            "user_id": str(self.user_id),
             "name": self.name,
             "voice": self.voice,
             "language": self.language,

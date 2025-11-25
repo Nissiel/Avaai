@@ -7,6 +7,8 @@ import {
   getBackendBaseUrl,
   loadPersistedSession,
   persistSession,
+  clearAllAuthData,
+  listenForLogout,
 } from "@/lib/auth/session-client";
 import { useSessionStore } from "@/stores/session-store";
 import { emitTokenChange } from "@/lib/hooks/use-auth-token";
@@ -113,8 +115,24 @@ export function SessionProvider({ children, session }: SessionProviderProps) {
 
     void bootstrap();
 
+    // Listen for logout events from other tabs
+    const cleanupLogoutListener = listenForLogout(() => {
+      if (!active) return;
+
+      // Another tab logged out - clear local state and redirect
+      clearAllAuthData();
+      setSession(null);
+
+      // Redirect to login
+      if (typeof window !== "undefined") {
+        const locale = window.location.pathname.match(/^\/([a-z]{2})\//)?.[1] || "en";
+        window.location.href = `/${locale}/login`;
+      }
+    });
+
     return () => {
       active = false;
+      cleanupLogoutListener();
     };
   }, [session, setSession]);
 

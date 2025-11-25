@@ -172,14 +172,14 @@ export async function verifyTwilioCredentials(
 }
 
 /**
- * Get all phone numbers for an organization
- * 
- * @param orgId - The organization ID
+ * Get all phone numbers for the authenticated user
+ *
  * @returns List of phone numbers
  */
-export async function getPhoneNumbers(orgId: string): Promise<any[]> {
+export async function getPhoneNumbers(): Promise<any[]> {
   try {
-    const response = await apiFetch(`/api/v1/phone-numbers/my-numbers?org_id=${orgId}`, {
+    // Backend now uses authenticated user directly (no query parameter needed)
+    const response = await apiFetch(`/api/v1/phone-numbers/my-numbers`, {
       method: "GET",
       baseUrl: "backend",
     });
@@ -187,7 +187,7 @@ export async function getPhoneNumbers(orgId: string): Promise<any[]> {
     if (!response.ok) {
       const errorPayload = await response.json().catch(() => ({}));
       throw new Error(
-        errorPayload.detail ?? 
+        errorPayload.detail ??
         `Failed to fetch phone numbers (status ${response.status})`
       );
     }

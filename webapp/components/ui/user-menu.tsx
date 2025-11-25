@@ -1,7 +1,6 @@
 "use client";
 
-import { LogOut, RefreshCw } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { LogOut } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useTranslations } from "next-intl";
 
@@ -15,9 +14,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { clearPersistedSession } from "@/lib/auth/session-client";
-import { emitTokenChange } from "@/lib/hooks/use-auth-token";
+import { clearAllAuthData, broadcastLogout } from "@/lib/auth/session-client";
 import { useSessionStore } from "@/stores/session-store";
+import { supabaseAuthEnabled } from "@/lib/supabase/env";
+import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client";
 
 function initials(name?: string | null): string {
   if (!name) return "AVA";
@@ -31,7 +31,6 @@ export function UserMenu() {
     session: state.session,
     setSession: state.setSession,
   }));
-  const router = useRouter();
   const locale = useLocale();
   const tMenu = useTranslations("userMenu");
   const tAuth = useTranslations("auth");
@@ -40,37 +39,41 @@ export function UserMenu() {
 
   const handleSignOut = async () => {
     try {
-      // Clear all session data
-      clearPersistedSession();
-      setSession(null);
-
-      if (typeof window !== "undefined") {
-        window.localStorage.removeItem("access_token");
-        window.localStorage.removeItem("refresh_token");
-        window.localStorage.removeItem("remember_me");
-        window.localStorage.removeItem("onboarding_completed");
-        emitTokenChange();
+      // 1. Sign out from Supabase (invalidates session on server)
+      if (supabaseAuthEnabled()) {
+        const supabase = getSupabaseBrowserClient();
+        if (supabase) {
+          await supabase.auth.signOut();
+        }
       }
 
-      // Force redirect to login page
+      // 2. Call backend logout to clear HTTP-only cookies
+      try {
+        await fetch("/api/auth/logout", {
+          method: "POST",
+          credentials: "same-origin",
+        });
+      } catch (e) {
+        console.warn("Backend logout failed:", e);
+      }
+
+      // 3. Clear all local auth data (localStorage + client cookies)
+      clearAllAuthData();
+      setSession(null);
+
+      // 4. Broadcast logout to other tabs
+      broadcastLogout();
+
+      // 5. Force redirect to login page
       const loginUrl = `/${locale}/login`.replace(/\/{2,}/g, "/");
       window.location.href = loginUrl;
     } catch (error) {
       console.error("Logout error:", error);
       // Even if logout fails, force redirect to login
+      clearAllAuthData();
       const loginUrl = `/${locale}/login`.replace(/\/{2,}/g, "/");
       window.location.href = loginUrl;
     }
-  };
-
-  const handleRestartOnboarding = () => {
-    // Clear onboarding completion flag
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("onboarding_completed");
-    }
-
-    // Navigate to onboarding
-    router.push(`/${locale}/onboarding`);
   };
 
   return (
@@ -94,17 +97,6 @@ export function UserMenu() {
           <p className="font-semibold text-foreground">{displayName}</p>
           {email ? <p className="text-muted-foreground">{email}</p> : null}
         </div>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          onSelect={(event) => {
-            event.preventDefault();
-            handleRestartOnboarding();
-          }}
-          className="gap-2 text-muted-foreground text-xs"
-        >
-          <RefreshCw className="h-3 w-3" />
-          Refaire l'onboarding
-        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onSelect={(event) => {

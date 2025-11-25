@@ -4,11 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { Sparkles } from "lucide-react";
 
-import { GlassCard } from "@/components/ui/glass-card";
 import { Badge } from "@/components/ui/badge";
 import { StudioSettingsForm } from "@/components/features/settings/studio-settings-form";
-import { VapiSetupBanner } from "@/components/features/vapi/vapi-setup-banner";
-import { useVapiStatus } from "@/lib/hooks/use-vapi-status";
 import type { StudioConfigInput } from "@/lib/validations/config";
 
 const STUDIO_CONFIG_QUERY_KEY = ["studio-config"] as const;
@@ -39,11 +36,7 @@ async function fetchStudioConfig(): Promise<StudioConfigInput> {
 }
 
 export function AssistantsStudio() {
-  const t = useTranslations("assistantsPage");
   const tHero = useTranslations("assistantsPage.hero");
-  const tDesigner = useTranslations("assistantsPage.designer");
-
-  const { hasVapiKey, isLoading: isLoadingVapi } = useVapiStatus();
 
   const studioConfigQuery = useQuery<StudioConfigInput>({
     queryKey: STUDIO_CONFIG_QUERY_KEY,
@@ -64,9 +57,6 @@ export function AssistantsStudio() {
           </h1>
         </div>
       </header>
-
-      {/* Vapi Setup Banner - Only show if user doesn't have a key */}
-      {!isLoadingVapi && !hasVapiKey && <VapiSetupBanner />}
 
       <div className="space-y-6">
         <StudioSettingsForm

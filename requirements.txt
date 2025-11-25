@@ -1,6 +1,6 @@
 # FastAPI & Server
-fastapi==0.115.0
-uvicorn[standard]==0.32.0
+fastapi==0.115.5  # Security fix: Starlette CVE-2024-47874, CVE-2025-54121
+uvicorn[standard]==0.32.1
 websockets==13.1
 
 # Configuration
@@ -21,9 +21,10 @@ psycopg2-binary==2.9.10
 greenlet==3.1.1
 
 # Authentication & Security
-python-jose[cryptography]==3.3.0
+python-jose[cryptography]==3.4.0  # Security fix: CVE-2024-33663, CVE-2024-33664
 bcrypt==4.2.0
 PyJWT==2.9.0
+supabase==2.10.0  # Supabase Auth Admin SDK
 
 # Email & Validation
 email-validator==2.2.0

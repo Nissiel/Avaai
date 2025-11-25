@@ -34,9 +34,9 @@ class RequestCorrelationMiddleware(BaseHTTPMiddleware):
             extra={"method": request.method, "path": request.url.path}
         )
 
-        # 🔥 DIVINE FIX: 20-second timeout to handle cold database starts
+        # 🔥 DIVINE FIX: 60-second timeout to handle cold Supabase database starts
         try:
-            response = await asyncio.wait_for(call_next(request), timeout=20.0)
+            response = await asyncio.wait_for(call_next(request), timeout=60.0)
             duration_ms = (time.time() - start_time) * 1000
             request_logger.info(
                 "Request completed: %s %s - %s",

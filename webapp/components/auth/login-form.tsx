@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useTranslations, useLocale } from "next-intl";
-import { useRouter } from "next/navigation";
+import { useLocale } from "next-intl";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { z } from "zod";
-import { Mail, Phone, Loader2 } from "lucide-react";
+import { Mail, Phone, Loader2, CheckCircle2 } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,11 +21,9 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
   createSessionFromTokenResponse,
-  getBackendBaseUrl,
   persistSession,
   type AuthTokenResponse,
 } from "@/lib/auth/session-client";
@@ -64,13 +63,26 @@ function detectIdentifierType(value: string): "email" | "phone" | "unknown" {
 // ============================================================================
 
 export function LoginForm() {
-  const t = useTranslations("auth");
   const router = useRouter();
+  const searchParams = useSearchParams();
   const locale = useLocale(); // Get current locale: "fr", "en", or "he"
   const [isLoading, setIsLoading] = useState(false);
   const [identifierType, setIdentifierType] = useState<"email" | "phone" | "unknown">("unknown");
   const setSession = useSessionStore((state) => state.setSession);
-  const backendBaseUrl = getBackendBaseUrl();
+
+  // Get redirect URL from query params (set by middleware or manual navigation)
+  const redirectTo = searchParams.get("redirect");
+  const passwordResetSuccess = searchParams.get("reset") === "success";
+
+  // Show toast if user just reset their password
+  useEffect(() => {
+    if (passwordResetSuccess) {
+      toast.success("Mot de passe réinitialisé", {
+        description: "Vous pouvez maintenant vous connecter avec votre nouveau mot de passe.",
+        icon: <CheckCircle2 className="h-4 w-4 text-green-500" />,
+      });
+    }
+  }, [passwordResetSuccess]);
 
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
@@ -90,6 +102,9 @@ export function LoginForm() {
     setIsLoading(true);
 
     try {
+      // 🔥 DIVINE: Always use backend API for login (handles both Supabase and legacy)
+      // This ensures consistent token handling and user resolution
+
       const response = await fetch(`/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -111,6 +126,12 @@ export function LoginForm() {
       if (typeof window !== "undefined") {
         localStorage.setItem("access_token", data.access_token);
         localStorage.setItem("refresh_token", data.refresh_token);
+
+        // 🔥 DIVINE FIX: Set cookies for middleware to detect auth state
+        const accessMaxAge = values.remember ? 60 * 60 * 24 * 30 : 60 * 60 * 24 * 7; // 30 days if remember, else 7 days
+        document.cookie = `access_token=${data.access_token}; path=/; max-age=${accessMaxAge}; SameSite=Lax`;
+        document.cookie = `refresh_token=${data.refresh_token}; path=/; max-age=${60 * 60 * 24 * 30}; SameSite=Lax`;
+
         emitTokenChange();
 
         if (values.remember) {
@@ -126,23 +147,45 @@ export function LoginForm() {
         description: `Bienvenue ${data.user?.name || ""}`,
       });
 
-      // Redirection avec locale préservée
-      // Check localStorage first (faster + offline support)
-      const localOnboardingCompleted = typeof window !== "undefined"
-        ? localStorage.getItem("onboarding_completed") === "true"
-        : false;
-
-      const isOnboardingCompleted = localOnboardingCompleted || data.user?.onboarding_completed;
-
-      if (!isOnboardingCompleted) {
-        router.push(`/${locale}/onboarding`);
+      // Determine redirect destination
+      let destination: string;
+      if (redirectTo) {
+        // Redirect to the page they were trying to access
+        // Ensure it's a valid path (starts with /) and not an external URL
+        const isValidRedirect = redirectTo.startsWith("/") && !redirectTo.includes("://");
+        destination = isValidRedirect ? redirectTo : `/${locale}/dashboard`;
       } else {
-        router.push(`/${locale}/dashboard`);
+        // Default to dashboard
+        destination = `/${locale}/dashboard`;
       }
+
+      router.push(destination);
     } catch (error) {
-      toast.error("Erreur de connexion", {
-        description: error instanceof Error ? error.message : "Vérifiez vos identifiants",
-      });
+      console.error("Login error:", error);
+      const errorMessage = error instanceof Error ? error.message : "Vérifiez vos identifiants";
+
+      // Map backend errors to user-friendly messages
+      let title = "Erreur de connexion";
+      let description = errorMessage;
+
+      if (errorMessage.toLowerCase().includes("invalid credentials")) {
+        title = "Identifiants incorrects";
+        description = "L'email/téléphone ou le mot de passe est incorrect. Veuillez réessayer.";
+      } else if (errorMessage.toLowerCase().includes("user not found")) {
+        title = "Compte introuvable";
+        description = "Aucun compte n'est associé à cet identifiant. Voulez-vous créer un compte ?";
+      } else if (errorMessage.toLowerCase().includes("rate limit") || errorMessage.toLowerCase().includes("too many")) {
+        title = "Trop de tentatives";
+        description = "Veuillez patienter quelques minutes avant de réessayer.";
+      } else if (errorMessage.toLowerCase().includes("timeout") || errorMessage.toLowerCase().includes("timed out")) {
+        title = "Délai dépassé";
+        description = "Le serveur met trop de temps à répondre. Veuillez réessayer.";
+      } else if (errorMessage.toLowerCase().includes("token")) {
+        title = "Session expirée";
+        description = "Votre session a expiré. Veuillez vous reconnecter.";
+      }
+
+      toast.error(title, { description, duration: 6000 });
     } finally {
       setIsLoading(false);
     }
@@ -163,15 +206,11 @@ export function LoginForm() {
                 </FormLabel>
                 <FormControl>
                   <div className="relative">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 transition-colors">
-                      {identifierType === "email" && (
-                        <Mail className="h-5 w-5 text-green-600" />
-                      )}
-                      {identifierType === "phone" && (
-                        <Phone className="h-5 w-5 text-blue-600" />
-                      )}
-                      {identifierType === "unknown" && (
-                        <Mail className="h-5 w-5 text-muted-foreground" />
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                      {identifierType === "phone" ? (
+                        <Phone className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <Mail className="h-4 w-4 text-muted-foreground" />
                       )}
                     </div>
                     <Input
@@ -179,11 +218,7 @@ export function LoginForm() {
                       type="text"
                       placeholder="email@exemple.com ou +33 6 12 34 56 78"
                       disabled={isLoading}
-                      className={cn(
-                        "h-12 pl-12 pr-4 text-base transition-all duration-200",
-                        identifierType === "email" && "border-green-500/50 bg-green-50/50 focus-visible:border-green-500 focus-visible:ring-green-500/20 dark:bg-green-950/20",
-                        identifierType === "phone" && "border-blue-500/50 bg-blue-50/50 focus-visible:border-blue-500 focus-visible:ring-blue-500/20 dark:bg-blue-950/20"
-                      )}
+                      className="h-11 pl-10 text-sm"
                       onChange={(e) => {
                         field.onChange(e);
                         handleIdentifierChange(e.target.value);
@@ -217,9 +252,9 @@ export function LoginForm() {
                   <Input
                     {...field}
                     type="password"
-                    placeholder="••••••••••••"
+                    placeholder="••••••••"
                     disabled={isLoading}
-                    className="h-12 text-base"
+                    className="h-11"
                   />
                 </FormControl>
                 <FormMessage className="text-xs" />
@@ -250,13 +285,12 @@ export function LoginForm() {
           {/* Submit Button */}
           <Button
             type="submit"
-            className="w-full h-12 text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
-            size="lg"
+            className="w-full h-11"
             disabled={isLoading}
           >
             {isLoading ? (
               <>
-                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Connexion en cours...
               </>
             ) : (
@@ -284,9 +318,9 @@ export function LoginForm() {
           variant="outline"
           type="button"
           disabled={isLoading}
-          className="h-11 font-medium hover:bg-accent/80"
+          className="h-10"
         >
-          <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
+          <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
             <path
               d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
               fill="#4285F4"
@@ -310,9 +344,9 @@ export function LoginForm() {
           variant="outline"
           type="button"
           disabled={isLoading}
-          className="h-11 font-medium hover:bg-accent/80"
+          className="h-10"
         >
-          <svg className="mr-2 h-5 w-5" viewBox="0 0 23 23">
+          <svg className="mr-2 h-4 w-4" viewBox="0 0 23 23">
             <path fill="#f3f3f3" d="M0 0h23v23H0z" />
             <path fill="#f35325" d="M1 1h10v10H1z" />
             <path fill="#81bc06" d="M12 1h10v10H12z" />

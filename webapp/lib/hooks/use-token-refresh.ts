@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { clientLogger } from "@/lib/logging/client-logger";
+import { emitTokenChange } from "@/lib/hooks/use-auth-token";
 
 const REFRESH_INTERVAL_MS = 10 * 60 * 1000; // Refresh every 10 minutes (access token expires in 15)
 const VISIBILITY_REFRESH_DELAY_MS = 2000; // Wait 2s after tab becomes visible before refreshing
@@ -29,7 +30,25 @@ export function useTokenRefresh() {
         });
 
         if (response.ok) {
-          clientLogger.info("✅ Token refreshed successfully");
+          // Parse response to get new tokens
+          const data = await response.json();
+
+          // Persist new tokens to localStorage
+          if (data.access_token) {
+            try {
+              window.localStorage.setItem("access_token", data.access_token);
+              if (data.refresh_token) {
+                window.localStorage.setItem("refresh_token", data.refresh_token);
+              }
+              // Emit token change event so hooks update
+              emitTokenChange();
+              clientLogger.info("✅ Token refreshed and persisted to localStorage");
+            } catch (storageError) {
+              clientLogger.warn("⚠️ Token refreshed but failed to persist", { storageError });
+            }
+          } else {
+            clientLogger.info("✅ Token refreshed (cookies updated)");
+          }
         } else {
           clientLogger.warn("⚠️ Token refresh returned non-OK status", {
             status: response.status,

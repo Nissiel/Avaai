@@ -3,6 +3,8 @@
 import type { Session } from "next-auth";
 import { emitTokenChange } from "@/lib/hooks/use-auth-token";
 import { getBackendUrl } from "@/lib/config/env";
+import { supabaseAuthEnabled } from "@/lib/supabase/env";
+import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client";
 
 export interface AuthUserPayload {
   id: string;
@@ -108,6 +110,92 @@ export function clearPersistedSession() {
 }
 
 /**
+ * Clear all authentication data from storage
+ * This should be called on logout to ensure complete cleanup
+ */
+export function clearAllAuthData() {
+  if (typeof window === "undefined") return;
+
+  try {
+    // Clear localStorage auth data
+    window.localStorage.removeItem("access_token");
+    window.localStorage.removeItem("refresh_token");
+    window.localStorage.removeItem("remember_me");
+    window.localStorage.removeItem("onboarding_completed");
+    window.localStorage.removeItem(SESSION_STORAGE_KEY);
+
+    // Clear cookies (set to expired)
+    document.cookie = "access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";
+    document.cookie = "refresh_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";
+
+    // Emit token change to notify listeners
+    emitTokenChange();
+  } catch (error) {
+    console.warn("Failed to clear all auth data", error);
+  }
+}
+
+/**
+ * Broadcast logout event to all tabs
+ * Uses BroadcastChannel API with localStorage fallback
+ */
+export function broadcastLogout() {
+  if (typeof window === "undefined") return;
+
+  try {
+    // Try BroadcastChannel first (more reliable)
+    if ("BroadcastChannel" in window) {
+      const channel = new BroadcastChannel("auth_channel");
+      channel.postMessage({ type: "LOGOUT" });
+      channel.close();
+    }
+
+    // Also use localStorage event as fallback
+    // This triggers storage event in other tabs
+    window.localStorage.setItem("logout_event", Date.now().toString());
+    window.localStorage.removeItem("logout_event");
+  } catch (error) {
+    console.warn("Failed to broadcast logout", error);
+  }
+}
+
+/**
+ * Listen for logout events from other tabs
+ */
+export function listenForLogout(callback: () => void): () => void {
+  if (typeof window === "undefined") return () => {};
+
+  const cleanups: (() => void)[] = [];
+
+  // BroadcastChannel listener
+  if ("BroadcastChannel" in window) {
+    const channel = new BroadcastChannel("auth_channel");
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data?.type === "LOGOUT") {
+        callback();
+      }
+    };
+    channel.addEventListener("message", handleMessage);
+    cleanups.push(() => {
+      channel.removeEventListener("message", handleMessage);
+      channel.close();
+    });
+  }
+
+  // Storage event listener (fallback)
+  const handleStorage = (event: StorageEvent) => {
+    if (event.key === "logout_event" && event.newValue) {
+      callback();
+    }
+  };
+  window.addEventListener("storage", handleStorage);
+  cleanups.push(() => window.removeEventListener("storage", handleStorage));
+
+  // Return cleanup function
+  return () => cleanups.forEach(fn => fn());
+}
+
+/**
  * 🎯 DIVINE: Refresh access token using refresh token
  * Returns new access token or null if refresh failed
  */
@@ -117,6 +205,33 @@ let inflightRefreshToken: string | null = null;
 export async function refreshAccessToken(refreshToken: string): Promise<string | null> {
   if (!refreshToken) {
     return null;
+  }
+
+  // Supabase path: let supabase-js manage refresh and just return the current session token
+  if (supabaseAuthEnabled()) {
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase) return null;
+    try {
+      const { data, error } = await supabase.auth.getSession();
+      if (error || !data.session) {
+        console.error("Supabase session fetch failed:", error?.message);
+        return null;
+      }
+      const session = data.session;
+      if (typeof window !== "undefined") {
+        try {
+          if (session.access_token) localStorage.setItem("access_token", session.access_token);
+          if (session.refresh_token) localStorage.setItem("refresh_token", session.refresh_token);
+        } catch (err) {
+          console.warn("Failed to persist Supabase tokens", err);
+        }
+        emitTokenChange();
+      }
+      return session.access_token;
+    } catch (error) {
+      console.error("Supabase token refresh exception:", error);
+      return null;
+    }
   }
 
   if (inflightRefresh && inflightRefreshToken === refreshToken) {
@@ -147,13 +262,15 @@ export async function refreshAccessToken(refreshToken: string): Promise<string |
       if (!response.ok) {
         console.error("❌ Token refresh failed:", response.status, requestId);
         if (typeof window !== "undefined") {
-          // Clear localStorage (legacy)
-          window.localStorage.removeItem("access_token");
-          window.localStorage.removeItem("refresh_token");
-          emitTokenChange();
+          // Clear all auth data
+          clearAllAuthData();
+
+          // Redirect to login with current path for post-login redirect
+          const currentPath = window.location.pathname;
+          const locale = currentPath.match(/^\/([a-z]{2})\//)?.[1] || "en";
+          const loginUrl = `/${locale}/login?redirect=${encodeURIComponent(currentPath)}`;
+          window.location.href = loginUrl;
         }
-        // Redirect to login if refresh fails
-        window.location.href = "/login";
         return null;
       }
 

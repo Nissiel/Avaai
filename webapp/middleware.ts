@@ -26,8 +26,8 @@ const PROTECTED_ROUTE_PREFIXES = [
   '/calls',
   '/assistants',
   '/settings',
-  '/onboarding',
   '/ava-profile',
+  '/app',
 ]
 
 /**
@@ -67,10 +67,17 @@ function isProtectedRoute(pathname: string): boolean {
 
 /**
  * Extrait le token d'authentification des cookies
+ * 🔥 DIVINE: Supports both custom JWT and Supabase Auth tokens
  */
 function getAuthToken(request: NextRequest): string | null {
-  // Try cookie first (server-side)
-  const cookieToken = request.cookies.get('access_token')?.value
+  // Try cookies first (server-side)
+  // Check custom token first, then Supabase token
+  const cookieToken =
+    request.cookies.get('access_token')?.value ||
+    request.cookies.get('sb-access-token')?.value ||
+    // Supabase stores tokens with project ref prefix
+    Array.from(request.cookies.getAll())
+      .find(c => c.name.startsWith('sb-') && c.name.endsWith('-auth-token'))?.value
   if (cookieToken) return cookieToken
 
   // Fallback: check Authorization header

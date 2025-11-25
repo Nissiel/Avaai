@@ -8,10 +8,13 @@ from datetime import datetime
 from typing import Optional
 
 from sqlalchemy import DateTime, Float, ForeignKey, Integer, JSON, String, Text
-from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from typing import TYPE_CHECKING
 
 from .base import Base
+
+if TYPE_CHECKING:
+    from .user import User
 
 
 class CallRecord(Base):
@@ -21,7 +24,7 @@ class CallRecord(Base):
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
     assistant_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
-    tenant_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     customer_number: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
     status: Mapped[str] = mapped_column(String(32), nullable=False)
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
@@ -30,6 +33,9 @@ class CallRecord(Base):
     cost: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     meta: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
     transcript: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+    # Relationships
+    user: Mapped["User"] = relationship("User", back_populates="call_records")
 
     def update_from_payload(self, payload: dict[str, object]) -> None:
         """Update the record using a Vapi call payload."""
