@@ -213,7 +213,7 @@ export function SignupForm() {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
 
         {/* ===== NAME FIELD ===== */}
         <FormField
@@ -221,19 +221,19 @@ export function SignupForm() {
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-sm font-semibold">
+              <FormLabel className="text-sm font-medium">
                 Nom complet
               </FormLabel>
               <FormControl>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground transition-colors" />
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground transition-colors" />
                   <Input
                     {...field}
                     type="text"
                     placeholder="Jean Dupont"
                     disabled={isLoading}
                     className={cn(
-                      "h-12 pl-11 pr-4 transition-all duration-200",
+                      "h-11 pl-10 pr-4 transition-all duration-200",
                       "border-2 rounded-xl",
                       "focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
                     )}
@@ -251,13 +251,13 @@ export function SignupForm() {
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-sm font-semibold">
+              <FormLabel className="text-sm font-medium">
                 Email
               </FormLabel>
               <FormControl>
                 <div className="relative">
                   <Mail className={cn(
-                    "absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 transition-colors",
+                    "absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 transition-colors",
                     field.value && field.value.includes("@")
                       ? "text-green-500"
                       : "text-muted-foreground"
@@ -268,7 +268,7 @@ export function SignupForm() {
                     placeholder="jean.dupont@example.com"
                     disabled={isLoading}
                     className={cn(
-                      "h-12 pl-11 pr-4 transition-all duration-200",
+                      "h-11 pl-10 pr-4 transition-all duration-200",
                       "border-2 rounded-xl",
                       "focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20",
                       field.value && field.value.includes("@") && "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800"
@@ -287,13 +287,13 @@ export function SignupForm() {
           name="phone"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-sm font-semibold">
-                Téléphone <span className="text-muted-foreground font-normal">(optionnel)</span>
+              <FormLabel className="text-sm font-medium">
+                Téléphone <span className="text-muted-foreground font-normal text-xs">(optionnel)</span>
               </FormLabel>
               <FormControl>
                 <div className="relative">
                   <Phone className={cn(
-                    "absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 transition-colors",
+                    "absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 transition-colors",
                     phoneType === "valid" ? "text-blue-500" : "text-muted-foreground"
                   )} />
                   <Input
@@ -306,7 +306,7 @@ export function SignupForm() {
                       handlePhoneChange(e.target.value);
                     }}
                     className={cn(
-                      "h-12 pl-11 pr-4 transition-all duration-200",
+                      "h-11 pl-10 pr-4 transition-all duration-200",
                       "border-2 rounded-xl",
                       "focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20",
                       phoneType === "valid" && "bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800"
@@ -328,12 +328,12 @@ export function SignupForm() {
           name="password"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-sm font-semibold">
+              <FormLabel className="text-sm font-medium">
                 Mot de passe
               </FormLabel>
               <FormControl>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground transition-colors" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground transition-colors" />
                   <Input
                     {...field}
                     type="password"
@@ -344,7 +344,7 @@ export function SignupForm() {
                       handlePasswordChange(e.target.value);
                     }}
                     className={cn(
-                      "h-12 pl-11 pr-4 transition-all duration-200",
+                      "h-11 pl-10 pr-4 transition-all duration-200",
                       "border-2 rounded-xl",
                       "focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
                     )}
@@ -352,8 +352,8 @@ export function SignupForm() {
                 </div>
               </FormControl>
               {field.value && (
-                <div className="flex items-center gap-2 mt-2">
-                  <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                <div className="flex items-center gap-2 mt-1.5">
+                  <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
                     <div
                       className={cn(
                         "h-full transition-all duration-300",
@@ -382,13 +382,13 @@ export function SignupForm() {
           name="confirmPassword"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-sm font-semibold">
+              <FormLabel className="text-sm font-medium">
                 Confirmer le mot de passe
               </FormLabel>
               <FormControl>
                 <div className="relative">
                   <Lock className={cn(
-                    "absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 transition-colors",
+                    "absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 transition-colors",
                     field.value && field.value === form.watch("password")
                       ? "text-green-500"
                       : "text-muted-foreground"
@@ -399,14 +399,14 @@ export function SignupForm() {
                     placeholder="••••••••"
                     disabled={isLoading}
                     className={cn(
-                      "h-12 pl-11 pr-4 transition-all duration-200",
+                      "h-11 pl-10 pr-4 transition-all duration-200",
                       "border-2 rounded-xl",
                       "focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20",
                       field.value && field.value === form.watch("password") && "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800"
                     )}
                   />
                   {field.value && field.value === form.watch("password") && (
-                    <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-green-500" />
+                    <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-green-500" />
                   )}
                 </div>
               </FormControl>
@@ -482,7 +482,7 @@ export function SignupForm() {
           type="submit"
           disabled={isLoading}
           className={cn(
-            "w-full h-12 text-base font-semibold",
+            "w-full h-11 text-base font-semibold",
             "bg-gradient-to-r from-brand-500 to-brand-600",
             "hover:from-brand-600 hover:to-brand-700",
             "shadow-lg hover:shadow-xl",
@@ -491,7 +491,7 @@ export function SignupForm() {
         >
           {isLoading ? (
             <>
-              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Création en cours...
             </>
           ) : (
@@ -500,7 +500,7 @@ export function SignupForm() {
         </Button>
 
         {/* ===== DIVIDER ===== */}
-        <div className="relative my-6">
+        <div className="relative my-4">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-muted"></div>
           </div>
@@ -517,9 +517,9 @@ export function SignupForm() {
             type="button"
             variant="outline"
             disabled={isLoading}
-            className="h-11 border-2 hover:bg-muted/50 transition-all duration-200"
+            className="h-10 border-2 hover:bg-muted/50 transition-all duration-200"
           >
-            <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
+            <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
               <path
                 fill="#4285F4"
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -544,9 +544,9 @@ export function SignupForm() {
             type="button"
             variant="outline"
             disabled={isLoading}
-            className="h-11 border-2 hover:bg-muted/50 transition-all duration-200"
+            className="h-10 border-2 hover:bg-muted/50 transition-all duration-200"
           >
-            <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24" fill="none">
+            <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" fill="none">
               <rect x="3" y="3" width="8" height="8" fill="#F25022" />
               <rect x="13" y="3" width="8" height="8" fill="#7FBA00" />
               <rect x="3" y="13" width="8" height="8" fill="#00A4EF" />
@@ -554,17 +554,6 @@ export function SignupForm() {
             </svg>
             Outlook
           </Button>
-        </div>
-
-        {/* ===== FOOTER - ALREADY HAVE ACCOUNT ===== */}
-        <div className="text-center text-sm text-muted-foreground mt-6">
-          Vous avez déjà un compte ?{" "}
-          <Link
-            href={`/${locale}/login`}
-            className="text-brand-600 hover:text-brand-700 font-medium hover:underline transition-colors"
-          >
-            Se connecter
-          </Link>
         </div>
 
       </form>

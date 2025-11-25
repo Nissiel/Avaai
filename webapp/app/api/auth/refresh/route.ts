@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { proxyBackend } from "../../_lib/backend-client";
+import { isDevBypassEnabled, createMockRefreshResponse } from "../_lib/dev-bypass";
 
 const BACKEND_PATH = "/api/v1/auth/refresh";
 
 export async function POST(request: NextRequest) {
+  // 🔓 DEV BYPASS: Return mock refresh response without hitting backend
+  if (isDevBypassEnabled()) {
+    return createMockRefreshResponse();
+  }
+
   // Get refresh token from cookies
   const refreshToken = request.cookies.get("refresh_token")?.value;
 

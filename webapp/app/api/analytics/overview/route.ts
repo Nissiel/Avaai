@@ -2,11 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { fetchAnalyticsOverview } from "@/services/analytics-service";
 import { getRequestAccessToken } from "@/app/api/_utils/auth";
+import { isDevBypassEnabled, createMockAnalyticsOverview } from "@/app/api/auth/_lib/dev-bypass";
 
 // Force dynamic rendering - this route fetches real-time data
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
+  // 🔓 DEV BYPASS: Return mock analytics without hitting backend
+  if (isDevBypassEnabled()) {
+    return createMockAnalyticsOverview();
+  }
+
   try {
     const token = getRequestAccessToken(request);
     if (!token) {

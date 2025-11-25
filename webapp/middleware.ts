@@ -92,6 +92,12 @@ function getAuthToken(request: NextRequest): string | null {
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
+  // 🔓 DEV BYPASS: Skip all auth checks in development mode
+  if (process.env.NEXT_PUBLIC_DEV_BYPASS_AUTH === 'true') {
+    console.log('🔓 DEV BYPASS: Auth middleware skipped for', pathname)
+    return NextResponse.next()
+  }
+
   // Skip middleware for:
   // - API routes (handled by API route auth)
   // - Static files

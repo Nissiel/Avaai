@@ -192,16 +192,16 @@ export function LoginForm() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           {/* Identifier Field (Email OR Phone) */}
           <FormField
             control={form.control}
             name="identifier"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-sm font-semibold">
+                <FormLabel className="text-sm font-medium">
                   Email ou téléphone
                 </FormLabel>
                 <FormControl>
@@ -238,7 +238,7 @@ export function LoginForm() {
             render={({ field }) => (
               <FormItem>
                 <div className="flex items-center justify-between">
-                  <FormLabel className="text-sm font-semibold">
+                  <FormLabel className="text-sm font-medium">
                     Mot de passe
                   </FormLabel>
                   <Link
@@ -306,7 +306,7 @@ export function LoginForm() {
           <span className="w-full border-t border-border/60" />
         </div>
         <div className="relative flex justify-center text-xs font-medium uppercase tracking-wider">
-          <span className="bg-background px-3 py-1 text-muted-foreground">
+          <span className="bg-background px-3 text-muted-foreground">
             Ou continuer avec
           </span>
         </div>
@@ -355,19 +355,6 @@ export function LoginForm() {
           </svg>
           Outlook
         </Button>
-      </div>
-
-      {/* Footer Links */}
-      <div className="space-y-4 pt-2 text-center">
-        <p className="text-sm text-muted-foreground">
-          Pas encore de compte ?{" "}
-          <Link
-            href={`/${locale}/signup` as any}
-            className="font-semibold text-brand-600 hover:text-brand-700 hover:underline"
-          >
-            Créer un compte gratuitement
-          </Link>
-        </p>
       </div>
     </div>
   );

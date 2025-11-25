@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { proxyBackend } from "../../_lib/backend-client";
+import { isDevBypassEnabled, createMockLoginResponse } from "../_lib/dev-bypass";
 
 const BACKEND_PATH = "/api/v1/auth/login";
 
 export async function POST(request: NextRequest) {
+  // 🔓 DEV BYPASS: Return mock login response without hitting backend
+  if (isDevBypassEnabled()) {
+    return createMockLoginResponse();
+  }
+
   const body = await request.text();
   const upstream = await proxyBackend(request, {
     path: BACKEND_PATH,

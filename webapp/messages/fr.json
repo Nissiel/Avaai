@@ -486,7 +486,7 @@
         "name": "Nom complet",
         "namePlaceholder": "Entrez votre nom complet",
         "email": "Email",
-        "phone": "Téléphone (optionnel)",
+        "phone": "Téléphone",
         "phonePlaceholder": "+33 1 23 45 67 89",
         "locale": "Langue par défaut"
       },

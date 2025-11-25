@@ -1,16 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { proxyBackend } from "@/app/api/_lib/backend-client";
+import { isDevBypassEnabled, createMockAssistantsResponse } from "@/app/api/auth/_lib/dev-bypass";
 
 const BACKEND_PATH = "/api/v1/assistants";
 
 /**
  * 🔥 DIVINE FIX: Proxy route for /api/v1/assistants
- * 
+ *
  * This route was being called directly from frontend but didn't exist.
  * Now properly proxies to backend API.
  */
 
 export async function GET(request: NextRequest) {
+  // 🔓 DEV BYPASS: Return mock assistants without hitting backend
+  if (isDevBypassEnabled()) {
+    return createMockAssistantsResponse();
+  }
+
   try {
     const upstream = await proxyBackend(request, {
       path: BACKEND_PATH,

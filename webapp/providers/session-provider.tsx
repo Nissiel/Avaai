@@ -12,6 +12,7 @@ import {
 } from "@/lib/auth/session-client";
 import { useSessionStore } from "@/stores/session-store";
 import { emitTokenChange } from "@/lib/hooks/use-auth-token";
+import { isDevBypassEnabled, createDevMockSession, initializeDevBypassSession } from "@/lib/auth/dev-mock-session";
 
 type SessionProviderProps = React.PropsWithChildren<{
   session?: AvaSession | null;
@@ -33,6 +34,15 @@ export function SessionProvider({ children, session }: SessionProviderProps) {
     };
 
     const bootstrap = async () => {
+      // 🔓 DEV BYPASS: Use mock session in development mode
+      if (isDevBypassEnabled()) {
+        console.log("🔓 DEV BYPASS: Using mock session for addavner@gmail.com");
+        initializeDevBypassSession();
+        const mockSession = createDevMockSession();
+        applySession(mockSession);
+        return;
+      }
+
       if (session) {
         applySession(session as AvaSession);
         return;
