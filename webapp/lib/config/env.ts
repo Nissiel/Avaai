@@ -9,7 +9,7 @@ const envSchema = z.object({
 
 const result = envSchema.safeParse(process.env);
 
-const fallbackBackendUrl = "http://localhost:8000";
+const fallbackBackendUrl = "http://localhost:5555";
 const backendBaseUrl = result.success
   ? result.data.NEXT_PUBLIC_API_URL ??
     result.data.APP_BACKEND_URL ??

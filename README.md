@@ -171,7 +171,7 @@ RATE_LIMIT_PER_MINUTE=60            # Requests per IP per minute (30-60 recommen
 
 - **[Architecture](docs/ARCHITECTURE.md)** - Vue d'ensemble du système
 - **[Installation](docs/SETUP.md)** - Guide d'installation détaillé
-- **[API Documentation](http://localhost:8000/docs)** - Swagger UI (après lancement)
+- **[API Documentation](http://localhost:5555/docs)** - Swagger UI (après lancement)
 
 ---
 
@@ -211,7 +211,7 @@ RATE_LIMIT_PER_MINUTE=60            # Requests per IP per minute (30-60 recommen
 
 4. **Accéder à l'app**
    - Frontend: http://localhost:3000
-   - API Docs: http://localhost:8000/docs
+   - API Docs: http://localhost:5555/docs
 
 **[Guide complet →](docs/SETUP.md)**
 
@@ -299,7 +299,7 @@ Avaai/
 
 # Backend uniquement
 source .venv/bin/activate
-uvicorn api.main:app --reload --port 8000
+uvicorn api.main:app --reload --port 5555
 
 # Frontend uniquement
 cd webapp && npm run dev

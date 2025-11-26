@@ -45,7 +45,7 @@
 
 **Requirements:**
 - Frontend running on `localhost:3000`
-- Backend running on `localhost:8000`
+- Backend running on `localhost:5555`
 - Optional: Lighthouse CLI (`npm install -g lighthouse`)
 - Optional: Apache Bench (`brew install ab` on macOS)
 

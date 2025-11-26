@@ -130,12 +130,14 @@ async def get_current_user(
     settings: Annotated[Settings, Depends(get_settings)] = None,
 ) -> User:
     """
-    Resolve the authenticated user from Supabase JWT token.
+    Resolve the authenticated user from JWT token (Supabase or Custom).
 
     Returns the full User object for multi-tenant operations.
     In DEV mode, returns default dev user if no credentials provided.
 
-    NOTE: This is Supabase-only authentication. Legacy JWT support has been removed.
+    Supports both:
+    - Supabase Auth JWT (when AVA_API_SUPABASE_AUTH_ENABLED=true)
+    - Custom JWT (when AVA_API_SUPABASE_AUTH_ENABLED=false)
     """
     from sqlalchemy import select
     repository = UserRepository(session)
@@ -168,8 +170,37 @@ async def get_current_user(
     if credentials is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required")
 
-    # Parse and validate Supabase JWT token
-    supabase_payload = await _parse_supabase_token(credentials.credentials, settings)
+    # Choose authentication method based on settings
+    if settings.supabase_auth_enabled:
+        # Supabase Auth: Parse and validate Supabase JWT token
+        supabase_payload = await _parse_supabase_token(credentials.credentials, settings)
+        return await _resolve_supabase_user(supabase_payload, repository)
+    else:
+        # Custom JWT: Parse and validate custom JWT token
+        try:
+            payload = jwt.decode(
+                credentials.credentials,
+                settings.jwt_secret_key,
+                algorithms=["HS256"],
+            )
+        except JWTError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid or expired token"
+            ) from exc
 
-    # Resolve user from Supabase token
-    return await _resolve_supabase_user(supabase_payload, repository)
+        user_id = payload.get("sub")
+        if not user_id:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token (missing sub)"
+            )
+
+        user = await repository.get_by_id(user_id)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+
+        return user

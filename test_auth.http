@@ -1,8 +1,8 @@
 ### AVA Authentication API Tests
-### Backend URL: http://localhost:8000
+### Backend URL: http://localhost:5555
 ### Documentation pour tester tous les endpoints auth
 
-@baseUrl = http://localhost:8000/api/v1
+@baseUrl = http://localhost:5555/api/v1
 
 ###############################################################################
 # 1. SIGNUP - Créer un nouveau compte utilisateur

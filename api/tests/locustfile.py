@@ -9,10 +9,10 @@ Performance targets:
 - Error rate: < 0.1%
 
 Run with:
-    locust -f api/tests/locustfile.py --host=http://localhost:8000
+    locust -f api/tests/locustfile.py --host=http://localhost:5555
 
 Or headless:
-    locust -f api/tests/locustfile.py --host=http://localhost:8000 --headless -u 100 -r 10 -t 60s
+    locust -f api/tests/locustfile.py --host=http://localhost:5555 --headless -u 100 -r 10 -t 60s
 """
 
 import json
@@ -489,4 +489,4 @@ def on_test_stop(environment, **kwargs):
 
 
 if __name__ == "__main__":
-    print("Run with: locust -f api/tests/locustfile.py --host=http://localhost:8000")
+    print("Run with: locust -f api/tests/locustfile.py --host=http://localhost:5555")

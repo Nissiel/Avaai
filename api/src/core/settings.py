@@ -45,6 +45,7 @@ class Settings(BaseSettings):
     environment: str = "development"
     allowed_origins: List[str] = Field(default_factory=list)  # List of allowed origins
     database_url: str  # No default - must be set in .env (PostgreSQL required)
+    database_pool_size: int = 2  # Max concurrent DB sessions (protect Supabase session cap)
     log_level: str = "INFO"
     vapi_base_url: str = "https://api.vapi.ai"
     vapi_api_key: Optional[str] = None

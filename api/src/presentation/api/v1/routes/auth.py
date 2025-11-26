@@ -237,6 +237,17 @@ def verify_token(token: str) -> dict:
         )
 
 
+def _should_fallback_to_legacy_auth(error: AuthApiError) -> bool:
+    """Detect Supabase Auth errors where falling back to legacy auth makes sense."""
+    message = (error.message or "").lower()
+    status_code = getattr(error, "status_code", None)
+    return (
+        "user not allowed" in message
+        or "signups not allowed" in message
+        or status_code == 403
+    )
+
+
 # ============================================================================
 # ROUTES
 # ============================================================================
@@ -272,8 +283,10 @@ async def signup(
 
     repository = UserRepository(session)
 
+    supabase_enabled = settings.supabase_auth_enabled
+
     # Check if Supabase Auth is enabled
-    if settings.supabase_auth_enabled:
+    if supabase_enabled:
         try:
             # Create user in Supabase Auth
             supabase_service = get_supabase_auth_service()
@@ -326,21 +339,28 @@ async def signup(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Email already registered"
                 )
-            logger.error(f"Supabase Auth error: {e.message}")
+            if _should_fallback_to_legacy_auth(e):
+                logger.warning(
+                    "Supabase Auth rejected signup (fallback to legacy): %s", e.message
+                )
+                supabase_enabled = False
+            else:
+                logger.error(f"Supabase Auth error: {e.message}")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=str(e.message)
+                )
+
+    # Legacy flow (Supabase Auth disabled or fallback)
+    if not supabase_enabled:
+        # Check if email already exists
+        existing_user = await repository.get_by_email(data.email)
+        if existing_user:
+            logger.warning(f"Signup rejected: Email already registered - {data.email}")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=str(e.message)
+                detail="Email already registered"
             )
-
-    # Legacy flow (Supabase Auth disabled)
-    # Check if email already exists
-    existing_user = await repository.get_by_email(data.email)
-    if existing_user:
-        logger.warning(f"Signup rejected: Email already registered - {data.email}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered"
-        )
 
     # Hash password
     hashed_pwd = hash_password(data.password)
@@ -412,7 +432,8 @@ async def login(
     is_email = "@" in identifier
 
     # Check if Supabase Auth is enabled
-    if settings.supabase_auth_enabled:
+    supabase_enabled = settings.supabase_auth_enabled
+    if supabase_enabled:
         if not is_email:
             # Supabase requires email for password auth
             # Try to find user by phone to get their email
@@ -456,17 +477,22 @@ async def login(
 
         except AuthApiError as e:
             logger.warning(f"Supabase login failed: {e.message}")
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid credentials"
-            )
+            if _should_fallback_to_legacy_auth(e):
+                logger.warning("Falling back to legacy login after Supabase failure")
+                supabase_enabled = False
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Invalid credentials"
+                )
 
     # Legacy flow (Supabase Auth disabled)
-    # Fetch user from database
-    if is_email:
-        user = await repository.get_by_email(identifier)
-    else:
-        user = await repository.get_by_phone(identifier)
+    if not supabase_enabled:
+        # Fetch user from database
+        if is_email:
+            user = await repository.get_by_email(identifier)
+        else:
+            user = await repository.get_by_phone(identifier)
 
     if not user or not user.password:
         raise HTTPException(

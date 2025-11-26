@@ -227,7 +227,7 @@ docker-compose up prometheus grafana
 pytest api/tests/test_integration_full_path.py -v
 
 # Make API requests to generate HTTP metrics
-curl http://localhost:8000/api/v1/vapi/settings
+curl http://localhost:5555/api/v1/vapi/settings
 ```
 
 ### 3. View Dashboards

@@ -13,7 +13,7 @@ from collections.abc import AsyncGenerator
 
 from sqlalchemy.exc import InterfaceError, OperationalError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-from sqlalchemy.pool import NullPool, AsyncAdaptedQueuePool
+from sqlalchemy.pool import NullPool
 
 try:  # pragma: no cover - optional dependency
     from asyncpg import exceptions as asyncpg_exceptions  # type: ignore
@@ -26,25 +26,22 @@ logger = logging.getLogger("ava.database")
 
 settings = get_settings()
 
-# 🔥 DIVINE ARCHITECTURE: Supabase Session Pooler (port 5432)
-# Session Mode supports prepared statements, so we can use them safely.
-# Using AsyncAdaptedQueuePool for better connection reuse with reasonable limits.
+# Gate concurrent DB sessions to stay under Supabase Session Mode client cap.
+# NullPool ensures we don't hold open connections; Supabase pooler handles reuse.
+_session_semaphore = asyncio.Semaphore(max(settings.database_pool_size, 1))
+
 engine = create_async_engine(
     settings.database_url,
     echo=False,
     future=True,
-    poolclass=AsyncAdaptedQueuePool,  # 🔥 Session Mode supports connection pooling
-    pool_size=5,  # 🔥 Keep 5 connections ready
-    max_overflow=10,  # 🔥 Allow up to 15 total connections
-    pool_pre_ping=True,  # 🔥 Verify connections before use
-    pool_recycle=300,  # 🔥 Recycle connections after 5 minutes
+    poolclass=NullPool,
     connect_args={
-        "timeout": 60.0,  # 🔥 60-second connection timeout (give Supabase time to wake from cold start)
-        "command_timeout": settings.database_statement_timeout_ms / 1000,  # 🔥 Query timeout (seconds)
+        "timeout": 60.0,
+        "command_timeout": settings.database_statement_timeout_ms / 1000,
         "server_settings": {
-            "jit": "off",  # 🔥 Disable JIT for predictable performance
-            "application_name": "ava-api-dev",  # 🔥 Identify in PostgreSQL logs
-            "statement_timeout": f"{settings.database_statement_timeout_ms}ms",  # 🔥 DIVINE: Must include unit!
+            "jit": "off",
+            "application_name": "ava-api-dev",
+            "statement_timeout": f"{settings.database_statement_timeout_ms}ms",
         },
     },
 )
@@ -62,16 +59,20 @@ else:  # pragma: no cover - asyncpg not installed in some unit tests
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
     """
     🔥 DIVINE: Provide an AsyncSession for FastAPI dependency injection.
-    
-    Per-request sessions with NullPool (PgBouncer handles connection pooling).
+
+    Per-request sessions with NullPool (Supabase Session Mode handles upstream pooling).
+    A semaphore caps concurrent sessions to avoid exhausting Supabase's MaxClients limit.
+    Sessions are automatically cleaned up after each request.
+
     Failures bubble up to FastAPI error handlers - let upstream retry logic
     handle transient errors instead of hiding them in generator loops.
-    
+
     Note: Retry configuration settings (database_max_retries, etc.) are
     reserved for future middleware/decorator-based retry logic.
     """
-    async with SessionLocal() as session:
-        yield session
+    async with _session_semaphore:
+        async with SessionLocal() as session:
+            yield session
 
 
 __all__ = ["SessionLocal", "engine", "get_session"]
